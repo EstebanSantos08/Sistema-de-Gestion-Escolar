@@ -110,6 +110,7 @@ Backend en Render:
 2. Despliega la carpeta `back-end/` como Web Service.
 3. Usa `DATABASE_URL` desde la base de datos de Render.
 4. Define `CORS_ORIGIN` con la URL final del frontend de Vercel.
+5. Si necesitas varios orígenes, sepáralos con coma en `CORS_ORIGIN`.
 
 Base de datos:
 
