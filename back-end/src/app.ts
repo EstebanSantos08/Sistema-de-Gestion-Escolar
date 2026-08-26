@@ -22,6 +22,17 @@ app.use(express.urlencoded({ extended: true }));
 // ── Rutas ──────────────────────────────────────────────────────────────────────
 app.use('/api', routes);
 
+app.get('/', (_req, res) => {
+  res.json({
+    success: true,
+    message: 'Sistema de Gestión Escolar API',
+    endpoints: {
+      health: '/health',
+      api: '/api',
+    },
+  });
+});
+
 // ── Health check ───────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
