@@ -9,30 +9,33 @@ const dbPath = path.resolve(process.env.DB_PATH || './database.sqlite');
 
 const usePostgres = Boolean(databaseUrl);
 
-const sequelize = new Sequelize({
-  dialect: usePostgres ? 'postgres' : 'sqlite',
-  ...(usePostgres
-    ? {
-        url: databaseUrl,
-        dialectOptions:
-          process.env.NODE_ENV === 'production'
-            ? {
-                ssl: {
-                  require: true,
-                  rejectUnauthorized: false,
-                },
-              }
-            : undefined,
-      }
-    : {
-        storage: dbPath,
-      }),
-  logging: process.env.NODE_ENV === 'development' ? console.log : false,
-  define: {
-    timestamps: true,
-    underscored: false,
-  },
-});
+const sequelize = usePostgres
+  ? new Sequelize(databaseUrl!, {
+      dialect: 'postgres',
+      dialectOptions:
+        process.env.NODE_ENV === 'production'
+          ? {
+              ssl: {
+                require: true,
+                rejectUnauthorized: false,
+              },
+            }
+          : undefined,
+      logging: process.env.NODE_ENV === 'development' ? console.log : false,
+      define: {
+        timestamps: true,
+        underscored: false,
+      },
+    })
+  : new Sequelize({
+      dialect: 'sqlite',
+      storage: dbPath,
+      logging: process.env.NODE_ENV === 'development' ? console.log : false,
+      define: {
+        timestamps: true,
+        underscored: false,
+      },
+    });
 
 export async function connectDatabase(): Promise<void> {
   try {
