@@ -96,6 +96,26 @@ git commit -m "Describe tus cambios"
 git push
 ```
 
+## Despliegue recomendado
+
+Frontend en Vercel:
+
+1. Importa la carpeta `front-end/` como proyecto en Vercel.
+2. Define `VITE_API_URL` apuntando a la URL pública del backend en Render.
+3. Mantén el `vercel.json` para que React Router funcione en rutas internas.
+
+Backend en Render:
+
+1. Crea una PostgreSQL en Render.
+2. Despliega la carpeta `back-end/` como Web Service.
+3. Usa `DATABASE_URL` desde la base de datos de Render.
+4. Define `CORS_ORIGIN` con la URL final del frontend de Vercel.
+
+Base de datos:
+
+- Recomendación: PostgreSQL en Render para este proyecto.
+- No uses SQLite en producción porque Render reinicia el filesystem y puedes perder datos.
+
 ## Notas
 
 - El backend usa SQLite local.
