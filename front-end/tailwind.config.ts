@@ -47,6 +47,21 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+
+        // Paleta personalizada de colores requerida
+        brand: {
+          turquoise: '#09A9C2',
+          blue: '#008BC1',
+          green: '#31B45A',
+          yellow: '#F4B51B',
+          orange: '#E99A19',
+          red: '#E84B5B',
+          pink: '#E8798A',
+          purple: '#7D5AA6',
+          navy: '#071B2D',
+          white: '#F5F5F2',
+          gray: '#D8D8D3',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',

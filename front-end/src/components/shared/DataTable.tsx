@@ -26,6 +26,8 @@ interface DataTableProps<T> {
   onPageChange?: (page: number) => void;
 }
 
+import { Card } from '@/components/ui/card';
+
 export function DataTable<T extends { id: number }>({
   columns,
   data,
@@ -36,8 +38,8 @@ export function DataTable<T extends { id: number }>({
   onPageChange,
 }: DataTableProps<T>) {
   return (
-    <div className="space-y-2">
-      <div className="rounded-md border">
+    <Card className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden border border-white/60">
+      <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -108,6 +110,7 @@ export function DataTable<T extends { id: number }>({
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
+

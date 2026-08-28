@@ -11,6 +11,7 @@ import { userService, type UserRow, type CreateUserPayload } from '@/services/us
 import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable, type Column } from '@/components/shared/DataTable';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -564,31 +565,34 @@ export default function UsersPage() {
       </PageHeader>
 
       {/* Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nombre o correo..."
-            className="pl-9"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-          />
+      <Card className="bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-white/60">
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Buscar por nombre o correo..."
+              className="pl-9 bg-white border-slate-200 text-slate-800 font-medium rounded-xl shadow-xs"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+          </div>
+          <Select
+            value={roleFilter || 'all'}
+            onValueChange={(v) => { setRoleFilter(v === 'all' ? '' : v); setPage(1); }}
+          >
+            <SelectTrigger className="w-full sm:w-48 bg-white border-slate-200 text-slate-800 font-bold rounded-xl shadow-xs">
+              <SelectValue placeholder="Todos los roles" />
+            </SelectTrigger>
+            <SelectContent className="bg-white border-slate-200 rounded-xl shadow-2xl">
+              <SelectItem value="all">Todos los roles</SelectItem>
+              <SelectItem value="admin">Administrador</SelectItem>
+              <SelectItem value="teacher">Docente</SelectItem>
+              <SelectItem value="student">Estudiante</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <Select
-          value={roleFilter || 'all'}
-          onValueChange={(v) => { setRoleFilter(v === 'all' ? '' : v); setPage(1); }}
-        >
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Todos los roles" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos los roles</SelectItem>
-            <SelectItem value="admin">Administrador</SelectItem>
-            <SelectItem value="teacher">Docente</SelectItem>
-            <SelectItem value="student">Estudiante</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      </Card>
+
 
       {/* Summary */}
       {data && (

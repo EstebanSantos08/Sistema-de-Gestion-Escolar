@@ -14,6 +14,7 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable, type Column } from '@/components/shared/DataTable';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { StatCard } from '@/components/shared/StatCard';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -448,52 +449,55 @@ export default function EnrollmentsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="space-y-1">
-          <Label className="text-xs">Período</Label>
-          <Input
-            className="w-32"
-            placeholder="2026-I"
-            value={periodFilter}
-            onChange={(e) => setPeriodFilter(e.target.value)}
-          />
-        </div>
+      <Card className="bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-white/60">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="space-y-1">
+            <Label className="text-xs font-bold text-slate-700">Período</Label>
+            <Input
+              className="w-32 bg-white border-slate-200 text-slate-800 font-medium rounded-xl shadow-xs"
+              placeholder="2026-I"
+              value={periodFilter}
+              onChange={(e) => setPeriodFilter(e.target.value)}
+            />
+          </div>
 
-        <div className="space-y-1">
-          <Label className="text-xs">Curso</Label>
-          <Select
-            value={courseFilter || 'all'}
-            onValueChange={(v) => setCourseFilter(v === 'all' ? '' : v)}
-          >
-            <SelectTrigger className="w-52">
-              <SelectValue placeholder="Todos los cursos" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los cursos</SelectItem>
-              {(coursesForFilter?.data ?? []).map((c) => (
-                <SelectItem key={c.id} value={String(c.id)}>
-                  {c.name} ({c.code})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+          <div className="space-y-1">
+            <Label className="text-xs font-bold text-slate-700">Curso</Label>
+            <Select
+              value={courseFilter || 'all'}
+              onValueChange={(v) => setCourseFilter(v === 'all' ? '' : v)}
+            >
+              <SelectTrigger className="w-56 bg-white border-slate-200 text-slate-800 font-bold rounded-xl shadow-xs">
+                <SelectValue placeholder="Todos los cursos" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border-slate-200 rounded-xl shadow-2xl">
+                <SelectItem value="all">Todos los cursos</SelectItem>
+                {(coursesForFilter?.data ?? []).map((c) => (
+                  <SelectItem key={c.id} value={String(c.id)}>
+                    {c.name} ({c.code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div className="space-y-1">
-          <Label className="text-xs">Estado</Label>
-          <Select value={statusFilter || 'all'} onValueChange={(v) => setStatusFilter(v === 'all' ? '' : v)}>
-            <SelectTrigger className="w-44">
-              <SelectValue placeholder="Todos los estados" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="active">Activa</SelectItem>
-              <SelectItem value="withdrawn">Retirada</SelectItem>
-              <SelectItem value="completed">Completada</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="space-y-1">
+            <Label className="text-xs font-bold text-slate-700">Estado</Label>
+            <Select value={statusFilter || 'all'} onValueChange={(v) => setStatusFilter(v === 'all' ? '' : v)}>
+              <SelectTrigger className="w-44 bg-white border-slate-200 text-slate-800 font-bold rounded-xl shadow-xs">
+                <SelectValue placeholder="Todos los estados" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border-slate-200 rounded-xl shadow-2xl">
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="active">Activa</SelectItem>
+                <SelectItem value="withdrawn">Retirada</SelectItem>
+                <SelectItem value="completed">Completada</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-      </div>
+      </Card>
+
 
       <DataTable
         columns={columns}

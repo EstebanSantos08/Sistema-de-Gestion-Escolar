@@ -142,6 +142,72 @@ export interface StudentGradesResponse {
   generalAverage: number;
 }
 
+// ─── Asistencia ────────────────────────────────────────────────────────────────
+
+export type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused';
+
+export interface AttendanceRecord {
+  id: string;
+  courseId: number;
+  courseName?: string;
+  studentId: number;
+  studentName: string;
+  studentCode: string;
+  date: string; // YYYY-MM-DD
+  status: AttendanceStatus;
+  notes?: string;
+}
+
+// ─── Actividades ───────────────────────────────────────────────────────────────
+
+export type ActivityType = 'tarea' | 'examen' | 'taller' | 'proyecto';
+export type ActivityStatus = 'programada' | 'en_curso' | 'completada';
+
+export interface ClassActivity {
+  id: string;
+  courseId: number;
+  courseName: string;
+  title: string;
+  description: string;
+  dueDate: string; // YYYY-MM-DD
+  type: ActivityType;
+  status: ActivityStatus;
+  createdAt: string;
+}
+
+// ─── Observaciones ─────────────────────────────────────────────────────────────
+
+export type ObservationType = 'positiva' | 'recomendacion' | 'atencion';
+
+export interface StudentObservation {
+  id: string;
+  studentId: number;
+  studentName: string;
+  studentCode: string;
+  courseId: number;
+  courseName: string;
+  type: ObservationType;
+  title: string;
+  detail: string;
+  date: string;
+  visibleToParents: boolean;
+}
+
+// ─── Comunicados ───────────────────────────────────────────────────────────────
+
+export type AnnouncementPriority = 'normal' | 'importante' | 'urgente';
+
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  courseId?: number | null; // null = Todos los cursos
+  courseName?: string;
+  priority: AnnouncementPriority;
+  publishDate: string;
+  authorName: string;
+}
+
 // ─── Pagination ───────────────────────────────────────────────────────────────
 
 export interface PaginatedResponse<T> {
@@ -160,3 +226,4 @@ export interface ApiResponse<T = unknown> {
   error?: string;
   details?: unknown[];
 }
+

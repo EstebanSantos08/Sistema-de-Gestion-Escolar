@@ -19,12 +19,18 @@ const UsersPage = lazy(() => import('@/pages/admin/UsersPage'));
 const CoursesPage = lazy(() => import('@/pages/admin/CoursesPage'));
 const EnrollmentsPage = lazy(() => import('@/pages/admin/EnrollmentsPage'));
 const ReportsPage = lazy(() => import('@/pages/admin/ReportsPage'));
+const AuditPage = lazy(() => import('@/pages/admin/AuditPage'));
 
 // Teacher
 const TeacherDashboard = lazy(() => import('@/pages/teacher/TeacherDashboard'));
 const TeacherMyCoursesPage = lazy(() => import('@/pages/teacher/MyCoursesPage'));
 const CourseDetailPage = lazy(() => import('@/pages/teacher/CourseDetailPage'));
 const GradeEntryPage = lazy(() => import('@/pages/teacher/GradeEntryPage'));
+const AssignedStudentsPage = lazy(() => import('@/pages/teacher/AssignedStudentsPage'));
+const AttendancePage = lazy(() => import('@/pages/teacher/AttendancePage'));
+const ActivitiesPage = lazy(() => import('@/pages/teacher/ActivitiesPage'));
+const ObservationsPage = lazy(() => import('@/pages/teacher/ObservationsPage'));
+const AnnouncementsPage = lazy(() => import('@/pages/teacher/AnnouncementsPage'));
 
 // Student
 const StudentDashboard = lazy(() => import('@/pages/student/StudentDashboard'));
@@ -66,6 +72,7 @@ function AppRoutes() {
             <Route path="/admin/cursos" element={<CoursesPage />} />
             <Route path="/admin/matriculas" element={<EnrollmentsPage />} />
             <Route path="/admin/reportes" element={<ReportsPage />} />
+            <Route path="/admin/auditoria" element={<AuditPage />} />
           </Route>
         </Route>
 
@@ -76,6 +83,11 @@ function AppRoutes() {
             <Route path="/docente/mis-cursos" element={<TeacherMyCoursesPage />} />
             <Route path="/docente/cursos/:courseId" element={<CourseDetailPage />} />
             <Route path="/docente/cursos/:courseId/notas" element={<GradeEntryPage />} />
+            <Route path="/docente/estudiantes" element={<AssignedStudentsPage />} />
+            <Route path="/docente/asistencia" element={<AttendancePage />} />
+            <Route path="/docente/actividades" element={<ActivitiesPage />} />
+            <Route path="/docente/observaciones" element={<ObservationsPage />} />
+            <Route path="/docente/comunicados" element={<AnnouncementsPage />} />
           </Route>
         </Route>
 

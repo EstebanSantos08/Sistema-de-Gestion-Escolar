@@ -12,6 +12,7 @@ import { userService } from '@/services/user.service';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable, type Column } from '@/components/shared/DataTable';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -245,23 +246,26 @@ export default function CoursesPage() {
         </Button>
       </PageHeader>
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <Card className="bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-white/60">
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Buscar curso..."
+              className="pl-9 bg-white border-slate-200 text-slate-800 font-medium rounded-xl shadow-xs"
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            />
+          </div>
           <Input
-            placeholder="Buscar curso..."
-            className="pl-9"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            placeholder="Período (ej: 2026-I)"
+            className="w-full sm:w-44 bg-white border-slate-200 text-slate-800 font-bold rounded-xl shadow-xs"
+            value={period}
+            onChange={(e) => { setPeriod(e.target.value); setPage(1); }}
           />
         </div>
-        <Input
-          placeholder="Período (ej: 2026-I)"
-          className="w-36"
-          value={period}
-          onChange={(e) => { setPeriod(e.target.value); setPage(1); }}
-        />
-      </div>
+      </Card>
+
 
       <DataTable
         columns={columns}
