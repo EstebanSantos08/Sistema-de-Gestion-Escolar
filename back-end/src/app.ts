@@ -8,7 +8,12 @@ import routes from './routes/index';
 dotenv.config();
 
 const app = express();
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+const defaultOrigins = [
+  'https://sistema-de-gestion-escolar.pages.dev',
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+const allowedOrigins = (process.env.CORS_ORIGIN || defaultOrigins.join(','))
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
@@ -24,7 +29,10 @@ app.use(cors({
     return callback(new Error(`Origen bloqueado por CORS: ${origin}`));
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
+app.options('*', cors());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
