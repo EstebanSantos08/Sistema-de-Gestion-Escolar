@@ -8,30 +8,35 @@ import routes from './routes/index';
 dotenv.config();
 
 const app = express();
+
+const envOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
+  : [];
+
 const defaultOrigins = [
   'https://sistema-de-gestion-escolar.pages.dev',
   'http://localhost:5173',
   'http://localhost:3000',
 ];
-const allowedOrigins = (process.env.CORS_ORIGIN || defaultOrigins.join(','))
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+
+const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 
 // ── Seguridad y utilidades ─────────────────────────────────────────────────────
 app.use(helmet());
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.pages.dev')) {
+        return callback(null, true);
+      }
 
-    return callback(new Error(`Origen bloqueado por CORS: ${origin}`));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-}));
+      return callback(new Error(`Origen bloqueado por CORS: ${origin}`));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  })
+);
 app.options('*', cors());
 app.use(morgan('dev'));
 app.use(express.json());
