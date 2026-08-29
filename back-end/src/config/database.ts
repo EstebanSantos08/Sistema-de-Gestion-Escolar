@@ -14,24 +14,20 @@ export const sequelize = new Sequelize(dbUrl || '', {
   dialectOptions: {
     ssl: {
       require: true,
-      rejectUnauthorized: false,
-    },
+      rejectUnauthorized: false
+    }
   },
   logging: false,
   define: {
     timestamps: true,
-    underscored: false,
-  },
+    underscored: false
+  }
 });
 
 export async function connectDatabase(): Promise<void> {
   try {
     await sequelize.authenticate();
-    console.log(
-      usePostgres
-        ? '✅ Conexión a PostgreSQL establecida.'
-        : '✅ Conexión a SQLite establecida.'
-    );
+    console.log('✅ Conexión a PostgreSQL establecida.');
   } catch (error) {
     console.error('❌ No se pudo conectar a la base de datos:', error);
     throw error;
