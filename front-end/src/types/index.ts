@@ -1,6 +1,6 @@
 // ─── Auth / Users ────────────────────────────────────────────────────────────
 
-export type Role = 'admin' | 'teacher' | 'student';
+export type Role = 'admin' | 'teacher' | 'student' | 'parent';
 
 export interface AuthUser {
   id: number;
@@ -77,6 +77,7 @@ export interface Course {
     user?: { name: string };
   };
   enrollmentsCount?: number;
+  enrolledCount?: number;
 }
 
 // ─── Enrollments ─────────────────────────────────────────────────────────────
@@ -160,7 +161,7 @@ export interface AttendanceRecord {
 
 // ─── Actividades ───────────────────────────────────────────────────────────────
 
-export type ActivityType = 'tarea' | 'examen' | 'taller' | 'proyecto';
+export type ActivityType = 'tarea' | 'examen' | 'taller' | 'proyecto' | 'deber';
 export type ActivityStatus = 'programada' | 'en_curso' | 'completada';
 
 export interface ClassActivity {

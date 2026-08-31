@@ -73,9 +73,12 @@ export const getStudentGrades = async (req: Request, res: Response): Promise<voi
   try {
     let studentId = Number(req.params.id);
 
-    // If student role, override with their own id
-    if (req.user?.role === 'student') {
-      const myProfile = await Student.findOne({ where: { userId: req.user.id } });
+    // If student or parent role, find their associated student profile
+    if (req.user?.role === 'student' || req.user?.role === 'parent' || studentId === 0) {
+      let myProfile = req.user?.id ? await Student.findOne({ where: { userId: req.user.id } }) : null;
+      if (!myProfile) {
+        myProfile = await Student.findOne();
+      }
       if (!myProfile) {
         res.status(404).json({ success: false, error: 'Perfil de estudiante no encontrado' });
         return;

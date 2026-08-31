@@ -7,9 +7,9 @@ const router = Router();
 
 router.use(authenticate);
 
-router.get('/', requireRole('admin', 'teacher'), getCourses);
+router.get('/', requireRole('admin', 'teacher', 'student', 'parent'), getCourses);
 router.post('/', requireRole('admin'), createCourse);
-router.get('/:id', requireRole('admin', 'teacher'), getCourseById);
+router.get('/:id', requireRole('admin', 'teacher', 'student', 'parent'), getCourseById);
 router.put('/:id', requireRole('admin'), updateCourse);
 router.delete('/:id', requireRole('admin'), deleteCourse);
 

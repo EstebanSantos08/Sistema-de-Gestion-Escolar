@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
@@ -9,34 +9,36 @@ import { useAuth } from '@/hooks/useAuth';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
 
-// Pages — lazy loaded
-const LoginPage = lazy(() => import('@/pages/LoginPage'));
-const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
+// Pages — static direct imports to prevent any Vite dynamic import failure
+import LoginPage from '@/pages/LoginPage';
+import NotFoundPage from '@/pages/NotFoundPage';
 
 // Admin
-const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
-const UsersPage = lazy(() => import('@/pages/admin/UsersPage'));
-const CoursesPage = lazy(() => import('@/pages/admin/CoursesPage'));
-const EnrollmentsPage = lazy(() => import('@/pages/admin/EnrollmentsPage'));
-const ReportsPage = lazy(() => import('@/pages/admin/ReportsPage'));
-const AuditPage = lazy(() => import('@/pages/admin/AuditPage'));
+import AdminDashboard from '@/pages/admin/AdminDashboard';
+import UsersPage from '@/pages/admin/UsersPage';
+import CoursesPage from '@/pages/admin/CoursesPage';
+import EnrollmentsPage from '@/pages/admin/EnrollmentsPage';
+import ReportsPage from '@/pages/admin/ReportsPage';
+import AuditPage from '@/pages/admin/AuditPage';
 
 // Teacher
-const TeacherDashboard = lazy(() => import('@/pages/teacher/TeacherDashboard'));
-const TeacherMyCoursesPage = lazy(() => import('@/pages/teacher/MyCoursesPage'));
-const CourseDetailPage = lazy(() => import('@/pages/teacher/CourseDetailPage'));
-const GradeEntryPage = lazy(() => import('@/pages/teacher/GradeEntryPage'));
-const AssignedStudentsPage = lazy(() => import('@/pages/teacher/AssignedStudentsPage'));
-const AttendancePage = lazy(() => import('@/pages/teacher/AttendancePage'));
-const ActivitiesPage = lazy(() => import('@/pages/teacher/ActivitiesPage'));
-const ObservationsPage = lazy(() => import('@/pages/teacher/ObservationsPage'));
-const AnnouncementsPage = lazy(() => import('@/pages/teacher/AnnouncementsPage'));
+import TeacherDashboard from '@/pages/teacher/TeacherDashboard';
+import TeacherMyCoursesPage from '@/pages/teacher/MyCoursesPage';
+import CourseDetailPage from '@/pages/teacher/CourseDetailPage';
+import GradeEntryPage from '@/pages/teacher/GradeEntryPage';
+import AssignedStudentsPage from '@/pages/teacher/AssignedStudentsPage';
+import BitacoraPage from '@/pages/teacher/BitacoraPage';
+import AttendancePage from '@/pages/teacher/AttendancePage';
+import ActivitiesPage from '@/pages/teacher/ActivitiesPage';
+import ObservationsPage from '@/pages/teacher/ObservationsPage';
+import AnnouncementsPage from '@/pages/teacher/AnnouncementsPage';
 
 // Student
-const StudentDashboard = lazy(() => import('@/pages/student/StudentDashboard'));
-const StudentMyCoursesPage = lazy(() => import('@/pages/student/MyCoursesPage'));
-const MyGradesPage = lazy(() => import('@/pages/student/MyGradesPage'));
-const TranscriptPage = lazy(() => import('@/pages/student/TranscriptPage'));
+import StudentDashboard from '@/pages/student/StudentDashboard';
+import StudentMyCoursesPage from '@/pages/student/MyCoursesPage';
+import StudentCourseDetailPage from '@/pages/student/StudentCourseDetailPage';
+import MyGradesPage from '@/pages/student/MyGradesPage';
+import TranscriptPage from '@/pages/student/TranscriptPage';
 
 const PageLoader = () => (
   <div className="flex min-h-screen items-center justify-center">
@@ -84,6 +86,7 @@ function AppRoutes() {
             <Route path="/docente/cursos/:courseId" element={<CourseDetailPage />} />
             <Route path="/docente/cursos/:courseId/notas" element={<GradeEntryPage />} />
             <Route path="/docente/estudiantes" element={<AssignedStudentsPage />} />
+            <Route path="/docente/bitacora" element={<BitacoraPage />} />
             <Route path="/docente/asistencia" element={<AttendancePage />} />
             <Route path="/docente/actividades" element={<ActivitiesPage />} />
             <Route path="/docente/observaciones" element={<ObservationsPage />} />
@@ -92,10 +95,11 @@ function AppRoutes() {
         </Route>
 
         {/* ── Student ───────────────────────────────────────── */}
-        <Route element={<ProtectedRoute allowedRoles={['student']} />}>
+        <Route element={<ProtectedRoute allowedRoles={['student', 'parent', 'admin', 'teacher']} />}>
           <Route element={<AppLayout />}>
             <Route path="/estudiante" element={<StudentDashboard />} />
             <Route path="/estudiante/mis-cursos" element={<StudentMyCoursesPage />} />
+            <Route path="/estudiante/cursos/:courseId" element={<StudentCourseDetailPage />} />
             <Route path="/estudiante/mis-notas" element={<MyGradesPage />} />
             <Route path="/estudiante/historial" element={<TranscriptPage />} />
           </Route>

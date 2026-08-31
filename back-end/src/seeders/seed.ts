@@ -4,7 +4,25 @@ dotenv.config();
 import bcrypt from 'bcryptjs';
 import sequelize from '../config/database';
 import '../models/index';
-import { User, Student, Teacher, Course, Enrollment, Grade } from '../models/index';
+import {
+  User,
+  Student,
+  Teacher,
+  Course,
+  Enrollment,
+  Grade,
+  Announcement,
+  Observation,
+  Activity,
+  Attendance,
+  AuditLog,
+  Report,
+  Representative,
+  Submission,
+  Evidence,
+  Comment,
+  Notification,
+} from '../models/index';
 
 // ─── Tipos auxiliares ─────────────────────────────────────────────────────────
 
@@ -457,6 +475,226 @@ async function seed() {
   }
 
   console.log('✅ Calificaciones creadas (8 est. × 5 cursos × 3 tipos = 120 registros).');
+
+  // ── Comunicados ───────────────────────────────────────────────────────────────
+  await Announcement.bulkCreate([
+    {
+      title: 'Bienvenida al Período Académico 2026-I',
+      content: 'Estimada comunidad educativa, les damos la bienvenida al nuevo año lectivo.',
+      targetRole: 'ALL',
+      authorId: _admin.id,
+    },
+    {
+      title: 'Reunión de Docentes',
+      content: 'Recordatorio de reunión general de profesores el viernes a las 15:00.',
+      targetRole: 'TEACHER',
+      authorId: _admin.id,
+    },
+    {
+      title: 'Entrega de Proyectos de Matemáticas',
+      content: 'Se recuerda a los estudiantes de 1er Grado entregar sus proyectos antes de la fecha límite.',
+      targetRole: 'STUDENT',
+      courseId: courseByCode['MAT-101']?.id,
+      authorId: userGarcia.id,
+    },
+  ]);
+  console.log('✅ Comunicados creados.');
+
+  // ── Observaciones ─────────────────────────────────────────────────────────────
+  if (studentInstances[0] && garcia) {
+    await Observation.bulkCreate([
+      {
+        studentId: studentInstances[0].id,
+        teacherId: garcia.id,
+        title: 'Excelente desempeño en clase',
+        description: 'Demuestra gran participación y ayuda a sus compañeros.',
+        type: 'ACADEMIC',
+        date: '2026-08-15',
+      },
+      {
+        studentId: studentInstances[2]?.id || studentInstances[0].id,
+        teacherId: martinez?.id || garcia.id,
+        title: 'Llegada con retraso recurrente',
+        description: 'Llegó 15 minutos tarde a la primera hora de clase.',
+        type: 'BEHAVIORAL',
+        date: '2026-08-20',
+      },
+    ]);
+    console.log('✅ Observaciones creadas.');
+  }
+
+  // ── Actividades ───────────────────────────────────────────────────────────────
+  if (courseByCode['MAT-101'] && courseByCode['LEN-101']) {
+    await Activity.bulkCreate([
+      {
+        courseId: courseByCode['MAT-101'].id,
+        title: 'Taller de Álgebra Básica',
+        description: 'Resolver los ejercicios de la página 45 a la 50 del libro.',
+        dueDate: new Date('2026-09-10'),
+        maxScore: 10.0,
+      },
+      {
+        courseId: courseByCode['LEN-101'].id,
+        title: 'Ensayo sobre Literatura Hispana',
+        description: 'Redactar un ensayo de 500 palabras sobre la obra leída en clase.',
+        dueDate: new Date('2026-09-15'),
+        maxScore: 10.0,
+      },
+    ]);
+    console.log('✅ Actividades creadas.');
+  }
+
+  // ── Asistencias ───────────────────────────────────────────────────────────────
+  if (studentInstances.length > 0 && courseByCode['MAT-101']) {
+    await Attendance.bulkCreate([
+      {
+        studentId: studentInstances[0].id,
+        courseId: courseByCode['MAT-101'].id,
+        date: '2026-08-28',
+        status: 'PRESENT',
+        registeredById: userGarcia.id,
+      },
+      {
+        studentId: studentInstances[1].id,
+        courseId: courseByCode['MAT-101'].id,
+        date: '2026-08-28',
+        status: 'PRESENT',
+        registeredById: userGarcia.id,
+      },
+      {
+        studentId: studentInstances[2].id,
+        courseId: courseByCode['MAT-101'].id,
+        date: '2026-08-28',
+        status: 'LATE',
+        remarks: 'Ingresó 10 minutos tarde',
+        registeredById: userGarcia.id,
+      },
+    ]);
+    console.log('✅ Asistencias creadas.');
+  }
+
+  // ── Auditoría ─────────────────────────────────────────────────────────────────
+  await AuditLog.bulkCreate([
+    {
+      userId: _admin.id,
+      action: 'INITIAL_SEED',
+      resource: 'System',
+      details: 'Poblamiento inicial del sistema ejecutado exitosamente.',
+      ipAddress: '127.0.0.1',
+    },
+    {
+      userId: userGarcia.id,
+      action: 'CREATE_GRADE',
+      resource: 'Grade',
+      details: 'Ingreso de calificaciones para MAT-101',
+      ipAddress: '127.0.0.1',
+    },
+  ]);
+  console.log('✅ Registros de auditoría creados.');
+
+  // ── Reportes ──────────────────────────────────────────────────────────────────
+  await Report.bulkCreate([
+    {
+      title: 'Reporte General de Calificaciones 2026-I',
+      type: 'ACADEMIC',
+      generatedById: _admin.id,
+      fileUrl: '/reports/academic_2026_I.pdf',
+      parameters: JSON.stringify({ period: '2026-I', type: 'summary' }),
+    },
+    {
+      title: 'Consolidado de Asistencias - Agosto 2026',
+      type: 'ATTENDANCE',
+      generatedById: _admin.id,
+      fileUrl: '/reports/attendance_aug_2026.xlsx',
+      parameters: JSON.stringify({ month: '2026-08' }),
+    },
+  ]);
+  // ── Representante / Padre ───────────────────────────────────────────────────
+  const parentPasswordHash = await bcrypt.hash('Padre123!', 10);
+  const [userParent] = await User.findOrCreate({
+    where: { email: 'padre@escuela.com' },
+    defaults: {
+      name: 'María Gómez (Representante)',
+      email: 'padre@escuela.com',
+      password: parentPasswordHash,
+      role: 'parent',
+      active: true,
+    },
+  });
+
+  const [repProfile] = await Representative.findOrCreate({
+    where: { userId: userParent.id },
+    defaults: {
+      userId: userParent.id,
+      relationship: 'madre',
+      phone: '0991234567',
+      occupation: 'Ingeniera',
+      address: 'Av. Amazonas y Colón, Quito',
+      primaryContact: true,
+    },
+  });
+  console.log('✅ Perfil de Representante creado.');
+
+  // ── Entregas y Evidencias ────────────────────────────────────────────────────
+  const firstAct = await Activity.findOne();
+  const firstStudent = await Student.findOne();
+
+  if (firstAct && firstStudent) {
+    const [sub] = await Submission.findOrCreate({
+      where: { activityId: firstAct.id, studentId: firstStudent.id },
+      defaults: {
+        activityId: firstAct.id,
+        studentId: firstStudent.id,
+        representativeId: repProfile.id,
+        status: 'completada',
+        submittedAt: new Date(),
+        studentNotes: 'Sofía realizó el taller en casa con apoyo de crayones.',
+        teacherFeedback: '¡Excelente trabajo! Identificó muy bien los colores.',
+        score: 9.5,
+      },
+    });
+
+    await Evidence.findOrCreate({
+      where: { submissionId: sub.id, fileName: 'dibujo_familia.jpg' },
+      defaults: {
+        submissionId: sub.id,
+        type: 'imagen',
+        fileUrl: '/evidences/dibujo_familia.jpg',
+        fileName: 'dibujo_familia.jpg',
+        caption: 'Fotografía del dibujo con colores primarios',
+      },
+    });
+
+    await Comment.findOrCreate({
+      where: { submissionId: sub.id, content: 'Demostró gran entusiasmo en la actividad.' },
+      defaults: {
+        submissionId: sub.id,
+        authorId: userParent.id,
+        authorRole: 'parent',
+        content: 'Demostró gran entusiasmo en la actividad.',
+      },
+    });
+  }
+  console.log('✅ Entregas, evidencias y comentarios de prueba creados.');
+
+  // ── Notificaciones ─────────────────────────────────────────────────────────
+  await Notification.bulkCreate([
+    {
+      userId: userParent.id,
+      title: 'Nueva Actividad Asignada',
+      message: 'La docente ha publicado la actividad "Dibujo de mi Familia".',
+      type: 'actividad',
+      read: false,
+    },
+    {
+      userId: userParent.id,
+      title: 'Retroalimentación de Docente',
+      message: 'Tu evidencia de "Taller de Colores" fue calificada con 9.5/10.',
+      type: 'evaluacion',
+      read: true,
+    },
+  ]);
+  console.log('✅ Notificaciones de prueba creadas.');
 
   // ── Resumen final ─────────────────────────────────────────────────────────────
 

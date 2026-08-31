@@ -8,7 +8,7 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/', requireRole('admin', 'teacher'), getStudents);
-router.get('/me/grades', requireRole('student'), getMyGrades);
+router.get('/me/grades', requireRole('student', 'parent'), getMyGrades);
 router.get('/:id', requireRole('admin', 'teacher', 'student'), getStudentById);
 router.get('/:id/grades', requireRole('admin', 'teacher', 'student'), getStudentGrades);
 

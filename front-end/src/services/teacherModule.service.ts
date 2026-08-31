@@ -6,11 +6,42 @@ import type {
   Announcement,
 } from '@/types';
 
+export type {
+  AttendanceRecord,
+  AttendanceStatus,
+  ClassActivity,
+  StudentObservation,
+  Announcement,
+};
+
+export const getTodayStr = (): string => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export interface SubmissionItem {
+  id: string;
+  activityId: string;
+  studentId: number;
+  studentName: string;
+  courseId: number;
+  status: 'pendiente' | 'entregada' | 'completada' | 'devuelta';
+  submittedAt: string;
+  notes?: string;
+  evidenceUrl?: string;
+  evidenceName?: string;
+  evidenceType?: 'imagen' | 'documento';
+}
+
 const STORAGE_KEYS = {
-  ATTENDANCE: 'teacher_attendance_records',
-  ACTIVITIES: 'teacher_activities_records',
-  OBSERVATIONS: 'teacher_observations_records',
-  ANNOUNCEMENTS: 'teacher_announcements_records',
+  ATTENDANCE: 'teacher_attendance_records_v4',
+  ACTIVITIES: 'teacher_activities_records_v4',
+  OBSERVATIONS: 'teacher_observations_records_v4',
+  ANNOUNCEMENTS: 'teacher_announcements_records_v4',
+  SUBMISSIONS: 'student_submissions_records_v1',
 };
 
 // Initial seed data for demonstration if localStorage is empty
@@ -20,8 +51,8 @@ const INITIAL_ACTIVITIES: ClassActivity[] = [
     courseId: 1,
     courseName: 'Matemáticas I',
     title: 'Taller de Ecuaciones Lineales',
-    description: 'Resolver los ejercicios del capítulo 4 del texto guía.',
-    dueDate: '2026-09-05',
+    description: 'Resolver los ejercicios del capítulo 4 del texto guía y adjuntar foto o PDF de la resolución.',
+    dueDate: '2026-09-05 23:59',
     type: 'taller',
     status: 'en_curso',
     createdAt: '2026-08-25',
@@ -32,21 +63,54 @@ const INITIAL_ACTIVITIES: ClassActivity[] = [
     courseName: 'Matemáticas I',
     title: 'Examen de Primer Parcial',
     description: 'Evaluación acumulativa sobre álgebra y trigonometría básica.',
-    dueDate: '2026-09-12',
+    dueDate: '2026-09-12 23:59',
     type: 'examen',
     status: 'programada',
     createdAt: '2026-08-26',
   },
   {
     id: 'act-3',
+    courseId: 2,
+    courseName: 'Lengua y Literatura',
+    title: 'Análisis Literario y Resumen de Lectura',
+    description: 'Redactar un resumen sintético sobre la obra asignada en clase.',
+    dueDate: '2026-09-08 23:59',
+    type: 'deber',
+    status: 'en_curso',
+    createdAt: '2026-08-27',
+  },
+  {
+    id: 'act-4',
     courseId: 3,
     courseName: 'Ciencias Naturales',
     title: 'Informe de Laboratorio de Biología',
-    description: 'Entrega del reporte del experimento de fotosíntesis.',
-    dueDate: '2026-09-02',
+    description: 'Entrega del reporte del experimento de fotosíntesis con fotos de la evidencia.',
+    dueDate: '2026-09-02 23:59',
     type: 'proyecto',
     status: 'en_curso',
     createdAt: '2026-08-24',
+  },
+  {
+    id: 'act-5',
+    courseId: 4,
+    courseName: 'Historia Universal',
+    title: 'Línea de Tiempo del Siglo XX',
+    description: 'Elaborar un esquema gráfico con los eventos más importantes del siglo XX.',
+    dueDate: '2026-09-10 23:59',
+    type: 'taller',
+    status: 'en_curso',
+    createdAt: '2026-08-28',
+  },
+  {
+    id: 'act-6',
+    courseId: 5,
+    courseName: 'Informática Básica',
+    title: 'Práctica de Programación en Scratch/Python',
+    description: 'Desarrollar un script que realice operaciones básicas y adjuntar captura o PDF.',
+    dueDate: '2026-09-06 23:59',
+    type: 'deber',
+    status: 'en_curso',
+    createdAt: '2026-08-29',
   },
 ];
 
@@ -151,6 +215,61 @@ const INITIAL_AUDIT_LOGS: AuditLogItem[] = [
   { id: 'log-6', timestamp: '2026-08-25 10:00:12', user: 'Directora María', role: 'admin', action: 'CAMBIO_PERIODO', entity: 'Sistema', details: 'Configurado período académico activo a 2026-I', ip: '192.168.1.10' },
 ];
 
+const INITIAL_SUBMISSIONS: SubmissionItem[] = [
+  {
+    id: 'sub-1',
+    activityId: 'act-1',
+    studentId: 1,
+    studentName: 'Juan Pérez',
+    courseId: 1,
+    status: 'entregada',
+    submittedAt: '2026-08-28 14:30',
+    notes: 'Adjunto la resolución completa del taller del capítulo 4.',
+    evidenceUrl: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=800&q=80',
+    evidenceName: 'Taller_Ecuaciones_JuanPerez.jpg',
+    evidenceType: 'imagen',
+  },
+  {
+    id: 'sub-2',
+    activityId: 'act-1',
+    studentId: 2,
+    studentName: 'María Rodríguez',
+    courseId: 1,
+    status: 'entregada',
+    submittedAt: '2026-08-29 09:15',
+    notes: 'Entregado a tiempo en formato PDF. Saludos docente.',
+    evidenceUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80',
+    evidenceName: 'Ecuaciones_Maria_Rodrigues.pdf',
+    evidenceType: 'documento',
+  },
+  {
+    id: 'sub-3',
+    activityId: 'act-1',
+    studentId: 4,
+    studentName: 'Ana López',
+    courseId: 1,
+    status: 'entregada',
+    submittedAt: '2026-08-30 18:45',
+    notes: 'Subo las fotos del cuaderno de trabajo.',
+    evidenceUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80',
+    evidenceName: 'Resolucion_AnaLopez.png',
+    evidenceType: 'imagen',
+  },
+  {
+    id: 'sub-4',
+    activityId: 'act-3',
+    studentId: 1,
+    studentName: 'Juan Pérez',
+    courseId: 2,
+    status: 'entregada',
+    submittedAt: '2026-08-29 11:20',
+    notes: 'Resumen literario con análisis sintético.',
+    evidenceUrl: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=800&q=80',
+    evidenceName: 'Resumen_Literario_JuanPerez.pdf',
+    evidenceType: 'documento',
+  },
+];
+
 export const teacherModuleService = {
   // ── Asistencia ─────────────────────────────────────────────────────────────
   getAttendance(courseId?: number, date?: string): AttendanceRecord[] {
@@ -212,11 +331,21 @@ export const teacherModuleService = {
     const newActivity: ClassActivity = {
       ...data,
       id: `act-${Date.now()}`,
-      createdAt: new Date().toISOString().split('T')[0],
+      createdAt: getTodayStr(),
     };
     const updated = [newActivity, ...list];
     saveToStorage(STORAGE_KEYS.ACTIVITIES, updated);
     return newActivity;
+  },
+
+  updateActivity(id: string, data: Partial<Omit<ClassActivity, 'id' | 'createdAt'>>): ClassActivity {
+    const list = this.getActivities();
+    const idx = list.findIndex((a) => a.id === id);
+    if (idx < 0) throw new Error('Actividad no encontrada');
+    const updatedActivity = { ...list[idx], ...data };
+    list[idx] = updatedActivity;
+    saveToStorage(STORAGE_KEYS.ACTIVITIES, list);
+    return updatedActivity;
   },
 
   updateActivityStatus(id: string, status: ClassActivity['status']): void {
@@ -229,6 +358,61 @@ export const teacherModuleService = {
     const list = this.getActivities();
     const updated = list.filter((a) => a.id !== id);
     saveToStorage(STORAGE_KEYS.ACTIVITIES, updated);
+  },
+
+  // ── Entregas y Evidencias (Límite 1MB) ─────────────────────────────────────
+  MAX_FILE_SIZE_BYTES: 1048576, // 1 MB en bytes
+
+  validateAndReadEvidenceFile(file: File): Promise<{ fileName: string; fileUrl: string; fileType: 'imagen' | 'documento' }> {
+    return new Promise((resolve, reject) => {
+      if (file.size > 1048576) {
+        reject(new Error(`El archivo "${file.name}" (${(file.size / (1024 * 1024)).toFixed(2)} MB) supera el tamaño máximo permitido de 1 MB.`));
+        return;
+      }
+
+      const isImage = file.type.startsWith('image/');
+      const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+
+      if (!isImage && !isPdf) {
+        reject(new Error('Formato no permitido. Solo se aceptan imágenes (JPG, PNG) y archivos PDF.'));
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        resolve({
+          fileName: file.name,
+          fileUrl: reader.result as string,
+          fileType: isImage ? 'imagen' : 'documento',
+        });
+      };
+      reader.onerror = () => reject(new Error('Error al procesar el archivo seleccionado.'));
+      reader.readAsDataURL(file);
+    });
+  },
+
+  getSubmissions(activityId?: string, studentId?: number): SubmissionItem[] {
+    const list = getFromStorage<SubmissionItem[]>(STORAGE_KEYS.SUBMISSIONS, INITIAL_SUBMISSIONS);
+    if (!localStorage.getItem(STORAGE_KEYS.SUBMISSIONS)) {
+      saveToStorage(STORAGE_KEYS.SUBMISSIONS, INITIAL_SUBMISSIONS);
+    }
+    return list.filter((s) => {
+      if (activityId && s.activityId !== activityId) return false;
+      if (studentId && s.studentId !== studentId) return false;
+      return true;
+    });
+  },
+
+  createSubmission(submission: Omit<SubmissionItem, 'id' | 'submittedAt'>): SubmissionItem {
+    const list = getFromStorage<SubmissionItem[]>(STORAGE_KEYS.SUBMISSIONS, []);
+    const newSub: SubmissionItem = {
+      ...submission,
+      id: `sub-${Date.now()}`,
+      submittedAt: getTodayStr(),
+    };
+    const updated = [newSub, ...list.filter((s) => !(s.activityId === submission.activityId && s.studentId === submission.studentId))];
+    saveToStorage(STORAGE_KEYS.SUBMISSIONS, updated);
+    return newSub;
   },
 
   // ── Observaciones ──────────────────────────────────────────────────────────
@@ -249,7 +433,7 @@ export const teacherModuleService = {
     const newObs: StudentObservation = {
       ...data,
       id: `obs-${Date.now()}`,
-      date: new Date().toISOString().split('T')[0],
+      date: getTodayStr(),
     };
     const updated = [newObs, ...list];
     saveToStorage(STORAGE_KEYS.OBSERVATIONS, updated);
@@ -279,7 +463,7 @@ export const teacherModuleService = {
     const newAnn: Announcement = {
       ...data,
       id: `ann-${Date.now()}`,
-      publishDate: new Date().toISOString().split('T')[0],
+      publishDate: getTodayStr(),
     };
     const updated = [newAnn, ...list];
     saveToStorage(STORAGE_KEYS.ANNOUNCEMENTS, updated);
@@ -290,5 +474,49 @@ export const teacherModuleService = {
     const list = getFromStorage<Announcement[]>(STORAGE_KEYS.ANNOUNCEMENTS, INITIAL_ANNOUNCEMENTS);
     const updated = list.filter((a) => a.id !== id);
     saveToStorage(STORAGE_KEYS.ANNOUNCEMENTS, updated);
+  },
+
+  // ── Bitácora ───────────────────────────────────────────────────────────────
+  getBitacoraByDate(dateStr: string) {
+    const todayStr = getTodayStr();
+    const isFuture = dateStr > todayStr;
+
+    if (isFuture) {
+      // En fechas futuras: NINGUNA asistencia, observación ni comunicado existe.
+      // Únicamente se muestran las actividades programadas para esa fecha límite (status !== 'completada')
+      const scheduledActivities = this.getActivities().filter(
+        (act) => act.dueDate === dateStr && act.status !== 'completada'
+      );
+      return {
+        date: dateStr,
+        isFuture: true,
+        attendance: [],
+        observations: [],
+        announcements: [],
+        activities: [],
+        scheduledActivities,
+        totalRecords: scheduledActivities.length,
+      };
+    }
+
+    // En fechas presentes/pasadas (dateStr <= todayStr):
+    const attendance = this.getAttendance(undefined, dateStr);
+    const observations = this.getObservations().filter((o) => o.date === dateStr);
+    const announcements = this.getAnnouncements().filter((a) => a.publishDate === dateStr);
+    // Solo actividades con estado 'completada' (Finalizada)
+    const activities = this.getActivities().filter(
+      (act) => act.status === 'completada' && (act.dueDate === dateStr || act.createdAt === dateStr)
+    );
+
+    return {
+      date: dateStr,
+      isFuture: false,
+      attendance,
+      observations,
+      announcements,
+      activities,
+      scheduledActivities: [],
+      totalRecords: attendance.length + observations.length + announcements.length + activities.length,
+    };
   },
 };

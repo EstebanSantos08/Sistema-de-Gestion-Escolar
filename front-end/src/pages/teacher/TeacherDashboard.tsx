@@ -1,4 +1,4 @@
-import { BookOpen, Users, ClipboardCheck, Megaphone, PlusCircle, CheckSquare, MessageSquare, AlertCircle } from 'lucide-react';
+import { BookOpen, Users, ClipboardCheck, Megaphone, PlusCircle, CheckSquare, MessageSquare, AlertCircle, BookMarked } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useMyCourses } from '@/hooks/useCourses';
@@ -13,7 +13,7 @@ export default function TeacherDashboard() {
   const { user } = useAuth();
   const { data: courses, isLoading } = useMyCourses();
 
-  const totalStudents = courses?.reduce((s, c) => s + (c.enrollmentsCount ?? 0), 0) ?? 0;
+  const totalStudents = courses?.reduce((s, c) => s + (c.enrolledCount ?? c.enrollmentsCount ?? 0), 0) ?? 0;
   const activities = teacherModuleService.getActivities();
   const announcements = teacherModuleService.getAnnouncements();
 
@@ -72,6 +72,13 @@ export default function TeacherDashboard() {
               <Link to="/docente/estudiantes">
                 <Users className="mr-1.5 h-4 w-4 text-[#09A9C2]" />
                 Estudiantes
+              </Link>
+            </Button>
+
+            <Button asChild variant="outline" className="w-full justify-start bg-[#008BC1]/10 hover:bg-[#008BC1]/20 hover:border-[#008BC1] border-[#008BC1]/30 shadow-sm rounded-xl font-bold transition-all text-xs text-[#008BC1]">
+              <Link to="/docente/bitacora">
+                <BookMarked className="mr-1.5 h-4 w-4 text-[#008BC1]" />
+                Bitácora
               </Link>
             </Button>
 
@@ -135,7 +142,7 @@ export default function TeacherDashboard() {
                     <div>
                       <p className="font-bold text-slate-800">{course.name}</p>
                       <p className="text-xs text-slate-500 font-medium">
-                        {course.code} · {course.enrollmentsCount ?? 0} estudiantes
+                        {course.code} · {course.enrolledCount ?? course.enrollmentsCount ?? 0} estudiantes
                       </p>
                     </div>
                     <div className="flex items-center gap-2">

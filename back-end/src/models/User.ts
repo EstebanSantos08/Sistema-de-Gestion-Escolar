@@ -6,7 +6,7 @@ export interface UserAttributes {
   name: string;
   email: string;
   password: string;
-  role: 'admin' | 'teacher' | 'student';
+  role: 'admin' | 'teacher' | 'student' | 'parent';
   active: boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -19,7 +19,7 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   declare name: string;
   declare email: string;
   declare password: string;
-  declare role: 'admin' | 'teacher' | 'student';
+  declare role: 'admin' | 'teacher' | 'student' | 'parent';
   declare active: boolean;
   declare createdAt: Date;
   declare updatedAt: Date;
@@ -37,7 +37,7 @@ User.init(
     email: { type: DataTypes.STRING(200), allowNull: false, unique: true },
     password: { type: DataTypes.STRING(200), allowNull: false },
     role: {
-      type: DataTypes.ENUM('admin', 'teacher', 'student'),
+      type: DataTypes.ENUM('admin', 'teacher', 'student', 'parent'),
       allowNull: false,
       defaultValue: 'student',
     },

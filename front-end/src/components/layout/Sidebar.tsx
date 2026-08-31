@@ -39,6 +39,7 @@ const teacherNav: NavItem[] = [
   { to: '/docente', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
   { to: '/docente/mis-cursos', label: 'Mis Cursos', icon: <BookOpen className="h-4 w-4" /> },
   { to: '/docente/estudiantes', label: 'Estudiantes', icon: <UserCheck className="h-4 w-4" /> },
+  { to: '/docente/bitacora', label: 'Bitácora', icon: <BookMarked className="h-4 w-4" /> },
   { to: '/docente/asistencia', label: 'Asistencia', icon: <ClipboardCheck className="h-4 w-4" /> },
   { to: '/docente/actividades', label: 'Actividades', icon: <CalendarCheck className="h-4 w-4" /> },
   { to: '/docente/observaciones', label: 'Observaciones', icon: <MessageSquare className="h-4 w-4" /> },

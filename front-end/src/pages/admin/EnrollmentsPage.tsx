@@ -63,7 +63,7 @@ function useDebounce<T>(value: T, delay = 400): T {
 const schema = z.object({
   studentId: z.coerce.number().min(1, 'Selecciona un estudiante'),
   courseId:  z.coerce.number().min(1, 'Selecciona un curso'),
-  period:    z.string().min(1).regex(/^\d{4}-(I|II)$/, 'Formato: YYYY-I o YYYY-II'),
+  period:    z.string().min(1, 'Selecciona un período'),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -74,25 +74,21 @@ interface EnrollFormProps {
 }
 
 function EnrollFormModal({ open, onOpenChange, onSaved }: EnrollFormProps) {
-  const [studentInput, setStudentInput] = useState('');
-  const studentSearch = useDebounce(studentInput, 350);
   const [period, setPeriod] = useState('2026-I');
-  const periodDebounced = useDebounce(period, 500);
 
-  const { data: studentsData, isFetching: fetchingStudents } = useQuery({
-    queryKey: ['students-modal-search', studentSearch],
-    queryFn: () => studentService.list({ search: studentSearch, limit: 20 }),
-    enabled: studentSearch.length >= 2,
+  const { data: studentsData, isLoading: loadingStudents } = useQuery({
+    queryKey: ['students-modal-list', open],
+    queryFn: () => studentService.list({ limit: 100 }),
+    enabled: open,
   });
 
-  const { data: coursesData } = useQuery({
-    queryKey: ['courses-modal', periodDebounced],
-    queryFn: () => courseService.list({ period: periodDebounced, limit: 100 }),
-    enabled: /^\d{4}-(I|II)$/.test(periodDebounced),
+  const { data: coursesData, isLoading: loadingCourses } = useQuery({
+    queryKey: ['courses-modal', period, open],
+    queryFn: () => courseService.list({ period, limit: 100 }),
+    enabled: open,
   });
 
   const {
-    register,
     handleSubmit,
     setValue,
     watch,
@@ -103,13 +99,16 @@ function EnrollFormModal({ open, onOpenChange, onSaved }: EnrollFormProps) {
     defaultValues: { period: '2026-I' },
   });
 
-  // Sync period field with local state
-  const watchedPeriod = watch('period');
-  useEffect(() => { setPeriod(watchedPeriod ?? '2026-I'); }, [watchedPeriod]);
+  const selectedPeriod = watch('period') ?? '2026-I';
+  const selectedStudentId = watch('studentId');
+  const selectedCourseId = watch('courseId');
+
+  useEffect(() => {
+    setValue('period', period);
+  }, [period, setValue]);
 
   const handleClose = () => {
     reset({ period: '2026-I' });
-    setStudentInput('');
     onOpenChange(false);
   };
 
@@ -118,7 +117,6 @@ function EnrollFormModal({ open, onOpenChange, onSaved }: EnrollFormProps) {
       await enrollmentService.create(values);
       toast.success('Matrícula registrada correctamente');
       reset({ period: '2026-I' });
-      setStudentInput('');
       onSaved();
       onOpenChange(false);
     } catch (err: unknown) {
@@ -131,114 +129,101 @@ function EnrollFormModal({ open, onOpenChange, onSaved }: EnrollFormProps) {
   };
 
   const students = studentsData?.data ?? [];
-  const courses  = coursesData?.data ?? [];
-  const selectedStudentId = watch('studentId');
-  const selectedCourseId  = watch('courseId');
+  const courses = coursesData?.data ?? [];
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg bg-white rounded-2xl shadow-2xl">
         <DialogHeader>
-          <DialogTitle>Nueva matrícula</DialogTitle>
+          <DialogTitle className="text-lg font-black text-slate-800">Nueva matrícula</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          {/* Period */}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-2">
+          {/* Período Académico (Combobox) */}
           <div className="space-y-1">
-            <Label htmlFor="enroll-period">Período académico *</Label>
-            <Input
-              id="enroll-period"
-              placeholder="2026-I"
-              {...register('period')}
-            />
+            <Label className="text-xs font-bold text-slate-700">Período académico *</Label>
+            <Select
+              value={selectedPeriod}
+              onValueChange={(val) => {
+                setPeriod(val);
+                setValue('period', val);
+              }}
+            >
+              <SelectTrigger className="rounded-xl border-slate-200 font-bold bg-white">
+                <SelectValue placeholder="Seleccionar período" />
+              </SelectTrigger>
+              <SelectContent className="bg-white rounded-xl">
+                <SelectItem value="2026-I">2026-I (Primer Semestre)</SelectItem>
+                <SelectItem value="2026-II">2026-II (Segundo Semestre)</SelectItem>
+              </SelectContent>
+            </Select>
             {errors.period && (
-              <p className="text-xs text-destructive">{errors.period.message}</p>
+              <p className="text-xs text-destructive font-bold">{errors.period.message}</p>
             )}
           </div>
 
-          {/* Student search */}
-          <div className="space-y-2">
-            <Label>Estudiante *</Label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                className="pl-9"
-                placeholder="Escribe nombre o código (mín. 2 caracteres)..."
-                value={studentInput}
-                onChange={(e) => setStudentInput(e.target.value)}
-              />
-              {fetchingStudents && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              )}
-            </div>
-
-            {students.length > 0 && (
-              <Select
-                value={selectedStudentId ? String(selectedStudentId) : undefined}
-                onValueChange={(v) => setValue('studentId', Number(v))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar estudiante" />
-                </SelectTrigger>
-                <SelectContent>
-                  {students.map((s) => (
+          {/* Estudiante (Combobox con listado completo de estudiantes) */}
+          <div className="space-y-1">
+            <Label className="text-xs font-bold text-slate-700">Estudiante *</Label>
+            <Select
+              value={selectedStudentId ? String(selectedStudentId) : undefined}
+              onValueChange={(v) => setValue('studentId', Number(v))}
+            >
+              <SelectTrigger className="rounded-xl border-slate-200 font-bold bg-white">
+                <SelectValue placeholder={loadingStudents ? 'Cargando estudiantes...' : 'Seleccionar estudiante...'} />
+              </SelectTrigger>
+              <SelectContent className="bg-white rounded-xl max-h-60">
+                {students.length === 0 ? (
+                  <div className="p-3 text-xs text-slate-400 font-bold text-center">No hay estudiantes activos registrados</div>
+                ) : (
+                  students.map((s) => (
                     <SelectItem key={s.id} value={String(s.id)}>
-                      <span className="font-medium">{s.name}</span>
-                      <span className="ml-2 text-muted-foreground text-xs">
-                        ({s.studentProfile?.studentCode ?? '—'})
+                      <span className="font-bold text-slate-800">{s.name}</span>
+                      <span className="ml-2 text-slate-400 font-semibold text-xs">
+                        ({s.studentProfile?.studentCode || 'EST-2026'})
                       </span>
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
-            {studentInput.length >= 2 && students.length === 0 && !fetchingStudents && (
-              <p className="text-xs text-muted-foreground">
-                No se encontraron estudiantes con ese nombre o código.
-              </p>
-            )}
+                  ))
+                )}
+              </SelectContent>
+            </Select>
             {errors.studentId && (
-              <p className="text-xs text-destructive">{errors.studentId.message}</p>
+              <p className="text-xs text-destructive font-bold">{errors.studentId.message}</p>
             )}
           </div>
 
-          {/* Course */}
+          {/* Curso (Combobox) */}
           <div className="space-y-1">
-            <Label>Curso *</Label>
-            {!/^\d{4}-(I|II)$/.test(watchedPeriod ?? '') ? (
-              <p className="text-xs text-muted-foreground">
-                Ingresa un período válido para ver los cursos disponibles.
-              </p>
-            ) : courses.length === 0 ? (
-              <p className="text-xs text-muted-foreground">
-                No hay cursos para el período <strong>{watchedPeriod}</strong>.
-              </p>
-            ) : (
-              <Select
-                value={selectedCourseId ? String(selectedCourseId) : undefined}
-                onValueChange={(v) => setValue('courseId', Number(v))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar curso" />
-                </SelectTrigger>
-                <SelectContent>
-                  {courses.map((c) => (
+            <Label className="text-xs font-bold text-slate-700">Curso *</Label>
+            <Select
+              value={selectedCourseId ? String(selectedCourseId) : undefined}
+              onValueChange={(v) => setValue('courseId', Number(v))}
+            >
+              <SelectTrigger className="rounded-xl border-slate-200 font-bold bg-white">
+                <SelectValue placeholder={loadingCourses ? 'Cargando cursos...' : 'Seleccionar curso...'} />
+              </SelectTrigger>
+              <SelectContent className="bg-white rounded-xl max-h-60">
+                {courses.length === 0 ? (
+                  <div className="p-3 text-xs text-slate-400 font-bold text-center">No hay cursos disponibles para {selectedPeriod}</div>
+                ) : (
+                  courses.map((c) => (
                     <SelectItem key={c.id} value={String(c.id)}>
-                      <span className="font-medium">{c.name}</span>
-                      <span className="ml-2 text-muted-foreground text-xs">({c.code})</span>
+                      <span className="font-bold text-slate-800">{c.name}</span>
+                      <span className="ml-2 text-[#008BC1] font-semibold text-xs">
+                        ({c.code})
+                      </span>
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+                  ))
+                )}
+              </SelectContent>
+            </Select>
             {errors.courseId && (
-              <p className="text-xs text-destructive">{errors.courseId.message}</p>
+              <p className="text-xs text-destructive font-bold">{errors.courseId.message}</p>
             )}
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose}>
+          <DialogFooter className="pt-4">
+            <Button type="button" variant="outline" onClick={handleClose} className="rounded-xl font-bold">
               Cancelar
             </Button>
             <Button type="submit" disabled={isSubmitting}>
@@ -319,6 +304,8 @@ export default function EnrollmentsPage() {
         .then(() => {
           toast.success('Estado actualizado');
           void qc.invalidateQueries({ queryKey: ['enrollments'] });
+          void qc.invalidateQueries({ queryKey: ['courses'] });
+          void qc.invalidateQueries({ queryKey: ['students'] });
         })
         .catch(() => toast.error('Error al actualizar el estado'));
     },
@@ -330,6 +317,8 @@ export default function EnrollmentsPage() {
     onSuccess: () => {
       toast.success('Matrícula eliminada');
       void qc.invalidateQueries({ queryKey: ['enrollments'] });
+      void qc.invalidateQueries({ queryKey: ['courses'] });
+      void qc.invalidateQueries({ queryKey: ['students'] });
       setDeleteTarget(null);
     },
     onError: (err: unknown) => {
@@ -512,7 +501,11 @@ export default function EnrollmentsPage() {
       <EnrollFormModal
         open={formOpen}
         onOpenChange={setFormOpen}
-        onSaved={() => void qc.invalidateQueries({ queryKey: ['enrollments'] })}
+        onSaved={() => {
+          void qc.invalidateQueries({ queryKey: ['enrollments'] });
+          void qc.invalidateQueries({ queryKey: ['courses'] });
+          void qc.invalidateQueries({ queryKey: ['students'] });
+        }}
       />
 
       <ConfirmDialog

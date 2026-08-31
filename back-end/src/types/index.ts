@@ -2,7 +2,7 @@ export interface JwtPayload {
   id: number;
   name: string;
   email: string;
-  role: 'admin' | 'teacher' | 'student';
+  role: 'admin' | 'teacher' | 'student' | 'parent';
 }
 
 export interface PaginationQuery {

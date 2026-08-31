@@ -162,9 +162,19 @@ export default function AuditPage() {
                   <Label className="text-xs font-bold text-slate-700">Fecha de Asistencia</Label>
                   <Input
                     type="date"
+                    max={new Date().toISOString().split('T')[0]}
                     className="w-44 bg-white border-slate-200 text-slate-800 font-medium rounded-xl shadow-xs"
                     value={attendanceDate}
-                    onChange={(e) => setAttendanceDate(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const todayStr = new Date().toISOString().split('T')[0];
+                      if (val > todayStr) {
+                        toast.error('No se pueden consultar fechas futuras');
+                        setAttendanceDate(todayStr);
+                      } else {
+                        setAttendanceDate(val);
+                      }
+                    }}
                   />
                 </div>
 

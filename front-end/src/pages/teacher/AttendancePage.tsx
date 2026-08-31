@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ClipboardCheck, CheckCircle2, XCircle, Clock, AlertCircle, Save, Calendar as CalendarIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useMyCourses } from '@/hooks/useCourses';
 import { useCourseStudents } from '@/hooks/useEnrollments';
-import { teacherModuleService } from '@/services/teacherModule.service';
+import { teacherModuleService, getTodayStr } from '@/services/teacherModule.service';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,8 @@ import type { AttendanceStatus, AttendanceRecord } from '@/types';
 export default function AttendancePage() {
   const { data: courses, isLoading: loadingCourses } = useMyCourses();
   const [selectedCourseId, setSelectedCourseId] = useState<string>('');
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const todayStr = useMemo(() => getTodayStr(), []);
+  const [date, setDate] = useState<string>(todayStr);
 
   // Set default course when loaded
   useEffect(() => {
@@ -28,14 +29,14 @@ export default function AttendancePage() {
   const { data: courseData, isLoading: loadingStudents } = useCourseStudents(courseIdNum);
 
   const activeCourse = courses?.find((c) => c.id === courseIdNum);
-  const students = courseData?.students ?? [];
+  const students = useMemo(() => courseData?.students ?? [], [courseData?.students]);
 
   // Local state for current attendance sheet
   const [attendanceState, setAttendanceState] = useState<Record<number, { status: AttendanceStatus; notes: string }>>({});
 
   // Load existing records from service whenever course or date changes
   useEffect(() => {
-    if (!courseIdNum || !date) return;
+    if (!courseIdNum || !date || students.length === 0) return;
     const existing = teacherModuleService.getAttendance(courseIdNum, date);
     const stateMap: Record<number, { status: AttendanceStatus; notes: string }> = {};
 
@@ -50,6 +51,10 @@ export default function AttendancePage() {
   }, [courseIdNum, date, students]);
 
   const setStatus = (studentId: number, status: AttendanceStatus) => {
+    if (date !== todayStr) {
+      toast.error('Acción bloqueada: Solo se puede tomar asistencia en la fecha de hoy. Las demás fechas son de solo lectura.');
+      return;
+    }
     setAttendanceState((prev) => ({
       ...prev,
       [studentId]: {
@@ -60,6 +65,10 @@ export default function AttendancePage() {
   };
 
   const setNotes = (studentId: number, notes: string) => {
+    if (date !== todayStr) {
+      toast.error('Acción bloqueada: Solo se pueden ingresar notas en la fecha de hoy.');
+      return;
+    }
     setAttendanceState((prev) => ({
       ...prev,
       [studentId]: {
@@ -71,6 +80,11 @@ export default function AttendancePage() {
 
   const handleSave = () => {
     if (!courseIdNum || students.length === 0) return;
+
+    if (date !== todayStr) {
+      toast.error('ERROR DE VALIDACIÓN: Solo se puede guardar la asistencia en el día de hoy. No se permite guardar asistencias para fechas anteriores ni futuras.');
+      return;
+    }
 
     const payload: Omit<AttendanceRecord, 'id'>[] = students.map((s) => ({
       courseId: courseIdNum,
@@ -84,7 +98,7 @@ export default function AttendancePage() {
     }));
 
     teacherModuleService.saveAttendanceBatch(payload);
-    toast.success(`Asistencia guardada exitosamente (${students.length} estudiantes)`);
+    toast.success(`Asistencia del día de hoy guardada exitosamente (${students.length} estudiantes)`);
   };
 
   // Metrics calculations
@@ -101,13 +115,40 @@ export default function AttendancePage() {
     <div className="space-y-6">
       <PageHeader
         title="Registro de Asistencia"
-        description="Toma de asistencia diaria por materia y registro de observaciones"
+        description="Toma de asistencia diaria por materia y registro de observaciones (Restringido al día en curso)"
       >
-        <Button onClick={handleSave} disabled={loadingStudents || total === 0} className="shadow-sm">
+        <Button
+          onClick={handleSave}
+          disabled={loadingStudents || total === 0 || date !== todayStr}
+          className={
+            date !== todayStr
+              ? 'bg-slate-400 text-white opacity-60 cursor-not-allowed shadow-none rounded-xl font-bold'
+              : 'bg-[#31B45A] hover:bg-emerald-700 text-white font-bold shadow-md rounded-xl'
+          }
+        >
           <Save className="mr-2 h-4 w-4" />
-          Guardar Asistencia
+          {date !== todayStr ? 'Solo Lectura Histórica' : 'Guardar Asistencia'}
         </Button>
       </PageHeader>
+
+      {/* Banner Informativo si la fecha no es HOY */}
+      {date !== todayStr && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs font-bold shadow-sm">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+            <span>
+              <strong>Modo de Consulta Histórica (Lectura):</strong> La fecha seleccionada ({date}) difiere de la fecha actual ({todayStr}). Únicamente se puede registrar y guardar asistencia el día de hoy.
+            </span>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => setDate(todayStr)}
+            className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-xs self-start sm:self-auto"
+          >
+            Volver a la Fecha de Hoy
+          </Button>
+        </div>
+      )}
 
       {/* Selectors Bar wrapped in high-contrast Card */}
       <Card className="bg-white/95 backdrop-blur-md rounded-2xl p-5 shadow-xl border border-white/60">
@@ -135,7 +176,21 @@ export default function AttendancePage() {
               Fecha de Registro
             </label>
             <div className="relative">
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="pr-8 bg-white border-slate-200 text-slate-800 font-bold rounded-xl shadow-xs" />
+              <Input
+                type="date"
+                value={date}
+                max={todayStr}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val > todayStr) {
+                    toast.error('No es posible seleccionar ni registrar asistencias para fechas futuras.');
+                    setDate(todayStr);
+                  } else {
+                    setDate(val);
+                  }
+                }}
+                className="pr-8 bg-white border-slate-200 text-slate-800 font-bold rounded-xl shadow-xs"
+              />
               <CalendarIcon className="absolute right-2.5 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
             </div>
           </div>
