@@ -12,6 +12,9 @@ async function bootstrap() {
   try {
     await connectDatabase();
     await sequelize.sync();
+    await sequelize.query(
+      `ALTER TABLE "observations" ADD COLUMN IF NOT EXISTS "visibility" VARCHAR(32) NOT NULL DEFAULT 'ESTUDIANTE_Y_PADRES'`
+    );
     console.log('✅ Modelos sincronizados con la base de datos.');
 
     app.listen(PORT, () => {

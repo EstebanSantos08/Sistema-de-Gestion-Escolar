@@ -126,7 +126,7 @@ const INITIAL_OBSERVATIONS: StudentObservation[] = [
     title: 'Participación Destacada',
     detail: 'Demuestra gran iniciativa en la resolución de problemas en la pizarra.',
     date: '2026-08-26',
-    visibleToParents: true,
+    visibility: 'ESTUDIANTE_Y_PADRES',
   },
   {
     id: 'obs-2',
@@ -139,7 +139,7 @@ const INITIAL_OBSERVATIONS: StudentObservation[] = [
     title: 'Falta de Cumplimiento de Deberes',
     detail: 'No presentó la guía de estudio n.º 2. Se le encomendó recuperarla.',
     date: '2026-08-27',
-    visibleToParents: true,
+    visibility: 'ESTUDIANTE_Y_PADRES',
   },
 ];
 

@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import type { StudentObservation, ObservationType } from '@/types';
+import type { StudentObservation, ObservationType, ObservationVisibility } from '@/types';
 
 export default function ObservationsPage() {
   const { data: courses } = useMyCourses();
@@ -26,7 +26,7 @@ export default function ObservationsPage() {
   const [formType, setFormType] = useState<ObservationType>('positiva');
   const [formTitle, setFormTitle] = useState('');
   const [formDetail, setFormDetail] = useState('');
-  const [formVisibleToParents, setFormVisibleToParents] = useState(true);
+  const [formVisibility, setFormVisibility] = useState<ObservationVisibility>('ESTUDIANTE_Y_PADRES');
 
   // Load students for selected course in form
   const courseIdNum = formCourseId ? Number(formCourseId) : null;
@@ -56,7 +56,7 @@ export default function ObservationsPage() {
       type: formType,
       title: formTitle,
       detail: formDetail,
-      visibleToParents: formVisibleToParents,
+      visibility: formVisibility,
     });
 
     toast.success('Observación registrada con éxito');
@@ -164,13 +164,17 @@ export default function ObservationsPage() {
 
                 <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-2">
                   <div className="flex items-center gap-1">
-                    {obs.visibleToParents ? (
+                    {obs.visibility === 'ESTUDIANTE_Y_PADRES' ? (
                       <span className="flex items-center gap-1 text-green-700 font-medium">
-                        <Eye className="h-3.5 w-3.5" /> Visible para Padres
+                        <Eye className="h-3.5 w-3.5" /> Visible para Estudiante y Padres
+                      </span>
+                    ) : obs.visibility === 'SOLO_ESTUDIANTE' ? (
+                      <span className="flex items-center gap-1 text-blue-700 font-medium">
+                        <Eye className="h-3.5 w-3.5" /> Visible solo para Estudiante
                       </span>
                     ) : (
                       <span className="flex items-center gap-1 text-slate-500 font-medium">
-                        <EyeOff className="h-3.5 w-3.5" /> Interno Docente
+                        <EyeOff className="h-3.5 w-3.5" /> Privado: Docentes / Administrativos
                       </span>
                     )}
                   </div>
@@ -243,13 +247,14 @@ export default function ObservationsPage() {
 
               <div>
                 <label className="text-xs font-semibold text-muted-foreground block mb-1">Visibilidad</label>
-                <Select value={formVisibleToParents ? 'true' : 'false'} onValueChange={(v) => setFormVisibleToParents(v === 'true')}>
+                <Select value={formVisibility} onValueChange={(v) => setFormVisibility(v as ObservationVisibility)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="true">Visible a Padres</SelectItem>
-                    <SelectItem value="false">Solo Docente</SelectItem>
+                    <SelectItem value="ESTUDIANTE_Y_PADRES">Visible solo a este Estudiante y Padres</SelectItem>
+                    <SelectItem value="SOLO_ESTUDIANTE">Visible solo a este Estudiante</SelectItem>
+                    <SelectItem value="SOLO_DOCENTE">Privado - Solo Docentes / Administrativos</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

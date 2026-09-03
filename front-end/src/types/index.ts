@@ -179,6 +179,7 @@ export interface ClassActivity {
 // ─── Observaciones ─────────────────────────────────────────────────────────────
 
 export type ObservationType = 'positiva' | 'recomendacion' | 'atencion';
+export type ObservationVisibility = 'ESTUDIANTE_Y_PADRES' | 'SOLO_ESTUDIANTE' | 'SOLO_DOCENTE';
 
 export interface StudentObservation {
   id: string;
@@ -191,7 +192,7 @@ export interface StudentObservation {
   title: string;
   detail: string;
   date: string;
-  visibleToParents: boolean;
+  visibility: ObservationVisibility;
 }
 
 // ─── Comunicados ───────────────────────────────────────────────────────────────

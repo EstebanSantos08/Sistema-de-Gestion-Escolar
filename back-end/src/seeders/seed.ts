@@ -509,6 +509,7 @@ async function seed() {
         title: 'Excelente desempeño en clase',
         description: 'Demuestra gran participación y ayuda a sus compañeros.',
         type: 'ACADEMIC',
+        visibility: 'ESTUDIANTE_Y_PADRES',
         date: '2026-08-15',
       },
       {
@@ -517,6 +518,7 @@ async function seed() {
         title: 'Llegada con retraso recurrente',
         description: 'Llegó 15 minutos tarde a la primera hora de clase.',
         type: 'BEHAVIORAL',
+        visibility: 'ESTUDIANTE_Y_PADRES',
         date: '2026-08-20',
       },
     ]);

@@ -8,6 +8,7 @@ export class Observation extends Model {
   public title!: string;
   public description!: string;
   public type!: 'ACADEMIC' | 'BEHAVIORAL' | 'GENERAL';
+  public visibility!: 'ESTUDIANTE_Y_PADRES' | 'SOLO_ESTUDIANTE' | 'SOLO_DOCENTE';
   public date!: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -48,6 +49,11 @@ Observation.init(
       type: DataTypes.ENUM('ACADEMIC', 'BEHAVIORAL', 'GENERAL'),
       allowNull: false,
       defaultValue: 'GENERAL',
+    },
+    visibility: {
+      type: DataTypes.ENUM('ESTUDIANTE_Y_PADRES', 'SOLO_ESTUDIANTE', 'SOLO_DOCENTE'),
+      allowNull: false,
+      defaultValue: 'ESTUDIANTE_Y_PADRES',
     },
     date: {
       type: DataTypes.DATEONLY,
