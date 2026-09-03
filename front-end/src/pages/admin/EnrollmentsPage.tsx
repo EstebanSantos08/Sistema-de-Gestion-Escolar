@@ -24,6 +24,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
@@ -136,6 +137,9 @@ function EnrollFormModal({ open, onOpenChange, onSaved }: EnrollFormProps) {
       <DialogContent className="sm:max-w-lg bg-white rounded-2xl shadow-2xl">
         <DialogHeader>
           <DialogTitle className="text-lg font-black text-slate-800">Nueva matrícula</DialogTitle>
+          <DialogDescription className="sr-only">
+            Selecciona el período, estudiante y curso para registrar una matrícula.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-2">
@@ -166,7 +170,7 @@ function EnrollFormModal({ open, onOpenChange, onSaved }: EnrollFormProps) {
           <div className="space-y-1">
             <Label className="text-xs font-bold text-slate-700">Estudiante *</Label>
             <Select
-              value={selectedStudentId ? String(selectedStudentId) : undefined}
+              value={selectedStudentId ? String(selectedStudentId) : ''}
               onValueChange={(v) => setValue('studentId', Number(v))}
             >
               <SelectTrigger className="rounded-xl border-slate-200 font-bold bg-white">
@@ -196,7 +200,7 @@ function EnrollFormModal({ open, onOpenChange, onSaved }: EnrollFormProps) {
           <div className="space-y-1">
             <Label className="text-xs font-bold text-slate-700">Curso *</Label>
             <Select
-              value={selectedCourseId ? String(selectedCourseId) : undefined}
+              value={selectedCourseId ? String(selectedCourseId) : ''}
               onValueChange={(v) => setValue('courseId', Number(v))}
             >
               <SelectTrigger className="rounded-xl border-slate-200 font-bold bg-white">

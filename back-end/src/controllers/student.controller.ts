@@ -20,12 +20,11 @@ export const getStudents = async (req: Request, res: Response): Promise<void> =>
 
     const { rows, count } = await Student.findAndCountAll({
       include: [
-        { model: User, as: 'user', where: userWhere, attributes: { exclude: ['password'] } },
-        { model: Enrollment, as: 'enrollments', required: false },
+        { model: User, as: 'user', where: userWhere, attributes: ['id', 'name', 'email', 'active'] },
       ],
       limit,
       offset,
-      order: [[{ model: User, as: 'user' }, 'name', 'ASC']],
+      order: [['id', 'ASC']],
     });
 
     res.json({

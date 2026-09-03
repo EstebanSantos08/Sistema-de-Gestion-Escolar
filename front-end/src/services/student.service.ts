@@ -1,4 +1,5 @@
 import api from '@/lib/axios';
+import axios from 'axios';
 import type { ApiResponse, PaginatedResponse, Student, StudentGradesResponse } from '@/types';
 
 export interface StudentFilters {
@@ -8,6 +9,21 @@ export interface StudentFilters {
   limit?: number;
 }
 
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === 'object' && value !== null ? value as Record<string, unknown> : {};
+}
+
+function asText(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
+interface StudentListResponse {
+  students: Record<string, unknown>[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
 export const studentService = {
   async list(filters: StudentFilters = {}): Promise<PaginatedResponse<Student>> {
     const params = new URLSearchParams();
@@ -15,33 +31,70 @@ export const studentService = {
     if (filters.period) params.set('period', filters.period);
     if (filters.page) params.set('page', String(filters.page));
     if (filters.limit) params.set('limit', String(filters.limit));
-    const res = await api.get<ApiResponse<{ students: Record<string, unknown>[]; total: number; page: number; totalPages: number }>>(
-      `/students?${params.toString()}`
-    );
-    const d = res.data.data!;
-    // Backend returns Student profiles with nested `user`. Map to frontend Student type.
-    const students: Student[] = d.students.map((s: Record<string, unknown>) => {
-      const user = s.user as { id?: number; name?: string; email?: string; active?: boolean } | undefined;
+    let responseData: unknown;
+    try {
+      const res = await api.get<ApiResponse<StudentListResponse>>(
+        `/students?${params.toString()}`
+      );
+      responseData = res.data.data;
+    } catch (error: unknown) {
+      if (!axios.isAxiosError(error) || error.response?.status !== 500) throw error;
+      const fallbackParams = new URLSearchParams({ role: 'student', active: 'true' });
+      if (filters.search) fallbackParams.set('search', filters.search);
+      if (filters.page) fallbackParams.set('page', String(filters.page));
+      if (filters.limit) fallbackParams.set('limit', String(filters.limit));
+      const res = await api.get<ApiResponse<{ users: Record<string, unknown>[]; total: number; page: number; totalPages: number }>>(
+        `/users?${fallbackParams.toString()}`
+      );
+      const fallbackData = res.data.data;
+      if (!fallbackData) return { data: [], total: 0, page: 1, totalPages: 0 };
+      responseData = {
+        students: fallbackData.users,
+        total: fallbackData.total,
+        page: fallbackData.page,
+        totalPages: fallbackData.totalPages,
+      } satisfies StudentListResponse;
+    }
+    const responseRecord = asRecord(responseData);
+    const rawStudents = Array.isArray(responseData)
+      ? responseData
+      : Array.isArray(responseRecord.students) ? responseRecord.students : [];
+
+    const students: Student[] = rawStudents.map((value: unknown) => {
+      const s = asRecord(value);
+      const profile = asRecord(s.studentProfile ?? s.StudentProfile);
+      const isUserRecord = s.role === 'student' || s.email !== undefined;
+      const user = isUserRecord ? s : asRecord(s.user ?? s.User);
+      const firstName = asText(user.firstName ?? user.first_name);
+      const lastName = asText(user.lastName ?? user.last_name);
+      const fullName = asText(user.name) || `${firstName} ${lastName}`.trim();
+      const studentIdValue = profile.id ?? s.id;
+      const studentId = typeof studentIdValue === 'number' ? studentIdValue : Number(studentIdValue);
       return {
-        id: s.id as number,
-        name: user?.name ?? '',
-        email: user?.email ?? '',
+        id: studentId,
+        name: fullName,
+        email: asText(user.email),
         role: 'student' as const,
-        active: user?.active ?? true,
+        active: user.active !== false,
         studentProfile: {
-          id: s.id as number,
-          userId: s.userId as number,
-          studentCode: (s.studentCode as string) ?? '',
-          birthDate: (s.birthDate as string) ?? '',
-          phone: (s.phone as string) ?? '',
-          address: (s.address as string) ?? '',
-          guardianName: (s.guardianName as string) ?? '',
-          guardianPhone: (s.guardianPhone as string) ?? '',
-          enrolledAt: (s.createdAt as string) ?? '',
+          id: studentId,
+          userId: typeof (profile.userId ?? s.userId ?? user.id) === 'number'
+            ? (profile.userId ?? s.userId ?? user.id) as number
+            : Number(profile.userId ?? s.userId ?? user.id),
+          studentCode: asText(profile.studentCode ?? s.studentCode),
+          birthDate: asText(profile.birthDate ?? s.birthDate),
+          phone: asText(profile.phone ?? s.phone),
+          address: asText(profile.address ?? s.address),
+          guardianName: asText(profile.guardianName ?? s.guardianName),
+          guardianPhone: asText(profile.guardianPhone ?? s.guardianPhone),
+          enrolledAt: asText(profile.enrolledAt ?? s.enrolledAt ?? s.createdAt),
         },
       };
     });
-    return { data: students, total: d.total, page: d.page, totalPages: d.totalPages };
+    const total = typeof responseRecord.total === 'number' ? responseRecord.total : students.length;
+    const page = typeof responseRecord.page === 'number' ? responseRecord.page : 1;
+    const totalPages = typeof responseRecord.totalPages === 'number' ? responseRecord.totalPages : 1;
+    return { data: students, total, page, totalPages };
   },
 
   async get(id: number): Promise<Student> {

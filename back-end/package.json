@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "migrate": "ts-node src/config/database.ts",
-    "seed": "ts-node src/seeders/seed.ts"
+    "seed": "ts-node src/seeders/seed.ts",
+    "test:local": "ts-node --files src/tests/local-suite.ts"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",

@@ -9,13 +9,15 @@ if (!dbUrl) {
   console.error('DATABASE_URL environment variable is missing.');
 }
 
+export const postgresSslOptions = {
+  require: true,
+  rejectUnauthorized: false,
+};
+
 export const sequelize = new Sequelize(dbUrl || '', {
   dialect: 'postgres',
   dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false
-    }
+    ssl: postgresSslOptions,
   },
   logging: false,
   define: {
