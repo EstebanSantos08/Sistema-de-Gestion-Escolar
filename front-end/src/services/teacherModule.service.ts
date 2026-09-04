@@ -28,12 +28,16 @@ export interface SubmissionItem {
   studentId: number;
   studentName: string;
   courseId: number;
-  status: 'pendiente' | 'entregada' | 'completada' | 'devuelta';
+  status: 'pendiente' | 'entregada' | 'completada' | 'devuelta' | 'calificada';
   submittedAt: string;
   notes?: string;
   evidenceUrl?: string;
   evidenceName?: string;
   evidenceType?: 'imagen' | 'documento';
+  score?: number;
+  maxScore?: number;
+  feedback?: string;
+  gradedAt?: string;
 }
 
 const STORAGE_KEYS = {
@@ -222,12 +226,16 @@ const INITIAL_SUBMISSIONS: SubmissionItem[] = [
     studentId: 1,
     studentName: 'Juan Pérez',
     courseId: 1,
-    status: 'entregada',
+    status: 'calificada',
     submittedAt: '2026-08-28 14:30',
     notes: 'Adjunto la resolución completa del taller del capítulo 4.',
     evidenceUrl: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=800&q=80',
     evidenceName: 'Taller_Ecuaciones_JuanPerez.jpg',
     evidenceType: 'imagen',
+    score: 10,
+    maxScore: 10,
+    feedback: 'Excelente resolución. Todos los ejercicios fueron completados de manera ordenada.',
+    gradedAt: '2026-08-29 10:00',
   },
   {
     id: 'sub-2',
@@ -413,6 +421,59 @@ export const teacherModuleService = {
     const updated = [newSub, ...list.filter((s) => !(s.activityId === submission.activityId && s.studentId === submission.studentId))];
     saveToStorage(STORAGE_KEYS.SUBMISSIONS, updated);
     return newSub;
+  },
+
+  gradeSubmission(data: {
+    submissionId?: string;
+    activityId: string;
+    studentId: number;
+    studentName?: string;
+    courseId?: number;
+    score: number;
+    feedback?: string;
+    maxScore?: number;
+  }): SubmissionItem {
+    const list = getFromStorage<SubmissionItem[]>(STORAGE_KEYS.SUBMISSIONS, INITIAL_SUBMISSIONS);
+    const maxScore = data.maxScore ?? 10;
+    const nowStr = getTodayStr();
+
+    let existingIdx = -1;
+    if (data.submissionId) {
+      existingIdx = list.findIndex((s) => s.id === data.submissionId);
+    } else {
+      existingIdx = list.findIndex((s) => s.activityId === data.activityId && s.studentId === data.studentId);
+    }
+
+    if (existingIdx >= 0) {
+      const updated: SubmissionItem = {
+        ...list[existingIdx],
+        status: 'calificada',
+        score: data.score,
+        maxScore,
+        feedback: data.feedback,
+        gradedAt: nowStr,
+      };
+      list[existingIdx] = updated;
+      saveToStorage(STORAGE_KEYS.SUBMISSIONS, list);
+      return updated;
+    } else {
+      const newSub: SubmissionItem = {
+        id: `sub-${Date.now()}`,
+        activityId: data.activityId,
+        studentId: data.studentId,
+        studentName: data.studentName || `Estudiante #${data.studentId}`,
+        courseId: data.courseId || 1,
+        status: 'calificada',
+        submittedAt: getTodayStr(),
+        score: data.score,
+        maxScore,
+        feedback: data.feedback,
+        gradedAt: nowStr,
+      };
+      const updatedList = [newSub, ...list];
+      saveToStorage(STORAGE_KEYS.SUBMISSIONS, updatedList);
+      return newSub;
+    }
   },
 
   // ── Observaciones ──────────────────────────────────────────────────────────

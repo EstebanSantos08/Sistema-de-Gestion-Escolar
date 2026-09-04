@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, FileText, Users, Sparkles, CheckCircle2, Clock, Eye, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, FileText, Users, Sparkles, CheckCircle2, Clock, Eye, Pencil, Trash2, Award } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCourse } from '@/hooks/useCourses';
 import { useCourseStudents } from '@/hooks/useEnrollments';
-import { teacherModuleService, type ClassActivity } from '@/services/teacherModule.service';
+import { teacherModuleService, type ClassActivity, type SubmissionItem } from '@/services/teacherModule.service';
 import { ClassroomSubmissionsDialog } from '@/components/teacher/ClassroomSubmissionsDialog';
 import { DataTable, type Column } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
@@ -61,15 +61,20 @@ export default function CourseDetailPage() {
 
   const [selectedActivityForSubmissions, setSelectedActivityForSubmissions] = useState<ClassActivity | null>(null);
 
-  // Lista de actividades locales
+  // Lista de actividades y entregas locales
   const [activities, setActivities] = useState<ClassActivity[]>(() =>
     id ? teacherModuleService.getActivities(id) : []
+  );
+
+  const [submissions, setSubmissions] = useState<SubmissionItem[]>(() =>
+    teacherModuleService.getSubmissions()
   );
 
   const refreshActivities = () => {
     if (id) {
       setActivities(teacherModuleService.getActivities(id));
     }
+    setSubmissions(teacherModuleService.getSubmissions());
   };
 
   const handleOpenCreateModal = () => {
@@ -239,7 +244,8 @@ export default function CourseDetailPage() {
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {activities.map((act) => {
-                const submissionsForAct = allSubmissions.filter((s) => s.activityId === act.id);
+                const submissionsForAct = submissions.filter((s) => s.activityId === act.id);
+                const gradedForAct = submissionsForAct.filter((s) => s.status === 'calificada' || s.score !== undefined).length;
                 return (
                   <Card key={act.id} className="bg-white/95 backdrop-blur-md rounded-2xl p-5 shadow-lg border border-slate-100 space-y-3 hover:shadow-xl transition-all flex flex-col justify-between">
                     <div className="space-y-2">
@@ -265,10 +271,18 @@ export default function CourseDetailPage() {
 
                     {/* Acciones del Docente: Editar Plazo / Ver Evidencias / Eliminar */}
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
-                      <span className="font-extrabold text-slate-700 flex items-center gap-1">
-                        <CheckCircle2 className="h-4 w-4 text-[#31B45A]" />
-                        {submissionsForAct.length} Entregas
-                      </span>
+                      <div className="flex flex-col text-[11px] font-extrabold text-slate-700">
+                        <span className="flex items-center gap-1">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-[#31B45A]" />
+                          {submissionsForAct.length} Entregas
+                        </span>
+                        {gradedForAct > 0 && (
+                          <span className="flex items-center gap-1 text-amber-700">
+                            <Award className="h-3.5 w-3.5 text-amber-500" />
+                            {gradedForAct} Calificadas
+                          </span>
+                        )}
+                      </div>
 
                       <div className="flex items-center gap-1.5">
                         <Button
@@ -385,7 +399,12 @@ export default function CourseDetailPage() {
       {/* Modal / Vista de Entregas y Evidencias Estilo Google Classroom */}
       <ClassroomSubmissionsDialog
         open={!!selectedActivityForSubmissions}
-        onOpenChange={(v) => !v && setSelectedActivityForSubmissions(null)}
+        onOpenChange={(v) => {
+          if (!v) {
+            setSelectedActivityForSubmissions(null);
+            refreshActivities();
+          }
+        }}
         activity={selectedActivityForSubmissions}
       />
     </div>

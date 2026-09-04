@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, FileText, Calendar, Upload, CheckCircle2, Clock, Sparkles, AlertTriangle, Paperclip, FileCheck, X } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, Upload, CheckCircle2, Clock, Sparkles, AlertTriangle, Paperclip, FileCheck, Award, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCourse } from '@/hooks/useCourses';
 import { useAuth } from '@/hooks/useAuth';
@@ -174,13 +174,19 @@ export default function StudentCourseDetailPage() {
           {activities.map((act) => {
             const mySubmission = submissions.find((s) => s.activityId === act.id);
             const isSubmitted = !!mySubmission;
+            const isGraded = mySubmission?.status === 'calificada' || mySubmission?.score !== undefined;
 
             return (
               <Card key={act.id} className="bg-white/95 backdrop-blur-md rounded-2xl p-5 shadow-lg border border-slate-100 space-y-4 hover:shadow-xl transition-all flex flex-col justify-between">
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <h4 className="font-black text-slate-800 text-base">{act.title}</h4>
-                    {isSubmitted ? (
+                    {isGraded ? (
+                      <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shrink-0 flex items-center gap-1 shadow-sm px-2.5 py-1">
+                        <Award className="h-3.5 w-3.5" />
+                        Calificado: {mySubmission?.score}/10
+                      </Badge>
+                    ) : isSubmitted ? (
                       <Badge className="bg-[#31B45A] text-white font-bold shrink-0">
                         <CheckCircle2 className="h-3 w-3 mr-1" /> Entregado
                       </Badge>
@@ -203,15 +209,52 @@ export default function StudentCourseDetailPage() {
                   )}
                 </div>
 
-                {/* Sección de Estado de Entrega o Botón para Subir */}
-                {isSubmitted ? (
-                  <div className="bg-teal-50/70 p-3 rounded-xl border border-teal-100 text-xs space-y-1.5">
-                    <p className="font-black text-teal-800 flex items-center gap-1.5">
-                      <FileCheck className="h-4 w-4 text-[#31B45A]" />
-                      Deber entregado el {mySubmission.submittedAt}
-                    </p>
+                {/* Sección de Estado de Entrega / Calificación o Botón para Subir */}
+                {isGraded ? (
+                  <div className="bg-gradient-to-br from-amber-50 via-white to-amber-50/60 p-4 rounded-2xl border border-amber-200/80 text-xs space-y-2.5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-amber-900 flex items-center gap-1.5 text-xs">
+                        <Award className="h-4 w-4 text-amber-600" />
+                        Nota Final: <span className="text-sm text-amber-700 font-black">{mySubmission.score} / 10</span>
+                      </span>
+                      {mySubmission.gradedAt && (
+                        <span className="text-[10px] font-bold text-amber-800 bg-amber-100/90 px-2 py-0.5 rounded-md border border-amber-200">
+                          {mySubmission.gradedAt}
+                        </span>
+                      )}
+                    </div>
+
+                    {mySubmission.feedback && (
+                      <div className="space-y-1 bg-amber-50/50 p-2.5 rounded-xl border border-amber-100">
+                        <p className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">
+                          Retroalimentación del Docente:
+                        </p>
+                        <p className="text-xs text-slate-700 italic font-medium leading-relaxed">
+                          "{mySubmission.feedback}"
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold pt-1 border-t border-amber-200/60">
+                      <span>Entregado: {mySubmission.submittedAt}</span>
+                      {mySubmission.evidenceName && (
+                        <span className="truncate max-w-[150px]">📎 {mySubmission.evidenceName}</span>
+                      )}
+                    </div>
+                  </div>
+                ) : isSubmitted ? (
+                  <div className="bg-teal-50/70 p-3.5 rounded-2xl border border-teal-100 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <p className="font-black text-teal-800 flex items-center gap-1.5">
+                        <FileCheck className="h-4 w-4 text-[#31B45A]" />
+                        Deber entregado el {mySubmission.submittedAt}
+                      </p>
+                      <Badge className="bg-sky-100 text-sky-700 border-sky-200 text-[10px] font-bold">
+                        En revisión por docente
+                      </Badge>
+                    </div>
                     {mySubmission.evidenceName && (
-                      <p className="text-slate-600 font-medium truncate">
+                      <p className="text-slate-600 font-medium truncate pt-0.5">
                         📎 Archivo adjunto: <strong>{mySubmission.evidenceName}</strong>
                       </p>
                     )}

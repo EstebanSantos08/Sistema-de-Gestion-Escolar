@@ -50,6 +50,10 @@ const studentNav: NavItem[] = [
   { to: '/estudiante', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
   { to: '/estudiante/mis-cursos', label: 'Mis Cursos', icon: <GraduationCap className="h-4 w-4" /> },
   { to: '/estudiante/mis-notas', label: 'Mis Notas', icon: <Star className="h-4 w-4" /> },
+  { to: '/estudiante/asistencia', label: 'Asistencia', icon: <ClipboardCheck className="h-4 w-4" /> },
+  { to: '/estudiante/actividades', label: 'Actividades', icon: <CalendarCheck className="h-4 w-4" /> },
+  { to: '/estudiante/observaciones', label: 'Observaciones', icon: <MessageSquare className="h-4 w-4" /> },
+  { to: '/estudiante/comunicados', label: 'Comunicados', icon: <Megaphone className="h-4 w-4" /> },
   { to: '/estudiante/historial', label: 'Historial', icon: <ScrollText className="h-4 w-4" /> },
 ];
 

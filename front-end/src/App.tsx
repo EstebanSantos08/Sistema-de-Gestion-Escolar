@@ -39,6 +39,10 @@ import StudentMyCoursesPage from '@/pages/student/MyCoursesPage';
 import StudentCourseDetailPage from '@/pages/student/StudentCourseDetailPage';
 import MyGradesPage from '@/pages/student/MyGradesPage';
 import TranscriptPage from '@/pages/student/TranscriptPage';
+import StudentAttendancePage from '@/pages/student/StudentAttendancePage';
+import StudentActivitiesPage from '@/pages/student/StudentActivitiesPage';
+import StudentObservationsPage from '@/pages/student/StudentObservationsPage';
+import StudentAnnouncementsPage from '@/pages/student/StudentAnnouncementsPage';
 
 const PageLoader = () => (
   <div className="flex min-h-screen items-center justify-center">
@@ -102,6 +106,10 @@ function AppRoutes() {
             <Route path="/estudiante/cursos/:courseId" element={<StudentCourseDetailPage />} />
             <Route path="/estudiante/mis-notas" element={<MyGradesPage />} />
             <Route path="/estudiante/historial" element={<TranscriptPage />} />
+            <Route path="/estudiante/asistencia" element={<StudentAttendancePage />} />
+            <Route path="/estudiante/actividades" element={<StudentActivitiesPage />} />
+            <Route path="/estudiante/observaciones" element={<StudentObservationsPage />} />
+            <Route path="/estudiante/comunicados" element={<StudentAnnouncementsPage />} />
           </Route>
         </Route>
 

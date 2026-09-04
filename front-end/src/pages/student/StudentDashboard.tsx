@@ -78,28 +78,28 @@ export default function StudentDashboard() {
             </Button>
 
             <Button asChild variant="outline" className="w-full justify-start bg-white hover:bg-emerald-50 hover:border-emerald-300 shadow-sm rounded-xl font-bold transition-all text-xs">
-              <Link to="/estudiante/mis-cursos">
+              <Link to="/estudiante/asistencia">
                 <ClipboardCheck className="mr-1.5 h-4 w-4 text-[#31B45A]" />
                 Asistencia
               </Link>
             </Button>
 
             <Button asChild variant="outline" className="w-full justify-start bg-white hover:bg-rose-50 hover:border-rose-300 shadow-sm rounded-xl font-bold transition-all text-xs">
-              <Link to="/estudiante/mis-notas">
+              <Link to="/estudiante/actividades">
                 <FileText className="mr-1.5 h-4 w-4 text-[#E84B5B]" />
                 Actividades & Notas
               </Link>
             </Button>
 
             <Button asChild variant="outline" className="w-full justify-start bg-white hover:bg-amber-50 hover:border-amber-300 shadow-sm rounded-xl font-bold transition-all text-xs">
-              <Link to="/estudiante">
+              <Link to="/estudiante/comunicados">
                 <Megaphone className="mr-1.5 h-4 w-4 text-[#F4B51B]" />
                 Comunicados
               </Link>
             </Button>
 
             <Button asChild variant="outline" className="w-full justify-start bg-white hover:bg-purple-50 hover:border-purple-300 shadow-sm rounded-xl font-bold transition-all text-xs">
-              <Link to="/estudiante/historial">
+              <Link to="/estudiante/observaciones">
                 <MessageSquare className="mr-1.5 h-4 w-4 text-[#7D5AA6]" />
                 Observaciones
               </Link>

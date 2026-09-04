@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   CheckCircle2,
   Clock,
@@ -13,11 +13,15 @@ import {
   Maximize2,
   Download,
   BookOpen,
+  Award,
+  Star,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useCourseStudents } from '@/hooks/useEnrollments';
 import { teacherModuleService, type ClassActivity, type SubmissionItem } from '@/services/teacherModule.service';
 
@@ -48,9 +52,22 @@ export function ClassroomSubmissionsDialog({
   const [filterStatus, setFilterStatus] = useState<'all' | 'submitted' | 'pending'>('all');
   const [selectedStudentId, setSelectedStudentId] = useState<number>(1);
 
+  // Estado local para entregas sincronizadas
+  const [submissionsList, setSubmissionsList] = useState<SubmissionItem[]>([]);
+
+  // Estados para formulario de calificación
+  const [gradeScore, setGradeScore] = useState<string>('');
+  const [gradeFeedback, setGradeFeedback] = useState<string>('');
+
   // Estado para el modal de vista previa en tamaño completo de la evidencia (Lightbox)
   const [previewMediaUrl, setPreviewMediaUrl] = useState<string | null>(null);
   const [previewMediaTitle, setPreviewMediaTitle] = useState<string>('');
+
+  useEffect(() => {
+    if (activity && open) {
+      setSubmissionsList(teacherModuleService.getSubmissions(activity.id));
+    }
+  }, [activity?.id, open]);
 
   if (!activity) return null;
   const enrolledStudents = courseData?.students && courseData.students.length > 0
@@ -62,7 +79,7 @@ export function ClassroomSubmissionsDialog({
     : DEFAULT_COURSE_STUDENTS;
 
   // Obtener todas las entregas para esta actividad
-  const submissions = teacherModuleService.getSubmissions(activity.id);
+  const submissions = submissionsList.length > 0 ? submissionsList : teacherModuleService.getSubmissions(activity.id);
 
   // Combinar estudiantes matriculados y cualquier estudiante con entregas registradas
   const allStudentsMap = new Map<number, { studentId: number; name: string; studentCode: string }>();
@@ -90,6 +107,7 @@ export function ClassroomSubmissionsDialog({
   });
 
   const submittedCount = studentSubmissions.filter((s) => s.hasSubmitted).length;
+  const gradedCount = studentSubmissions.filter((s) => s.submission?.status === 'calificada' || s.submission?.score !== undefined).length;
   const pendingCount = studentSubmissions.length - submittedCount;
   const completionPercentage = Math.round((submittedCount / Math.max(studentSubmissions.length, 1)) * 100);
 
@@ -111,6 +129,42 @@ export function ClassroomSubmissionsDialog({
     studentSubmissions.find((s) => s.studentId === selectedStudentId) ??
     firstSubmittedStudent ??
     studentSubmissions[0];
+
+  useEffect(() => {
+    if (selectedItem?.submission) {
+      setGradeScore(selectedItem.submission.score !== undefined ? String(selectedItem.submission.score) : '');
+      setGradeFeedback(selectedItem.submission.feedback || '');
+    } else {
+      setGradeScore('');
+      setGradeFeedback('');
+    }
+  }, [selectedItem?.studentId, selectedItem?.submission?.id, selectedItem?.submission?.score]);
+
+  const handleSaveGrade = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedItem || !activity) return;
+
+    const scoreNum = parseFloat(gradeScore);
+    if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > 10) {
+      toast.error('Por favor ingresa una calificación válida entre 0 y 10.');
+      return;
+    }
+
+    teacherModuleService.gradeSubmission({
+      submissionId: selectedItem.submission?.id,
+      activityId: activity.id,
+      studentId: selectedItem.studentId,
+      studentName: selectedItem.name,
+      courseId: activity.courseId,
+      score: scoreNum,
+      feedback: gradeFeedback,
+      maxScore: 10,
+    });
+
+    toast.success(`¡Calificación (${scoreNum}/10) guardada para ${selectedItem.name}!`);
+    const updatedSubmissions = teacherModuleService.getSubmissions(activity.id);
+    setSubmissionsList(updatedSubmissions);
+  };
 
   const activityTypeLabel = (activity.type ?? 'deber').toUpperCase();
   const courseNameLabel = activity.courseName ?? 'Curso';
@@ -150,7 +204,7 @@ export function ClassroomSubmissionsDialog({
           </div>
 
           {/* Tarjetas de Métricas Google Classroom */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
             <div className="bg-slate-800/80 backdrop-blur-md p-3 rounded-2xl border border-slate-700/60 flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                 <CheckCircle2 className="h-5 w-5" />
@@ -163,6 +217,16 @@ export function ClassroomSubmissionsDialog({
 
             <div className="bg-slate-800/80 backdrop-blur-md p-3 rounded-2xl border border-slate-700/60 flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                <Award className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Calificadas</p>
+                <p className="text-lg font-black text-amber-400">{gradedCount}</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-800/80 backdrop-blur-md p-3 rounded-2xl border border-slate-700/60 flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30">
                 <AlertTriangle className="h-5 w-5" />
               </div>
               <div>
@@ -294,7 +358,12 @@ export function ClassroomSubmissionsDialog({
                       </div>
 
                       <div>
-                        {item.hasSubmitted ? (
+                        {item.submission?.status === 'calificada' || item.submission?.score !== undefined ? (
+                          <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] font-extrabold px-2 py-0.5 flex items-center gap-1">
+                            <Award className="h-3 w-3 text-amber-400" />
+                            {item.submission.score}/10
+                          </Badge>
+                        ) : item.hasSubmitted ? (
                           <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px] font-extrabold px-2 py-0.5">
                             Entregado
                           </Badge>
@@ -503,6 +572,82 @@ export function ClassroomSubmissionsDialog({
                     </div>
                   </div>
                 )}
+
+                {/* Formulario de Calificación Docente */}
+                <form onSubmit={handleSaveGrade} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4 shadow-xl">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                        <Award className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black text-white">Calificación y Retroalimentación</h4>
+                        <p className="text-[11px] font-semibold text-slate-400">
+                          Asigna la nota final y comentarios para el estudiante/representante
+                        </p>
+                      </div>
+                    </div>
+
+                    {selectedItem.submission?.status === 'calificada' || selectedItem.submission?.score !== undefined ? (
+                      <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 font-black text-xs px-3 py-1 flex items-center gap-1">
+                        <Award className="h-3.5 w-3.5 text-amber-400" />
+                        ✓ Nota: {selectedItem.submission.score}/10
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-sky-500/20 text-sky-400 border-sky-500/30 font-extrabold text-xs px-2.5 py-1">
+                        Pendiente de Calificar
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <div className="space-y-1 sm:col-span-1">
+                      <label className="text-xs font-bold text-slate-300 flex items-center gap-1">
+                        <Star className="h-3.5 w-3.5 text-amber-400" />
+                        Nota (0 - 10) *
+                      </label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="10"
+                        step="0.1"
+                        placeholder="Ej: 9.5"
+                        value={gradeScore}
+                        onChange={(e) => setGradeScore(e.target.value)}
+                        className="bg-slate-950 border-slate-700 text-white font-black text-base rounded-xl focus:border-sky-500"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-1 sm:col-span-3">
+                      <label className="text-xs font-bold text-slate-300">
+                        Observaciones o Retroalimentación
+                      </label>
+                      <Textarea
+                        placeholder="Escribe la retroalimentación para el estudiante..."
+                        value={gradeFeedback}
+                        onChange={(e) => setGradeFeedback(e.target.value)}
+                        className="bg-slate-950 border-slate-700 text-slate-200 text-xs rounded-xl"
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-800/80">
+                    <span className="text-[11px] font-semibold text-slate-400">
+                      {selectedItem.submission?.gradedAt ? `Calificado el: ${selectedItem.submission.gradedAt}` : 'Aún no calificado'}
+                    </span>
+                    <Button
+                      type="submit"
+                      className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs rounded-xl shadow-lg px-5"
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-1.5" />
+                      {selectedItem.submission?.status === 'calificada' || selectedItem.submission?.score !== undefined
+                        ? 'Actualizar Nota'
+                        : 'Guardar Calificación'}
+                    </Button>
+                  </div>
+                </form>
               </div>
             ) : (
               <div className="p-12 text-center text-slate-500 text-xs font-semibold">
