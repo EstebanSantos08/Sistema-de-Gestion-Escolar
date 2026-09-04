@@ -50,7 +50,7 @@ export default function CourseDetailPage() {
   const { data: courseData, isLoading: loadingStudents } = useCourseStudents(id);
 
   const [activeTab, setActiveTab] = useState<'tasks' | 'students'>('tasks');
-  
+
   // Modales y formularios
   const [modalOpen, setModalOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<ClassActivity | null>(null);
