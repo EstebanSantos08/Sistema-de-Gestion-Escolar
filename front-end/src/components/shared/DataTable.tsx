@@ -24,11 +24,12 @@ interface DataTableProps<T> {
   page?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
+  getRowId?: (row: T) => number | string;
 }
 
 import { Card } from '@/components/ui/card';
 
-export function DataTable<T extends { id: number }>({
+export function DataTable<T>({
   columns,
   data,
   isLoading,
@@ -36,6 +37,7 @@ export function DataTable<T extends { id: number }>({
   page,
   totalPages,
   onPageChange,
+  getRowId,
 }: DataTableProps<T>) {
   return (
     <Card className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden border border-white/60">
@@ -67,19 +69,27 @@ export function DataTable<T extends { id: number }>({
                 </TableCell>
               </TableRow>
             ) : (
-              data.map((row) => (
-                <TableRow key={row.id}>
-                  {columns.map((col, ci) => (
-                    <TableCell key={ci} className={col.className}>
-                      {col.render
-                        ? col.render(row)
-                        : col.key !== undefined
-                          ? String(row[col.key] ?? '')
-                          : null}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              data.map((row, index) => {
+                const key = getRowId
+                  ? getRowId(row)
+                  : ((row as Record<string, unknown>)?.id as number | string | undefined) ??
+                    ((row as Record<string, unknown>)?.enrollmentId as number | string | undefined) ??
+                    index;
+
+                return (
+                  <TableRow key={key}>
+                    {columns.map((col, ci) => (
+                      <TableCell key={ci} className={col.className}>
+                        {col.render
+                          ? col.render(row)
+                          : col.key !== undefined
+                            ? String(row[col.key] ?? '')
+                            : null}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>

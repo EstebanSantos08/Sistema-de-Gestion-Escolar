@@ -327,6 +327,7 @@ export default function CourseDetailPage() {
           <DataTable
             columns={studentColumns}
             data={courseData?.students ?? []}
+            getRowId={(s) => s.enrollmentId}
             isLoading={loadingStudents}
             emptyMessage="No hay estudiantes matriculados en este curso"
           />
