@@ -15,6 +15,7 @@ import {
   BookOpen,
   Award,
   Star,
+  ExternalLink,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -62,6 +63,7 @@ export function ClassroomSubmissionsDialog({
   // Estado para el modal de vista previa en tamaño completo de la evidencia (Lightbox)
   const [previewMediaUrl, setPreviewMediaUrl] = useState<string | null>(null);
   const [previewMediaTitle, setPreviewMediaTitle] = useState<string>('');
+  const [imageLoadError, setImageLoadError] = useState(false);
 
   useEffect(() => {
     if (activity && open) {
@@ -131,6 +133,7 @@ export function ClassroomSubmissionsDialog({
     studentSubmissions[0];
 
   useEffect(() => {
+    setImageLoadError(false);
     if (selectedItem?.submission) {
       setGradeScore(selectedItem.submission.score !== undefined ? String(selectedItem.submission.score) : '');
       setGradeFeedback(selectedItem.submission.feedback || '');
@@ -489,7 +492,7 @@ export function ClassroomSubmissionsDialog({
 
                       {selectedItem.submission.evidenceUrl ? (
                         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-center space-y-3">
-                          {selectedItem.submission.evidenceType === 'imagen' ? (
+                          {selectedItem.submission.evidenceType === 'imagen' && !imageLoadError ? (
                             <div
                               onClick={() => {
                                 setPreviewMediaUrl(selectedItem.submission!.evidenceUrl!);
@@ -502,6 +505,7 @@ export function ClassroomSubmissionsDialog({
                               <img
                                 src={selectedItem.submission.evidenceUrl}
                                 alt="Evidencia entregada"
+                                onError={() => setImageLoadError(true)}
                                 className="max-h-80 object-contain rounded-xl transition-transform duration-300 group-hover:scale-105"
                               />
                               <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -515,23 +519,35 @@ export function ClassroomSubmissionsDialog({
                               <FileText className="h-12 w-12 text-rose-400 animate-pulse" />
                               <div>
                                 <p className="font-extrabold text-sm text-white">
-                                  {selectedItem.submission.evidenceName ?? 'Documento Adjunto (PDF)'}
+                                  {selectedItem.submission.evidenceName ?? 'Documento / Archivo Adjunto'}
                                 </p>
                                 <p className="text-xs text-slate-400 mt-0.5">
-                                  Documento preparado para revisión docente
+                                  {imageLoadError
+                                    ? 'No se pudo cargar la vista previa directa. Puedes abrirlo en una nueva pestaña o descargarlo.'
+                                    : 'Documento preparado para revisión docente'}
                                 </p>
                               </div>
-                              <Button
-                                onClick={() => {
-                                  setPreviewMediaUrl(selectedItem.submission!.evidenceUrl!);
-                                  setPreviewMediaTitle(
-                                    `${selectedItem.name} — ${selectedItem.submission!.evidenceName ?? 'Documento PDF'}`
-                                  );
-                                }}
-                                className="bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs rounded-xl shadow-md"
-                              >
-                                <Eye className="h-4 w-4 mr-1.5" /> Abrir Documento PDF
-                              </Button>
+                              <div className="flex items-center gap-2 flex-wrap justify-center">
+                                <Button
+                                  onClick={() => {
+                                    setPreviewMediaUrl(selectedItem.submission!.evidenceUrl!);
+                                    setPreviewMediaTitle(
+                                      `${selectedItem.name} — ${selectedItem.submission!.evidenceName ?? 'Documento PDF'}`
+                                    );
+                                  }}
+                                  className="bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs rounded-xl shadow-md"
+                                >
+                                  <Eye className="h-4 w-4 mr-1.5" /> Abrir en Visor
+                                </Button>
+                                <a
+                                  href={selectedItem.submission.evidenceUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-sky-300 font-bold text-xs rounded-xl border border-slate-700 inline-flex items-center gap-1.5"
+                                >
+                                  <ExternalLink className="h-3.5 w-3.5" /> Abrir en Nueva Pestaña
+                                </a>
+                              </div>
                             </div>
                           )}
 
@@ -666,23 +682,52 @@ export function ClassroomSubmissionsDialog({
               <h3 className="font-black text-sm text-sky-400 truncate pr-4">
                 {previewMediaTitle}
               </h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setPreviewMediaUrl(null)}
-                className="text-slate-400 hover:text-white rounded-xl h-8 w-8 p-0"
-              >
-                <X className="h-5 w-5" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <a
+                  href={previewMediaUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-300 rounded-xl font-bold text-xs inline-flex items-center gap-1 border border-slate-700 transition-all"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" /> Abrir en Pestaña
+                </a>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPreviewMediaUrl(null)}
+                  className="text-slate-400 hover:text-white rounded-xl h-8 w-8 p-0"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
 
             <div className="py-4 flex items-center justify-center max-h-[75vh] overflow-auto">
-              {previewMediaUrl.startsWith('data:application/pdf') || previewMediaTitle.endsWith('.pdf') ? (
-                <iframe
-                  src={previewMediaUrl}
-                  title="PDF Preview"
-                  className="w-full h-[70vh] rounded-2xl border border-slate-800"
-                />
+              {previewMediaUrl.startsWith('data:application/pdf') || previewMediaTitle.toLowerCase().endsWith('.pdf') ? (
+                <object
+                  data={previewMediaUrl}
+                  type="application/pdf"
+                  className="w-full h-[70vh] rounded-2xl border border-slate-800 bg-slate-900"
+                >
+                  <iframe
+                    src={previewMediaUrl}
+                    title="PDF Preview"
+                    className="w-full h-[70vh] rounded-2xl border border-slate-800"
+                  >
+                    <div className="p-8 text-center text-slate-300 space-y-3">
+                      <FileText className="h-12 w-12 mx-auto text-rose-400" />
+                      <p className="font-bold text-sm">No se pudo visualizar el documento directamente.</p>
+                      <a
+                        href={previewMediaUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-sky-500 text-white rounded-xl font-bold text-xs inline-flex items-center gap-1.5"
+                      >
+                        <ExternalLink className="h-4 w-4" /> Abrir PDF en Nueva Pestaña
+                      </a>
+                    </div>
+                  </iframe>
+                </object>
               ) : (
                 <img
                   src={previewMediaUrl}

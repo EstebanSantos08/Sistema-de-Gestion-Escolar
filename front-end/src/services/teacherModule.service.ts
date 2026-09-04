@@ -245,10 +245,10 @@ const INITIAL_SUBMISSIONS: SubmissionItem[] = [
     courseId: 1,
     status: 'entregada',
     submittedAt: '2026-08-29 09:15',
-    notes: 'Entregado a tiempo en formato PDF. Saludos docente.',
+    notes: 'Entregado a tiempo. Saludos docente.',
     evidenceUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80',
-    evidenceName: 'Ecuaciones_Maria_Rodrigues.pdf',
-    evidenceType: 'documento',
+    evidenceName: 'Ecuaciones_Maria_Rodrigues.png',
+    evidenceType: 'imagen',
   },
   {
     id: 'sub-3',

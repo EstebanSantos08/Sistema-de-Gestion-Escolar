@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, FileText, Calendar, Upload, CheckCircle2, Clock, Sparkles, AlertTriangle, Paperclip, FileCheck, Award, Star } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, Upload, CheckCircle2, Clock, Sparkles, AlertTriangle, Paperclip, FileCheck, Award, Star, Eye, Download, ExternalLink, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCourse } from '@/hooks/useCourses';
 import { useAuth } from '@/hooks/useAuth';
@@ -35,17 +35,16 @@ export default function StudentCourseDetailPage() {
     5: { name: 'Informática Básica', code: 'INF-101' },
   };
 
-  const fallbackCourse = defaultNames[id ?? 1] ?? { name: 'Aula Virtual del Curso', code: 'CURSO-2026' };
-
   const displayCourse = course ?? {
     id: id ?? 1,
-    name: fallbackCourse.name,
-    code: fallbackCourse.code,
+    name: defaultNames[id ?? 1]?.name ?? 'Curso General',
+    code: defaultNames[id ?? 1]?.code ?? 'MAT-101',
     period: '2026-I',
   };
 
-  const allActivities = id ? teacherModuleService.getActivities(id) : teacherModuleService.getActivities();
-  const activities = allActivities.length > 0 ? allActivities : teacherModuleService.getActivities();
+  const [activities] = useState<ClassActivity[]>(() =>
+    id ? teacherModuleService.getActivities(id) : []
+  );
 
   const [submissions, setSubmissions] = useState<SubmissionItem[]>(() =>
     teacherModuleService.getSubmissions()
@@ -56,6 +55,10 @@ export default function StudentCourseDetailPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Estados para vista previa de evidencia del estudiante
+  const [previewMediaUrl, setPreviewMediaUrl] = useState<string | null>(null);
+  const [previewMediaTitle, setPreviewMediaTitle] = useState<string>('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -238,12 +241,25 @@ export default function StudentCourseDetailPage() {
                     <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold pt-1 border-t border-amber-200/60">
                       <span>Entregado: {mySubmission.submittedAt}</span>
                       {mySubmission.evidenceName && (
-                        <span className="truncate max-w-[150px]">📎 {mySubmission.evidenceName}</span>
+                        mySubmission.evidenceUrl ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPreviewMediaUrl(mySubmission.evidenceUrl!);
+                              setPreviewMediaTitle(`Mi Evidencia — ${mySubmission.evidenceName ?? 'Deber'}`);
+                            }}
+                            className="text-[#008BC1] hover:underline font-extrabold flex items-center gap-1 cursor-pointer"
+                          >
+                            <Eye className="h-3.5 w-3.5" /> 📎 {mySubmission.evidenceName}
+                          </button>
+                        ) : (
+                          <span className="truncate max-w-[150px]">📎 {mySubmission.evidenceName}</span>
+                        )
                       )}
                     </div>
                   </div>
                 ) : isSubmitted ? (
-                  <div className="bg-teal-50/70 p-3.5 rounded-2xl border border-teal-100 text-xs space-y-1.5">
+                  <div className="bg-teal-50/70 p-3.5 rounded-2xl border border-teal-100 text-xs space-y-2">
                     <div className="flex items-center justify-between">
                       <p className="font-black text-teal-800 flex items-center gap-1.5">
                         <FileCheck className="h-4 w-4 text-[#31B45A]" />
@@ -254,9 +270,24 @@ export default function StudentCourseDetailPage() {
                       </Badge>
                     </div>
                     {mySubmission.evidenceName && (
-                      <p className="text-slate-600 font-medium truncate pt-0.5">
-                        📎 Archivo adjunto: <strong>{mySubmission.evidenceName}</strong>
-                      </p>
+                      <div className="flex items-center justify-between pt-1 border-t border-teal-100/80">
+                        <span className="text-slate-600 font-medium truncate text-xs">
+                          📎 {mySubmission.evidenceName}
+                        </span>
+                        {mySubmission.evidenceUrl && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setPreviewMediaUrl(mySubmission.evidenceUrl!);
+                              setPreviewMediaTitle(`Mi Evidencia — ${mySubmission.evidenceName ?? 'Deber'}`);
+                            }}
+                            className="h-7 text-xs font-bold text-[#008BC1] border-sky-200 hover:bg-sky-50 rounded-lg px-2 shrink-0"
+                          >
+                            <Eye className="h-3.5 w-3.5 mr-1" /> Ver Evidencia
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </div>
                 ) : (
@@ -350,6 +381,82 @@ export default function StudentCourseDetailPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Modal Lightbox de Vista Previa de Evidencia para el Estudiante */}
+      {previewMediaUrl && (
+        <Dialog open={!!previewMediaUrl} onOpenChange={() => setPreviewMediaUrl(null)}>
+          <DialogContent className="max-w-4xl w-11/12 bg-slate-950 border border-slate-800 p-4 rounded-3xl text-white">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 className="font-black text-sm text-sky-400 truncate pr-4">
+                {previewMediaTitle}
+              </h3>
+              <div className="flex items-center gap-2">
+                <a
+                  href={previewMediaUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-300 rounded-xl font-bold text-xs inline-flex items-center gap-1 border border-slate-700 transition-all"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" /> Abrir en Pestaña
+                </a>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPreviewMediaUrl(null)}
+                  className="text-slate-400 hover:text-white rounded-xl h-8 w-8 p-0"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="py-4 flex items-center justify-center max-h-[75vh] overflow-auto">
+              {previewMediaUrl.startsWith('data:application/pdf') || previewMediaTitle.toLowerCase().endsWith('.pdf') ? (
+                <object
+                  data={previewMediaUrl}
+                  type="application/pdf"
+                  className="w-full h-[70vh] rounded-2xl border border-slate-800 bg-slate-900"
+                >
+                  <iframe
+                    src={previewMediaUrl}
+                    title="PDF Preview"
+                    className="w-full h-[70vh] rounded-2xl border border-slate-800"
+                  >
+                    <div className="p-8 text-center text-slate-300 space-y-3">
+                      <FileText className="h-12 w-12 mx-auto text-rose-400" />
+                      <p className="font-bold text-sm">No se pudo visualizar el documento directamente.</p>
+                      <a
+                        href={previewMediaUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-sky-500 text-white rounded-xl font-bold text-xs inline-flex items-center gap-1.5"
+                      >
+                        <ExternalLink className="h-4 w-4" /> Abrir PDF en Nueva Pestaña
+                      </a>
+                    </div>
+                  </iframe>
+                </object>
+              ) : (
+                <img
+                  src={previewMediaUrl}
+                  alt="Evidencia entregada"
+                  className="max-h-[70vh] object-contain rounded-2xl shadow-2xl border border-slate-800"
+                />
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+              <a
+                href={previewMediaUrl}
+                download="mi_evidencia"
+                className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-bold text-xs inline-flex items-center gap-1.5 shadow-md"
+              >
+                <Download className="h-4 w-4" /> Descargar Mi Archivo
+              </a>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
