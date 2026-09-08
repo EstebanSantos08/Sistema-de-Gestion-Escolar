@@ -72,12 +72,13 @@ export const getStudentGrades = async (req: Request, res: Response): Promise<voi
   try {
     let studentId = Number(req.params.id);
 
-    // If student or parent role, find their associated student profile
-    if (req.user?.role === 'student' || req.user?.role === 'parent' || studentId === 0) {
-      let myProfile = req.user?.id ? await Student.findOne({ where: { userId: req.user.id } }) : null;
-      if (!myProfile) {
-        myProfile = await Student.findOne();
-      }
+    // Students and parents must be resolved from their authenticated JWT identity.
+    // SECURITY: Never fall back to Student.findOne() without a WHERE clause –
+    // that would silently expose another student's grades when the profile is missing.
+    if (req.user?.role === 'student' || req.user?.role === 'parent') {
+      const myProfile = req.user?.id
+        ? await Student.findOne({ where: { userId: req.user.id } })
+        : null;
       if (!myProfile) {
         res.status(404).json({ success: false, error: 'Perfil de estudiante no encontrado' });
         return;
@@ -156,6 +157,17 @@ export const getStudentGrades = async (req: Request, res: Response): Promise<voi
 };
 
 export const getMyGrades = async (req: Request, res: Response): Promise<void> => {
-  req.params.id = '0'; // will be overridden by role check in getStudentGrades
+  // Resolve the student profile from the authenticated user's JWT identity.
+  // Do NOT use id=0 trick – that was coupled to the now-removed unsafe fallback.
+  if (!req.user?.id) {
+    res.status(401).json({ success: false, error: 'No autenticado' });
+    return;
+  }
+  const myProfile = await Student.findOne({ where: { userId: req.user.id } });
+  if (!myProfile) {
+    res.status(404).json({ success: false, error: 'Perfil de estudiante no encontrado' });
+    return;
+  }
+  req.params.id = String(myProfile.id);
   await getStudentGrades(req, res);
 };

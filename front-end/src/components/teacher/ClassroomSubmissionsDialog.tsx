@@ -71,7 +71,6 @@ export function ClassroomSubmissionsDialog({
     }
   }, [activity?.id, open]);
 
-  if (!activity) return null;
   const enrolledStudents = courseData?.students && courseData.students.length > 0
     ? courseData.students.map((s) => ({
         studentId: s.studentId,
@@ -81,7 +80,7 @@ export function ClassroomSubmissionsDialog({
     : DEFAULT_COURSE_STUDENTS;
 
   // Obtener todas las entregas para esta actividad
-  const submissions = submissionsList.length > 0 ? submissionsList : teacherModuleService.getSubmissions(activity.id);
+  const submissions = !activity ? [] : submissionsList.length > 0 ? submissionsList : teacherModuleService.getSubmissions(activity.id);
 
   // Combinar estudiantes matriculados y cualquier estudiante con entregas registradas
   const allStudentsMap = new Map<number, { studentId: number; name: string; studentCode: string }>();
@@ -168,6 +167,8 @@ export function ClassroomSubmissionsDialog({
     const updatedSubmissions = teacherModuleService.getSubmissions(activity.id);
     setSubmissionsList(updatedSubmissions);
   };
+
+  if (!activity) return null;
 
   const activityTypeLabel = (activity.type ?? 'deber').toUpperCase();
   const courseNameLabel = activity.courseName ?? 'Curso';

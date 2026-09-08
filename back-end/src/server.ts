@@ -3,19 +3,27 @@ dotenv.config();
 
 import app from './app';
 import { connectDatabase } from './config/database';
-import './models/index'; // registrar asociaciones
-import sequelize from './config/database';
+import './models/index'; // register associations
 
 const PORT = Number(process.env.PORT) || 3001;
 
+/**
+ * Application bootstrap.
+ *
+ * IMPORTANT:
+ * `sequelize.sync()` and ad-hoc `ALTER TABLE` calls have been removed.
+ * Schema evolution is now managed through versioned migration scripts
+ * (see migrations/ directory) and must be applied explicitly with
+ * appropriate preflight checks and DBA approval.
+ *
+ * To verify connectivity at startup we only call `authenticate()`.
+ */
 async function bootstrap() {
   try {
     await connectDatabase();
-    await sequelize.sync();
-    await sequelize.query(
-      `ALTER TABLE "observations" ADD COLUMN IF NOT EXISTS "visibility" VARCHAR(32) NOT NULL DEFAULT 'ESTUDIANTE_Y_PADRES'`
-    );
-    console.log('✅ Modelos sincronizados con la base de datos.');
+    // Do NOT call sequelize.sync() or ALTER TABLE here.
+    // Use migration scripts for schema changes.
+    console.log('✅ Base de datos verificada correctamente.');
 
     app.listen(PORT, () => {
       console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);

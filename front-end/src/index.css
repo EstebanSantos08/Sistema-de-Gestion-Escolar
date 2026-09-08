@@ -102,3 +102,45 @@
 }
 
 
+
+/* Course surfaces opt in; existing screens keep their component defaults. */
+.course-ui {
+  --background: 0 0% 100%;
+  --foreground: 174 22% 27%;
+  --primary: 177 88% 26%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 173 47% 93%;
+  --secondary-foreground: 177 88% 26%;
+  --muted: 170 38% 97%;
+  --muted-foreground: 174 22% 27%;
+  --accent: 173 47% 93%;
+  --accent-foreground: 177 88% 26%;
+  --border: 172 22% 87%;
+  --input: 173 10% 49%;
+  --ring: 177 88% 26%;
+  --destructive: 352 67% 42%;
+  color: #365451;
+}
+.course-ui :is(h1, h2, h3) { color: #183B3A; }
+.course-ui ::selection { background: #E3F5F3; color: #183B3A; }
+.course-ui :is(input, textarea) { caret-color: #087F79; }
+.course-ui :is(button, input, textarea, [role="combobox"]) { border-radius: 0.5rem; }
+.course-ui :is(button, a.inline-flex, input, [role="combobox"]) { min-height: 44px; }
+.course-ui :is(a, button, input, textarea):focus-visible {
+  outline: 2px solid #087F79;
+  outline-offset: 3px;
+}
+.course-panel, .course-ui .course-card {
+  border: 1px solid #D6E5E3;
+  border-radius: 14px;
+  background: #FFFFFF;
+  color: #365451;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+/* Suppress the incumbent Card's decorative stripe only on opted-in cards. */
+.course-ui .course-card > div:first-child:not(:last-child) { background-image: none; }
+.course-ui .course-card > div.h-1\.5 { height: 3px; background: #41C4BD; }
+@media (prefers-reduced-motion: reduce) {
+  .course-ui *, .course-ui *::before, .course-ui *::after { animation: none !important; transition-property: color, background-color, opacity !important; }
+}

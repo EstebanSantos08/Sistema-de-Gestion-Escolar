@@ -9,9 +9,11 @@
     "start": "node dist/server.js",
     "migrate": "ts-node src/config/database.ts",
     "seed": "ts-node src/seeders/seed.ts",
-    "test:local": "ts-node --files src/tests/local-suite.ts"
+    "test:local": "ts-node --files src/tests/local-suite.ts",
+    "test:unit": "ts-node --files src/tests/unit-suite.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.109.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",

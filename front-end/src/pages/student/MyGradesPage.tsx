@@ -1,4 +1,5 @@
-import { FileText } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { FileText, AlertCircle, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useMyGrades } from '@/hooks/useStudents';
 import { useAuth } from '@/hooks/useAuth';
@@ -33,7 +34,7 @@ const gradeTypeLabel: Record<string, string> = {
 
 export default function MyGradesPage() {
   const { user } = useAuth();
-  const { data, isLoading } = useMyGrades();
+  const { data, isLoading, isError, refetch } = useMyGrades();
   const courses = data?.courses ?? [];
 
   const handleDownloadBuletin = async () => {
@@ -49,17 +50,25 @@ export default function MyGradesPage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-20">
+      <div role="status" className="course-ui flex items-center justify-center gap-3 py-20">Cargando calificaciones…
         <span className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
 
+  if (isError) return <div className="course-ui space-y-4">
+    <PageHeader variant="course" title="Mis Notas" description="Calificaciones académicas" />
+    <div role="alert" className="course-panel space-y-3 p-6"><p className="flex items-center gap-2"><AlertCircle aria-hidden="true" className="h-5 w-5 text-destructive" />No se pudieron cargar las calificaciones.</p><Button variant="outline" onClick={() => void refetch()}>Reintentar</Button></div>
+    <Button asChild variant="link"><Link to="/estudiante/mis-cursos">Volver a Mis Cursos</Link></Button>
+  </div>;
+
   return (
-    <div className="space-y-6">
+    <div className="course-ui mx-auto max-w-6xl space-y-6">
+      <Button asChild variant="link"><Link to="/estudiante/mis-cursos"><ArrowLeft aria-hidden="true" className="h-4 w-4" />Mis Cursos</Link></Button>
       <PageHeader
-        title={`Mis Calificaciones — Período ${data?.period ?? '2026-I'}`}
-        description="Desglose de notas por materia"
+        variant="course"
+        title="Mis Notas"
+        description={`Calificaciones académicas${data?.period ? ` · Período ${data.period}` : ''}`}
       >
         <Button variant="outline" onClick={handleDownloadBuletin}>
           <FileText className="mr-2 h-4 w-4" />
@@ -76,18 +85,18 @@ export default function MyGradesPage() {
               <AccordionItem
                 key={c.courseId}
                 value={String(c.courseId)}
-                className="rounded-lg border px-4"
+                className="course-panel rounded-xl px-4"
               >
                 <AccordionTrigger className="hover:no-underline">
-                  <div className="flex items-center justify-between w-full pr-4">
-                    <div className="text-left">
+                  <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between w-full pr-4">
+                    <div className="min-w-0 break-words text-left">
                       <p className="font-semibold">{c.courseName}</p>
                       <p className="text-xs text-muted-foreground">{c.teacherName}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       {c.grades.length > 0 ? (
                         <>
-                          <span className={`font-bold text-lg ${c.passed ? 'text-green-700' : 'text-red-600'}`}>
+                          <span className={`font-bold text-lg ${c.passed ? 'text-[#287A32]' : 'text-[#B42335]'}`}>
                             {c.weightedAverage.toFixed(2)}
                           </span>
                           <GradeBadge passed={c.passed} />
@@ -110,9 +119,9 @@ export default function MyGradesPage() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Tipo</TableHead>
-                            <TableHead className="text-center">Nota</TableHead>
-                            <TableHead className="text-center">Peso</TableHead>
-                            <TableHead className="text-center">Aporte</TableHead>
+                            <TableHead className="tabular-nums text-center">Nota</TableHead>
+                            <TableHead className="tabular-nums text-center">Peso</TableHead>
+                            <TableHead className="tabular-nums text-center">Aporte</TableHead>
                             <TableHead>Observaciones</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -120,16 +129,16 @@ export default function MyGradesPage() {
                           {c.grades.map((g, gi) => (
                             <TableRow key={gi}>
                               <TableCell>{gradeTypeLabel[g.gradeType] ?? g.gradeType}</TableCell>
-                              <TableCell className="text-center font-semibold">
+                              <TableCell className="tabular-nums text-center font-semibold">
                                 {g.score.toFixed(2)}
                               </TableCell>
-                              <TableCell className="text-center text-muted-foreground">
+                              <TableCell className="tabular-nums text-center text-muted-foreground">
                                 {(g.weight * 100).toFixed(0)}%
                               </TableCell>
-                              <TableCell className="text-center">
+                              <TableCell className="tabular-nums text-center">
                                 {(g.score * g.weight).toFixed(2)}
                               </TableCell>
-                              <TableCell className="text-muted-foreground text-xs">
+                              <TableCell className="min-w-40 max-w-md whitespace-pre-wrap break-words text-muted-foreground text-sm">
                                 {(g as { comments?: string }).comments ?? '—'}
                               </TableCell>
                             </TableRow>
@@ -141,7 +150,7 @@ export default function MyGradesPage() {
                       <div className="space-y-1">
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Promedio final</span>
-                          <span className={`font-bold ${c.passed ? 'text-green-700' : 'text-red-600'}`}>
+                          <span className={`font-bold ${c.passed ? 'text-[#287A32]' : 'text-[#B42335]'}`}>
                             {c.weightedAverage.toFixed(2)} / 10
                           </span>
                         </div>
@@ -159,8 +168,8 @@ export default function MyGradesPage() {
 
           {/* General average footer */}
           {data && data.generalAverage > 0 && (
-            <Card className="bg-primary/5 border-primary/20">
-              <CardContent className="p-4 flex items-center justify-between">
+            <Card className="course-card bg-primary/5 border-primary/20">
+              <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
                 <span className="font-semibold">Promedio general del período</span>
                 <span className="text-2xl font-bold text-primary">
                   {data.generalAverage.toFixed(2)}

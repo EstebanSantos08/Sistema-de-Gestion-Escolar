@@ -8,6 +8,9 @@ import enrollmentRoutes from './enrollment.routes';
 import gradeRoutes from './grade.routes';
 import reportRoutes from './report.routes';
 import observationRoutes from './observation.routes';
+import activityRoutes from './activity.routes';
+import submissionRoutes from './submission.routes';
+import auditLogRoutes from './auditLog.routes';
 
 const router = Router();
 
@@ -20,5 +23,8 @@ router.use('/enrollments', enrollmentRoutes);
 router.use('/grades', gradeRoutes);
 router.use('/reports', reportRoutes);
 router.use('/observations', observationRoutes);
+router.use('/activities', activityRoutes);
+router.use('/submissions', submissionRoutes);
+router.use('/audit-logs', auditLogRoutes);
 
 export default router;
