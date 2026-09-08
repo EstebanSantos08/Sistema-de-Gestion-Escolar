@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { authService } from '@/services/auth.service';
 import { AuthContext } from '@/hooks/useAuth';
+import { queryClient } from '@/lib/queryClient';
 import type { AuthUser, Role } from '@/types';
 
 function loadFromStorage(): { user: AuthUser | null; token: string | null } {
@@ -33,6 +34,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('user', JSON.stringify(u));
       })
       .catch(() => {
+        queryClient.cancelQueries();
+        queryClient.clear();
         setUser(null);
         setToken(null);
         localStorage.removeItem('token');
@@ -43,6 +46,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
+    queryClient.cancelQueries();
+    queryClient.clear();
     const data = await authService.login({ email, password });
     setToken(data.token);
     setUser(data.user);
@@ -51,6 +56,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
+    queryClient.cancelQueries();
+    queryClient.clear();
     setToken(null);
     setUser(null);
     localStorage.removeItem('token');

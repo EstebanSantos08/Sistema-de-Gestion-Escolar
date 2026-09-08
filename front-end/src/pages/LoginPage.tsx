@@ -93,18 +93,17 @@ export default function LoginPage() {
       <div className="pointer-events-none fixed -top-32 -left-32 h-96 w-96 rounded-full bg-[#E3F5F3] blur-3xl opacity-80" />
       <div className="pointer-events-none fixed -bottom-32 -right-32 h-96 w-96 rounded-full bg-[#E3F5F3] blur-3xl opacity-80" />
 
-      <div className="w-full max-w-md rounded-3xl border border-[#D6E5E3] bg-white p-6 sm:p-8 shadow-xs z-10">
-        <div className="text-center pb-6">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E3F5F3] text-[#087F79] shadow-xs">
-            <GraduationCap className="h-8 w-8" aria-hidden="true" />
+      <div className="w-full max-w-md rounded-3xl border border-[#D6E5E3] bg-white p-6 sm:p-8 shadow-md z-10">
+        <div className="text-center pb-5">
+          <div className="inline-block mb-3">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#183B3A]">
+              NICE KIDS
+            </h1>
+            <span className="text-xs font-bold text-[#087F79] uppercase tracking-widest mt-1 inline-block bg-[#E3F5F3] px-3.5 py-0.5 rounded-full border border-[#BBE5E1]">
+              Centro de Desarrollo Infantil
+            </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#183B3A]">
-            NICE KIDS
-          </h1>
-          <p className="text-xs font-semibold uppercase tracking-wider text-[#087F79] mt-0.5">
-            Centro de Desarrollo Infantil
-          </p>
-          <h2 className="text-lg font-semibold text-[#183B3A] mt-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-[#183B3A] mt-2">
             Portal Institucional
           </h2>
           <p className="text-sm text-[#5E7A77] mt-1">

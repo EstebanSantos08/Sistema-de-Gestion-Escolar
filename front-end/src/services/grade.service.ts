@@ -1,5 +1,9 @@
 import api from '@/lib/axios';
-import type { ApiResponse, Grade, GradeType } from '@/types';
+import type { ApiResponse, Grade, GradeType, Enrollment } from '@/types';
+
+export interface EnrollmentWithGrades extends Enrollment {
+  grades: Grade[];
+}
 
 export interface GradePayload {
   enrollmentId: number;
@@ -23,9 +27,9 @@ export interface BatchGradePayload {
 }
 
 export const gradeService = {
-  async getByCourse(courseId: number, period?: string): Promise<Grade[]> {
+  async getByCourse(courseId: number, period?: string): Promise<EnrollmentWithGrades[]> {
     const params = period ? `?period=${period}` : '';
-    const res = await api.get<ApiResponse<Grade[]>>(`/grades/course/${courseId}${params}`);
+    const res = await api.get<ApiResponse<EnrollmentWithGrades[]>>(`/grades/course/${courseId}${params}`);
     return res.data.data ?? [];
   },
 

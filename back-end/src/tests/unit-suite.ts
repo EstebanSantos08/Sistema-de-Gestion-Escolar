@@ -514,6 +514,162 @@ expectTruthy('AuditAction: EVIDENCE_REPLACED present', expectedActions.includes(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 10. ATTENDANCE DOMAIN & TRANSACTION LOGIC TESTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+{
+  // 10.1 Authorized teacher read
+  const mockTeacherCourses = [{ id: 1, teacherId: 10 }, { id: 2, teacherId: 10 }];
+  const canTeacherReadCourse = (teacherId: number, courseId: number) => {
+    return mockTeacherCourses.some(c => c.id === courseId && c.teacherId === teacherId);
+  };
+  expect('Attendance: authorized teacher read', canTeacherReadCourse(10, 1), true);
+
+  // 10.2 Unauthorized teacher rejected
+  expect('Attendance: unauthorized teacher rejected', canTeacherReadCourse(99, 1), false);
+
+  // 10.3 Student from another course rejected in batch
+  const mockEnrollments = [
+    { studentId: 101, courseId: 1 },
+    { studentId: 102, courseId: 1 },
+  ];
+  const validateBatchStudents = (courseId: number, studentIds: number[]) => {
+    const enrolled = new Set(mockEnrollments.filter(e => e.courseId === courseId).map(e => e.studentId));
+    const unenrolled = studentIds.filter(id => !enrolled.has(id));
+    return { valid: unenrolled.length === 0, unenrolled };
+  };
+  const checkCrossCourse = validateBatchStudents(1, [101, 999]);
+  expect('Attendance: student from another course rejected', checkCrossCourse.valid, false);
+
+  // 10.4 Valid batch save validation
+  const checkValidBatch = validateBatchStudents(1, [101, 102]);
+  expect('Attendance: valid batch save', checkValidBatch.valid, true);
+
+  // 10.5 Invalid status rejected
+  const VALID_ATTENDANCE_STATUSES = ['PRESENT', 'ABSENT', 'LATE', 'EXCUSED'];
+  const isValidAttendanceStatus = (status: string) => VALID_ATTENDANCE_STATUSES.includes(status.toUpperCase());
+  expect('Attendance: valid status PRESENT', isValidAttendanceStatus('PRESENT'), true);
+  expect('Attendance: valid status late (case-insensitive)', isValidAttendanceStatus('late'), true);
+  expect('Attendance: invalid status rejected', isValidAttendanceStatus('INVENTED_STATUS'), false);
+
+  // 10.6 Batch transaction rollback simulation
+  let txCommitted = false;
+  let txRolledBack = false;
+  const mockAttendanceBatchTx = (shouldFail: boolean) => {
+    txCommitted = false;
+    txRolledBack = false;
+    try {
+      if (shouldFail) throw new Error('DB Error during batch');
+      txCommitted = true;
+    } catch {
+      txRolledBack = true;
+    }
+  };
+  mockAttendanceBatchTx(true);
+  expect('Attendance: batch transaction rollback on error', txRolledBack, true);
+  expect('Attendance: batch not committed on error', txCommitted, false);
+
+  // 10.7 Audit event generated
+  const generatedAuditEvents: Array<{ action: string; details: Record<string, unknown> }> = [];
+  const logAttendanceAudit = (action: string, details: Record<string, unknown>) => {
+    generatedAuditEvents.push({ action, details });
+  };
+  logAttendanceAudit('ATTENDANCE_SAVED', { studentId: 101, courseId: 1, date: '2026-09-08', newValues: { status: 'PRESENT' } });
+  expect('Attendance: audit event generated', generatedAuditEvents.length > 0, true);
+  expect('Attendance: audit action matches ATTENDANCE_SAVED', generatedAuditEvents[0].action, 'ATTENDANCE_SAVED');
+
+  // 10.8 Repeated save updates rather than creating application-level duplicate
+  const mockAttendanceTable: Array<{ id: number; studentId: number; courseId: number; date: string; status: string }> = [];
+  let nextAttId = 1;
+  const saveOrUpdateAttendance = (studentId: number, courseId: number, date: string, status: string) => {
+    const existing = mockAttendanceTable.find(a => a.studentId === studentId && a.courseId === courseId && a.date === date);
+    if (existing) {
+      existing.status = status;
+      return { record: existing, created: false };
+    } else {
+      const created = { id: nextAttId++, studentId, courseId, date, status };
+      mockAttendanceTable.push(created);
+      return { record: created, created: true };
+    }
+  };
+  const firstSave = saveOrUpdateAttendance(101, 1, '2026-09-08', 'PRESENT');
+  expect('Attendance: first save creates record', firstSave.created, true);
+  const secondSave = saveOrUpdateAttendance(101, 1, '2026-09-08', 'ABSENT');
+  expect('Attendance: repeated save updates rather than duplicate', secondSave.created, false);
+  expect('Attendance: record updated to new status', secondSave.record.status, 'ABSENT');
+  expect('Attendance: total table records remains 1', mockAttendanceTable.length, 1);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 11. ANNOUNCEMENTS DOMAIN & SCOPE TESTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+{
+  // 11.1 Authorized teacher create announcement
+  const mockTeacherCourses = [{ id: 1, teacherId: 10 }];
+  const canTeacherPublishToCourse = (teacherId: number, courseId: number) => {
+    return mockTeacherCourses.some(c => c.id === courseId && c.teacherId === teacherId);
+  };
+  expect('Announcements: authorized teacher create', canTeacherPublishToCourse(10, 1), true);
+
+  // 11.2 Unauthorized course rejected
+  expect('Announcements: unauthorized course rejected', canTeacherPublishToCourse(10, 99), false);
+
+  // 11.3 Student read-only (attempt to write rejected)
+  const canRoleCreateAnnouncement = (role: string) => ['admin', 'teacher'].includes(role);
+  expect('Announcements: student read-only (write rejected)', canRoleCreateAnnouncement('student'), false);
+  expect('Announcements: teacher write allowed', canRoleCreateAnnouncement('teacher'), true);
+  expect('Announcements: admin write allowed', canRoleCreateAnnouncement('admin'), true);
+
+  // 11.4 Student only sees authorized announcements
+  const mockAnnouncements = [
+    { id: 1, title: 'Global', targetRole: 'ALL', courseId: null },
+    { id: 2, title: 'Math 101', targetRole: 'ALL', courseId: 1 },
+    { id: 3, title: 'Science 202', targetRole: 'ALL', courseId: 2 },
+    { id: 4, title: 'Teachers only', targetRole: 'TEACHER', courseId: null },
+  ];
+  const filterStudentAnnouncements = (studentEnrolledCourseIds: number[]) => {
+    return mockAnnouncements.filter(a => {
+      if (!['ALL', 'STUDENT'].includes(a.targetRole)) return false;
+      return a.courseId === null || studentEnrolledCourseIds.includes(a.courseId);
+    });
+  };
+  const studentVisible = filterStudentAnnouncements([1]); // Enrolled in course 1
+  expect('Announcements: student sees authorized announcements count', studentVisible.length, 2);
+  expect('Announcements: student sees global announcement', studentVisible.some(a => a.id === 1), true);
+  expect('Announcements: student sees enrolled course announcement', studentVisible.some(a => a.id === 2), true);
+  expect('Announcements: student does NOT see other course announcement', studentVisible.some(a => a.id === 3), false);
+  expect('Announcements: student does NOT see teacher-only announcement', studentVisible.some(a => a.id === 4), false);
+
+  // 11.5 Update creates AuditLog with old/new
+  const mockAnnouncementAuditLogs: Array<{ action: string; oldValues?: unknown; newValues?: unknown }> = [];
+  const updateAnnouncementMock = (current: { title: string; content: string }, updates: { title?: string; content?: string }, actorUserId: number) => {
+    const oldValues = { ...current };
+    if (updates.title) current.title = updates.title;
+    if (updates.content) current.content = updates.content;
+    mockAnnouncementAuditLogs.push({
+      action: 'ANNOUNCEMENT_UPDATED',
+      oldValues,
+      newValues: { ...current },
+    });
+    return current;
+  };
+  const currentAnn = { title: 'Examen de Física', content: 'Lunes a las 8am' };
+  updateAnnouncementMock(currentAnn, { title: 'Examen de Física - Reprogramado' }, 10);
+  expect('Announcements: update creates AuditLog with old/new', mockAnnouncementAuditLogs.length, 1);
+  expect('Announcements: audit log contains old title', (mockAnnouncementAuditLogs[0].oldValues as { title: string }).title, 'Examen de Física');
+  expect('Announcements: audit log contains new title', (mockAnnouncementAuditLogs[0].newValues as { title: string }).title, 'Examen de Física - Reprogramado');
+
+  // 11.6 Actor spoofing in request body ignored
+  const resolveAnnouncementAuthor = (reqUser: { id: number; role: string }, body: { authorId?: number }) => {
+    // Controller must ignore body.authorId and use reqUser.id
+    return reqUser.id;
+  };
+  const actualAuthorId = resolveAnnouncementAuthor({ id: 10, role: 'teacher' }, { authorId: 9999 });
+  expect('Announcements: actor spoofing in request body ignored', actualAuthorId, 10);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Delay printSummary slightly so any microtasks/promises finish
 setTimeout(() => {

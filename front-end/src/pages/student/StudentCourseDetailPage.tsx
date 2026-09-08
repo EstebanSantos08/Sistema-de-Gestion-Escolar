@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, FileText, Calendar, Upload, CheckCircle2, Clock, Sparkles, AlertTriangle, Paperclip, FileCheck, Award, Star, Eye, Download, ExternalLink, X } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, Upload, CheckCircle2, Clock, AlertTriangle, Paperclip, FileCheck, Award, Eye, Download, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
 import { useCourse } from '@/hooks/useCourses';
 import { useAuth } from '@/hooks/useAuth';
-import { teacherModuleService, type ClassActivity, type SubmissionItem } from '@/services/teacherModule.service';
-import { PageHeader } from '@/components/shared/PageHeader';
+import { activityService } from '@/services/activity.service';
+import { submissionService, MAX_FILE_SIZE } from '@/services/submission.service';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,38 +21,50 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import type { ApiActivity, SubmissionRecord, EvidenceRecord } from '@/types';
 
 export default function StudentCourseDetailPage() {
   const { courseId } = useParams<{ courseId: string }>();
   const id = courseId ? Number(courseId) : null;
   const { user } = useAuth();
+  const qc = useQueryClient();
 
-  const { data: course } = useCourse(id);
+  const { data: course, isLoading: loadingCourse } = useCourse(id);
 
-  const defaultNames: Record<number, { name: string; code: string }> = {
-    1: { name: 'Matemáticas I', code: 'MAT-101' },
-    2: { name: 'Lengua y Literatura', code: 'LEN-101' },
-    3: { name: 'Ciencias Naturales', code: 'CIE-101' },
-    4: { name: 'Historia Universal', code: 'HIS-101' },
-    5: { name: 'Informática Básica', code: 'INF-101' },
-  };
+  const { data: activities = [], isLoading: loadingActivities } = useQuery({
+    queryKey: ['activities', id, user?.id],
+    queryFn: () => (id ? activityService.list({ courseId: id }) : Promise.resolve([])),
+    enabled: !!id,
+  });
 
-  const displayCourse = course ?? {
-    id: id ?? 1,
-    name: defaultNames[id ?? 1]?.name ?? 'Curso General',
-    code: defaultNames[id ?? 1]?.code ?? 'MAT-101',
-    period: '2026-I',
-  };
+  const activityIds = activities.map((a) => a.id);
 
-  const [activities] = useState<ClassActivity[]>(() =>
-    id ? teacherModuleService.getActivities(id) : []
-  );
+  // Fetch student's own submission for each course activity
+  const { data: submissionsMap = {}, isLoading: loadingSubmissions } = useQuery({
+    queryKey: ['student-course-submissions', id, user?.id, activityIds],
+    queryFn: async () => {
+      if (activities.length === 0) return {};
+      const map: Record<number, SubmissionRecord> = {};
+      await Promise.all(
+        activities.map(async (act) => {
+          try {
+            const raw = await activityService.getSubmissions(act.id);
+            const sub = Array.isArray(raw) ? raw[0] : raw;
+            if (sub && sub.id) {
+              const full = await submissionService.get(sub.id);
+              map[act.id] = full;
+            }
+          } catch {
+            // No submission or error for this activity
+          }
+        })
+      );
+      return map;
+    },
+    enabled: activities.length > 0 && !!user,
+  });
 
-  const [submissions, setSubmissions] = useState<SubmissionItem[]>(() =>
-    teacherModuleService.getSubmissions()
-  );
-
-  const [selectedActivity, setSelectedActivity] = useState<ClassActivity | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<ApiActivity | null>(null);
   const [notes, setNotes] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -67,7 +81,7 @@ export default function StudentCourseDetailPage() {
       return;
     }
 
-    if (file.size > 1048576) {
+    if (file.size > MAX_FILE_SIZE) {
       const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
       const errMsg = `El archivo "${file.name}" (${sizeMb} MB) supera el tamaño máximo permitido de 1 MB.`;
       setFileError(errMsg);
@@ -77,7 +91,7 @@ export default function StudentCourseDetailPage() {
       return;
     }
 
-    const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif|bmp|heic|svg)$/i.test(file.name);
+    const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp)$/i.test(file.name);
     const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
 
     if (!isImage && !isPdf) {
@@ -104,41 +118,63 @@ export default function StudentCourseDetailPage() {
     setIsSubmitting(true);
 
     try {
-      const fileDataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(selectedFile);
-      });
+      const existingSub = submissionsMap[selectedActivity.id];
 
-      const isImage = selectedFile.type.startsWith('image/');
-      const studentId = user?.id ?? 1;
-      const studentName = user?.name ?? 'Estudiante Actual';
+      if (!existingSub) {
+        // 1. Create submission first
+        const newSub = await submissionService.create({
+          activityId: selectedActivity.id,
+          studentNotes: notes.trim() || undefined,
+        });
 
-      teacherModuleService.submitEvidence({
-        activityId: selectedActivity.id,
-        studentId,
-        studentName,
-        courseId: id,
-        notes: notes.trim(),
-        evidenceUrl: fileDataUrl,
-        evidenceName: selectedFile.name,
-        evidenceType: isImage ? 'imagen' : 'documento',
-      });
+        // 2. Upload evidence to newly created submission
+        await submissionService.uploadEvidence(newSub.id, selectedFile, notes.trim() || undefined);
+        toast.success('¡Deber y evidencia entregados exitosamente!');
+      } else {
+        // Existing submission: replace evidence if exists, otherwise upload
+        const existingEv = existingSub.evidences && existingSub.evidences.length > 0
+          ? existingSub.evidences[0]
+          : null;
 
-      toast.success('¡Deber entregado exitosamente!');
-      setSubmissions(teacherModuleService.getSubmissions());
+        if (existingEv) {
+          await submissionService.replaceEvidence(
+            existingSub.id,
+            existingEv.id,
+            selectedFile,
+            notes.trim() || undefined
+          );
+          toast.success('¡Evidencia actualizada y reemplazada con éxito!');
+        } else {
+          await submissionService.uploadEvidence(
+            existingSub.id,
+            selectedFile,
+            notes.trim() || undefined
+          );
+          toast.success('¡Evidencia adjuntada con éxito!');
+        }
+      }
+
+      qc.invalidateQueries({ queryKey: ['student-course-submissions'] });
+      qc.invalidateQueries({ queryKey: ['submissions'] });
+      qc.invalidateQueries({ queryKey: ['submission'] });
+      qc.invalidateQueries({ queryKey: ['activities', id] });
+
       setSelectedActivity(null);
       setSelectedFile(null);
       setNotes('');
-    } catch {
-      toast.error('Error al procesar el archivo. Por favor inténtalo de nuevo.');
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        const msg = err.response?.data?.error || err.response?.data?.message;
+        toast.error(msg || 'Error al enviar la evidencia al servidor.');
+      } else if (err instanceof Error) {
+        toast.error(err.message);
+      } else {
+        toast.error('Error al subir la evidencia. Por favor inténtalo de nuevo.');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  const studentId = user?.id ?? 1;
 
   return (
     <div className="space-y-6">
@@ -155,11 +191,11 @@ export default function StudentCourseDetailPage() {
         <div className="relative z-10 space-y-2">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-school-subtle bg-white/10 px-2.5 py-0.5 rounded-md">
-              {displayCourse.code}
+              {course?.code ?? 'AULA'}
             </span>
-            <span className="text-xs text-white/80">· Período {displayCourse.period}</span>
+            <span className="text-xs text-white/80">· Período {course?.period ?? '2026-I'}</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold">{displayCourse.name}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">{course?.name ?? 'Aula Virtual'}</h1>
           <p className="text-sm text-white/90">
             Aula virtual de aprendizaje y entrega de actividades
           </p>
@@ -175,7 +211,11 @@ export default function StudentCourseDetailPage() {
         </div>
       </div>
 
-      {activities.length === 0 ? (
+      {loadingActivities ? (
+        <div className="flex justify-center py-12">
+          <span className="h-7 w-7 animate-spin rounded-full border-2 border-school-primary border-t-transparent" />
+        </div>
+      ) : activities.length === 0 ? (
         <Card className="p-12 text-center">
           <FileText className="h-10 w-10 mx-auto text-school-muted mb-2" />
           <p className="font-semibold text-school-heading text-base">No hay actividades asignadas aún</p>
@@ -186,11 +226,12 @@ export default function StudentCourseDetailPage() {
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           {activities.map((act) => {
-            const mySubmission = submissions.find(
-              (s) => s.activityId === act.id && (s.studentId === studentId || s.studentId === 1)
-            );
+            const mySubmission = submissionsMap[act.id];
             const isSubmitted = !!mySubmission;
-            const isGraded = mySubmission?.status === 'calificada' || mySubmission?.score !== undefined;
+            const isGraded = mySubmission?.score !== null && mySubmission?.score !== undefined;
+            const primaryEvidence = mySubmission?.evidences && mySubmission.evidences.length > 0
+              ? mySubmission.evidences[0]
+              : null;
 
             return (
               <Card key={act.id} className="flex flex-col justify-between hover:border-school-accent transition-colors">
@@ -201,7 +242,7 @@ export default function StudentCourseDetailPage() {
                       {isGraded ? (
                         <Badge variant="warning" className="shrink-0 flex items-center gap-1">
                           <Award className="h-3.5 w-3.5" />
-                          Calificado: {mySubmission?.score}/10
+                          Calificado: {mySubmission.score}/10
                         </Badge>
                       ) : isSubmitted ? (
                         <Badge variant="success" className="shrink-0">
@@ -216,7 +257,7 @@ export default function StudentCourseDetailPage() {
 
                     <div className="flex items-center gap-1.5 text-xs font-medium text-school-muted">
                       <Calendar className="h-3.5 w-3.5 text-school-primary shrink-0" />
-                      <span>Fecha límite: {act.dueDate}</span>
+                      <span>Fecha límite: {act.dueDate || 'Sin fecha límite'}</span>
                     </div>
 
                     {act.description && (
@@ -232,39 +273,44 @@ export default function StudentCourseDetailPage() {
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-school-heading flex items-center gap-1.5">
                           <Award className="h-4 w-4 text-school-warning" />
-                          Nota Final: <strong className="text-sm text-school-primary">{mySubmission.score} / 10</strong>
+                          Nota de Tarea: <strong className="text-sm text-school-primary">{mySubmission.score} / 10</strong>
                         </span>
-                        {mySubmission.gradedAt && (
-                          <span className="text-xs text-school-muted">
-                            {mySubmission.gradedAt}
-                          </span>
-                        )}
                       </div>
 
-                      {mySubmission.feedback && (
+                      {mySubmission.teacherFeedback && (
                         <div className="space-y-1 bg-white p-3 rounded-lg border border-school-border">
                           <p className="text-xs font-semibold text-school-muted uppercase tracking-wider">
                             Comentarios del Docente:
                           </p>
                           <p className="text-sm text-school-body italic leading-relaxed">
-                            "{mySubmission.feedback}"
+                            "{mySubmission.teacherFeedback}"
                           </p>
                         </div>
                       )}
 
                       <div className="flex items-center justify-between text-xs text-school-muted pt-1 border-t border-school-border/60">
-                        <span>Entregado: {mySubmission.submittedAt}</span>
-                        {mySubmission.evidenceName && mySubmission.evidenceUrl && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPreviewMediaUrl(mySubmission.evidenceUrl!);
-                              setPreviewMediaTitle(`Mi Evidencia — ${mySubmission.evidenceName ?? 'Deber'}`);
-                            }}
-                            className="text-school-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
-                          >
-                            <Eye className="h-3.5 w-3.5" /> 📎 {mySubmission.evidenceName}
-                          </button>
+                        <span>Estado: Completada</span>
+                        {primaryEvidence && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const evUrl = submissionService.getEvidenceDownloadUrl(mySubmission.id, primaryEvidence.id);
+                                setPreviewMediaUrl(evUrl);
+                                setPreviewMediaTitle(`Mi Evidencia — ${primaryEvidence.fileName}`);
+                              }}
+                              className="text-school-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                            >
+                              <Eye className="h-3.5 w-3.5" /> Ver Evidencia
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => submissionService.downloadEvidence(mySubmission.id, primaryEvidence.id, primaryEvidence.fileName)}
+                              className="text-school-heading hover:text-school-primary font-medium flex items-center gap-1 cursor-pointer"
+                            >
+                              <Download className="h-3.5 w-3.5" /> Descargar
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -273,36 +319,67 @@ export default function StudentCourseDetailPage() {
                       <div className="flex items-center justify-between">
                         <p className="font-semibold text-emerald-800 flex items-center gap-1.5">
                           <FileCheck className="h-4 w-4 text-school-success" />
-                          Entregado el {mySubmission.submittedAt}
+                          Entregado (en revisión)
                         </p>
                         <Badge variant="secondary" className="text-xs">
                           En revisión
                         </Badge>
                       </div>
-                      {mySubmission.evidenceName && (
+
+                      {primaryEvidence && (
                         <div className="flex items-center justify-between pt-1 border-t border-school-border/60">
                           <span className="text-school-muted truncate text-xs">
-                            📎 {mySubmission.evidenceName}
+                            📎 {primaryEvidence.fileName}
                           </span>
-                          {mySubmission.evidenceUrl && (
+                          <div className="flex items-center gap-1.5">
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => {
-                                setPreviewMediaUrl(mySubmission.evidenceUrl!);
-                                setPreviewMediaTitle(`Mi Evidencia — ${mySubmission.evidenceName ?? 'Deber'}`);
+                                const evUrl = submissionService.getEvidenceDownloadUrl(mySubmission.id, primaryEvidence.id);
+                                setPreviewMediaUrl(evUrl);
+                                setPreviewMediaTitle(`Mi Evidencia — ${primaryEvidence.fileName}`);
                               }}
                               className="h-7 text-xs font-medium px-2"
                             >
                               <Eye className="h-3.5 w-3.5 mr-1" /> Ver
                             </Button>
-                          )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => submissionService.downloadEvidence(mySubmission.id, primaryEvidence.id, primaryEvidence.fileName)}
+                              className="h-7 text-xs font-medium px-2"
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                         </div>
                       )}
+
+                      <div className="pt-2 border-t border-school-border/60">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedActivity(act);
+                            setFileError(null);
+                            setSelectedFile(null);
+                            setNotes(mySubmission.studentNotes || '');
+                          }}
+                          className="w-full h-8 text-xs"
+                        >
+                          <Upload className="mr-1.5 h-3.5 w-3.5" /> Reemplazar Evidencia
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <Button
-                      onClick={() => { setSelectedActivity(act); setFileError(null); setSelectedFile(null); setNotes(''); }}
+                      onClick={() => {
+                        setSelectedActivity(act);
+                        setFileError(null);
+                        setSelectedFile(null);
+                        setNotes('');
+                      }}
                       className="w-full"
                     >
                       <Upload className="mr-2 h-4 w-4" />

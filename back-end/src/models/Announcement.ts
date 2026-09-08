@@ -1,5 +1,7 @@
 import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/database';
+import type Course from './Course';
+import type User from './User';
 
 export class Announcement extends Model {
   public id!: number;
@@ -10,6 +12,10 @@ export class Announcement extends Model {
   public authorId!: number;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  // Associations (populated by include)
+  public course?: Course;
+  public author?: User;
 }
 
 Announcement.init(

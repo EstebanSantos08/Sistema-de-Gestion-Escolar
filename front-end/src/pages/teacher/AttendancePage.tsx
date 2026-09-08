@@ -1,23 +1,35 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ClipboardCheck, CheckCircle2, XCircle, Clock, AlertCircle, Save, Calendar as CalendarIcon } from 'lucide-react';
+import { ClipboardCheck, CheckCircle2, XCircle, Clock, AlertCircle, Save, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
 import { useMyCourses } from '@/hooks/useCourses';
 import { useCourseStudents } from '@/hooks/useEnrollments';
-import { teacherModuleService, getTodayStr } from '@/services/teacherModule.service';
+import { attendanceService, type AttendanceBatchItem } from '@/services/attendance.service';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import type { AttendanceStatus, AttendanceRecord } from '@/types';
+import type { BackendAttendanceStatus } from '@/types';
+
+function getTodayStr(): string {
+  const d = new Date();
+  const yr = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${yr}-${mo}-${day}`;
+}
 
 export default function AttendancePage() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
   const { data: courses, isLoading: loadingCourses } = useMyCourses();
   const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const todayStr = useMemo(() => getTodayStr(), []);
   const [date, setDate] = useState<string>(todayStr);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (courses && courses.length > 0 && !selectedCourseId) {
@@ -31,28 +43,36 @@ export default function AttendancePage() {
   const activeCourse = courses?.find((c) => c.id === courseIdNum);
   const students = useMemo(() => courseData?.students ?? [], [courseData?.students]);
 
-  const [attendanceState, setAttendanceState] = useState<Record<number, { status: AttendanceStatus; notes: string }>>({});
+  // Read real attendance from /api/attendance
+  const { data: existingAttendance = [], isLoading: loadingAttendance } = useQuery({
+    queryKey: ['attendance', user?.id, courseIdNum, date],
+    queryFn: () =>
+      courseIdNum
+        ? attendanceService.list({
+            courseId: courseIdNum,
+            date,
+          })
+        : Promise.resolve([]),
+    enabled: !!user && !!courseIdNum,
+  });
+
+  const [attendanceState, setAttendanceState] = useState<Record<number, { status: BackendAttendanceStatus; notes: string }>>({});
 
   useEffect(() => {
     if (!courseIdNum || !date || students.length === 0) return;
-    const existing = teacherModuleService.getAttendance(courseIdNum, date);
-    const stateMap: Record<number, { status: AttendanceStatus; notes: string }> = {};
+    const stateMap: Record<number, { status: BackendAttendanceStatus; notes: string }> = {};
 
     students.forEach((s) => {
-      const match = existing.find((r) => r.studentId === s.studentId);
+      const match = existingAttendance.find((r) => r.studentId === s.studentId);
       stateMap[s.studentId] = {
-        status: match ? match.status : 'present',
-        notes: match?.notes ?? '',
+        status: match?.status ?? 'PRESENT',
+        notes: match?.remarks ?? '',
       };
     });
     setAttendanceState(stateMap);
-  }, [courseIdNum, date, students]);
+  }, [courseIdNum, date, students, existingAttendance]);
 
-  const setStatus = (studentId: number, status: AttendanceStatus) => {
-    if (date !== todayStr) {
-      toast.error('Acción restringida: Solo se puede tomar asistencia en la fecha de hoy.');
-      return;
-    }
+  const setStatus = (studentId: number, status: BackendAttendanceStatus) => {
     setAttendanceState((prev) => ({
       ...prev,
       [studentId]: {
@@ -63,10 +83,6 @@ export default function AttendancePage() {
   };
 
   const setNotes = (studentId: number, notes: string) => {
-    if (date !== todayStr) {
-      toast.error('Acción restringida: Solo se pueden ingresar notas en la fecha de hoy.');
-      return;
-    }
     setAttendanceState((prev) => ({
       ...prev,
       [studentId]: {
@@ -76,82 +92,67 @@ export default function AttendancePage() {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!courseIdNum || students.length === 0) return;
 
-    if (date !== todayStr) {
-      toast.error('Solo se puede guardar la asistencia en el día de hoy.');
-      return;
+    try {
+      setIsSaving(true);
+      const batch: AttendanceBatchItem[] = students.map((s) => ({
+        studentId: s.studentId,
+        status: attendanceState[s.studentId]?.status ?? 'PRESENT',
+        remarks: attendanceState[s.studentId]?.notes || null,
+      }));
+
+      await attendanceService.saveBatch({
+        courseId: courseIdNum,
+        date,
+        attendance: batch,
+      });
+
+      toast.success('Asistencia guardada exitosamente en el servidor');
+      qc.invalidateQueries({ queryKey: ['attendance', user?.id, courseIdNum, date] });
+      qc.invalidateQueries({ queryKey: ['daily-summary'] });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al registrar la asistencia';
+      toast.error(msg);
+    } finally {
+      setIsSaving(false);
     }
-
-    const payload: Omit<AttendanceRecord, 'id'>[] = students.map((s) => ({
-      courseId: courseIdNum,
-      courseName: activeCourse?.name,
-      studentId: s.studentId,
-      studentName: s.name,
-      studentCode: s.studentCode,
-      date,
-      status: attendanceState[s.studentId]?.status ?? 'present',
-      notes: attendanceState[s.studentId]?.notes ?? '',
-    }));
-
-    teacherModuleService.saveAttendanceBatch(payload);
-    toast.success('Asistencia guardada exitosamente');
   };
 
-  const total = students.length;
-  const counts = Object.values(attendanceState).reduce(
-    (acc, cur) => {
-      acc[cur.status] = (acc[cur.status] || 0) + 1;
-      return acc;
-    },
-    { present: 0, absent: 0, late: 0, excused: 0 } as Record<AttendanceStatus, number>
-  );
+  const counts = useMemo(() => {
+    const list = Object.values(attendanceState);
+    return {
+      present: list.filter((a) => a.status === 'PRESENT').length,
+      absent: list.filter((a) => a.status === 'ABSENT').length,
+      late: list.filter((a) => a.status === 'LATE').length,
+      excused: list.filter((a) => a.status === 'EXCUSED').length,
+    };
+  }, [attendanceState]);
+
+  const isLoading = loadingCourses || loadingStudents || loadingAttendance;
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Docente"
         title="Control de Asistencia"
-        description="Toma de asistencia diaria por aula y registro de justificaciones pedagógicas"
+        description="Pase de lista oficial por curso y jornada académica — Datos canónicos del servidor"
       >
-        <Button
-          onClick={handleSave}
-          disabled={loadingStudents || total === 0 || date !== todayStr}
-        >
-          <Save className="mr-2 h-4 w-4" />
-          {date !== todayStr ? 'Solo Lectura (Histórico)' : 'Guardar Asistencia'}
+        <Button onClick={handleSave} disabled={isSaving || isLoading || students.length === 0} className="gap-2">
+          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {isSaving ? 'Guardando...' : 'Guardar Asistencia'}
         </Button>
       </PageHeader>
 
-      {/* Banner Informativo si la fecha no es HOY */}
-      {date !== todayStr && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-amber-700 shrink-0" />
-            <span>
-              <strong>Modo de Consulta Histórica:</strong> La fecha seleccionada ({date}) difiere de hoy ({todayStr}). Únicamente se puede registrar y guardar asistencia en el día actual.
-            </span>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setDate(todayStr)}
-            className="border-amber-300 text-amber-900 hover:bg-amber-100 shrink-0"
-          >
-            Volver al Día de Hoy
-          </Button>
-        </div>
-      )}
-
-      {/* Selectors Bar */}
-      <Card className="p-5">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 items-end">
-          <div className="space-y-1.5">
-            <Label className="text-sm font-medium text-school-heading">Materia / Aula</Label>
+      {/* Selectors */}
+      <Card className="p-4 shadow-xs">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+          <div className="space-y-1.5 flex-1">
+            <Label htmlFor="course-select">Curso / Materia *</Label>
             <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar Curso" />
+              <SelectTrigger id="course-select">
+                <SelectValue placeholder="Selecciona un curso" />
               </SelectTrigger>
               <SelectContent>
                 {courses?.map((c) => (
@@ -163,132 +164,153 @@ export default function AttendancePage() {
             </Select>
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-sm font-medium text-school-heading">Fecha de Registro</Label>
-            <div className="relative">
-              <Input
-                type="date"
-                value={date}
-                max={todayStr}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val > todayStr) {
-                    toast.error('No es posible seleccionar fechas futuras.');
-                    setDate(todayStr);
-                  } else {
-                    setDate(val);
-                  }
-                }}
-                className="pr-9"
-              />
-              <CalendarIcon className="absolute right-3 top-3 h-4 w-4 text-school-muted pointer-events-none" />
-            </div>
-          </div>
-
-          {/* Attendance Summary Pill */}
-          <div className="flex items-center sm:justify-end">
-            <div className="flex items-center gap-3 rounded-xl border border-school-border bg-school-subtle/50 px-4 py-2.5 text-xs font-medium w-full sm:w-auto justify-between sm:justify-start">
-              <span className="flex items-center gap-1.5 text-emerald-800">
-                <CheckCircle2 className="h-4 w-4 text-school-success" /> {counts.present} Pres.
-              </span>
-              <span className="flex items-center gap-1.5 text-rose-800">
-                <XCircle className="h-4 w-4 text-school-error" /> {counts.absent} Aus.
-              </span>
-              <span className="flex items-center gap-1.5 text-amber-800">
-                <Clock className="h-4 w-4 text-school-warning" /> {counts.late} Atras.
-              </span>
-              <span className="flex items-center gap-1.5 text-sky-800">
-                <AlertCircle className="h-4 w-4 text-school-blue" /> {counts.excused} Just.
-              </span>
-            </div>
+          <div className="space-y-1.5 w-full sm:w-60">
+            <Label htmlFor="attendance-date" className="flex items-center gap-1.5">
+              <CalendarIcon className="h-3.5 w-3.5 text-school-primary" /> Fecha *
+            </Label>
+            <Input
+              id="attendance-date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="bg-white"
+            />
           </div>
         </div>
       </Card>
 
-      {/* Attendance Table */}
-      <Card className="overflow-hidden">
-        <CardContent className="p-0">
-          {loadingCourses || loadingStudents ? (
-            <div className="p-10 text-center text-school-muted text-sm">Cargando lista de estudiantes...</div>
-          ) : total === 0 ? (
-            <div className="p-10 text-center text-school-muted text-sm">No hay estudiantes en este curso.</div>
-          ) : (
-            <div className="divide-y divide-school-border">
-              {students.map((s, idx) => {
-                const currentStatus = attendanceState[s.studentId]?.status ?? 'present';
-                const currentNotes = attendanceState[s.studentId]?.notes ?? '';
+      {/* Metrics Row */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card className="p-4 text-center">
+          <CheckCircle2 className="h-5 w-5 mx-auto text-school-success mb-1" />
+          <p className="text-2xl font-bold text-school-heading">{counts.present}</p>
+          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Presentes</p>
+        </Card>
+        <Card className="p-4 text-center">
+          <XCircle className="h-5 w-5 mx-auto text-school-error mb-1" />
+          <p className="text-2xl font-bold text-school-error">{counts.absent}</p>
+          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Ausentes</p>
+        </Card>
+        <Card className="p-4 text-center">
+          <Clock className="h-5 w-5 mx-auto text-school-warning mb-1" />
+          <p className="text-2xl font-bold text-school-warning">{counts.late}</p>
+          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Atrasos</p>
+        </Card>
+        <Card className="p-4 text-center">
+          <AlertCircle className="h-5 w-5 mx-auto text-school-blue mb-1" />
+          <p className="text-2xl font-bold text-school-blue">{counts.excused}</p>
+          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Justificados</p>
+        </Card>
+      </div>
 
-                return (
-                  <div
-                    key={s.studentId}
-                    className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between hover:bg-school-background/40 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-[200px]">
-                      <span className="text-xs text-school-muted font-medium w-5">{idx + 1}.</span>
-                      <div>
-                        <p className="font-semibold text-sm text-school-heading">{s.name}</p>
-                        <p className="text-xs text-school-muted">{s.studentCode}</p>
-                      </div>
-                    </div>
+      {/* Student List */}
+      <Card className="shadow-xs overflow-hidden">
+        <div className="p-4 border-b border-school-border/70 flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-base text-school-heading">
+              {activeCourse ? activeCourse.name : 'Listado de Alumnos'}
+            </h3>
+            <p className="text-xs text-school-muted">
+              {students.length} estudiantes matriculados en este curso
+            </p>
+          </div>
+        </div>
 
-                    {/* Status Buttons */}
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={currentStatus === 'present' ? 'default' : 'outline'}
-                        className={currentStatus === 'present' ? 'bg-school-success hover:bg-emerald-700 text-white font-medium' : 'text-school-heading hover:bg-school-subtle'}
-                        onClick={() => setStatus(s.studentId, 'present')}
-                      >
-                        <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Presente
-                      </Button>
+        {isLoading ? (
+          <div className="py-16 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-school-primary mb-3" />
+            <p className="text-school-muted text-sm font-medium">Cargando lista de estudiantes y asistencias del servidor...</p>
+          </div>
+        ) : students.length === 0 ? (
+          <div className="py-16 text-center text-school-muted">
+            <ClipboardCheck className="h-10 w-10 mx-auto text-school-muted mb-2" />
+            <p className="font-semibold text-school-heading text-base">No hay alumnos en este curso</p>
+            <p className="text-xs text-school-muted mt-1">Selecciona otro curso para gestionar la asistencia.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-school-border bg-school-background text-school-muted uppercase text-xs tracking-wider">
+                  <th className="py-3 px-4">Estudiante</th>
+                  <th className="py-3 px-4">Código</th>
+                  <th className="py-3 px-4 text-center">Estado de Asistencia</th>
+                  <th className="py-3 px-4">Observación / Justificación</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-school-border/60">
+                {students.map((st) => {
+                  const state = attendanceState[st.studentId] ?? { status: 'PRESENT', notes: '' };
 
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={currentStatus === 'absent' ? 'default' : 'outline'}
-                        className={currentStatus === 'absent' ? 'bg-school-error hover:bg-rose-700 text-white font-medium' : 'text-school-heading hover:bg-school-subtle'}
-                        onClick={() => setStatus(s.studentId, 'absent')}
-                      >
-                        <XCircle className="mr-1 h-3.5 w-3.5" /> Ausente
-                      </Button>
-
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={currentStatus === 'late' ? 'default' : 'outline'}
-                        className={currentStatus === 'late' ? 'bg-school-warning hover:bg-amber-600 text-white font-medium' : 'text-school-heading hover:bg-school-subtle'}
-                        onClick={() => setStatus(s.studentId, 'late')}
-                      >
-                        <Clock className="mr-1 h-3.5 w-3.5" /> Atraso
-                      </Button>
-
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={currentStatus === 'excused' ? 'default' : 'outline'}
-                        className={currentStatus === 'excused' ? 'bg-school-blue hover:bg-sky-700 text-white font-medium' : 'text-school-heading hover:bg-school-subtle'}
-                        onClick={() => setStatus(s.studentId, 'excused')}
-                      >
-                        <AlertCircle className="mr-1 h-3.5 w-3.5" /> Justificado
-                      </Button>
-                    </div>
-
-                    {/* Notes Input */}
-                    <div className="w-full sm:w-64">
-                      <Input
-                        placeholder="Observación opcional..."
-                        value={currentNotes}
-                        onChange={(e) => setNotes(s.studentId, e.target.value)}
-                        className="text-xs"
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
+                  return (
+                    <tr key={st.studentId} className="hover:bg-school-subtle/30 transition-colors">
+                      <td className="py-3.5 px-4 font-semibold text-school-heading">
+                        {st.name}
+                      </td>
+                      <td className="py-3.5 px-4 text-xs font-mono text-school-muted">
+                        {st.studentCode}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={state.status === 'PRESENT' ? 'default' : 'outline'}
+                            onClick={() => setStatus(st.studentId, 'PRESENT')}
+                            className={`h-8 text-xs ${
+                              state.status === 'PRESENT' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''
+                            }`}
+                          >
+                            Presente
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={state.status === 'ABSENT' ? 'destructive' : 'outline'}
+                            onClick={() => setStatus(st.studentId, 'ABSENT')}
+                            className="h-8 text-xs"
+                          >
+                            Ausente
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={state.status === 'LATE' ? 'secondary' : 'outline'}
+                            onClick={() => setStatus(st.studentId, 'LATE')}
+                            className={`h-8 text-xs ${
+                              state.status === 'LATE' ? 'bg-amber-500 hover:bg-amber-600 text-white' : ''
+                            }`}
+                          >
+                            Atraso
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={state.status === 'EXCUSED' ? 'secondary' : 'outline'}
+                            onClick={() => setStatus(st.studentId, 'EXCUSED')}
+                            className={`h-8 text-xs ${
+                              state.status === 'EXCUSED' ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''
+                            }`}
+                          >
+                            Justificado
+                          </Button>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <Input
+                          placeholder="Nota o motivo..."
+                          value={state.notes}
+                          onChange={(e) => setNotes(st.studentId, e.target.value)}
+                          className="h-8 text-xs bg-white"
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
     </div>
   );

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { studentService, type StudentFilters } from '@/services/student.service';
+import { useAuth } from './useAuth';
 
 export function useStudents(filters: StudentFilters = {}) {
   return useQuery({
@@ -25,8 +26,9 @@ export function useStudentGrades(id: number | null, period?: string) {
 }
 
 export function useMyGrades(period?: string) {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ['my-grades', period],
+    queryKey: ['my-grades', user?.id, period],
     queryFn: () => studentService.getMyGrades(period),
   });
 }

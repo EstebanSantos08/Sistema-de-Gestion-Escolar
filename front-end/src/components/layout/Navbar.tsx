@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { navigationForRole, isNavigationActive, navigationLinkClass } from './navigation';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, User as UserIcon, Menu, GraduationCap } from 'lucide-react';
+import { LogOut, User as UserIcon, Menu } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import {
@@ -99,13 +99,8 @@ export function Navbar() {
           </DialogContent>
         </Dialog>
 
-        <div className="flex items-center gap-2 md:hidden">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#E3F5F3] text-[#087F79]">
-            <GraduationCap className="h-4 w-4" aria-hidden="true" />
-          </div>
-          <span className="text-sm font-bold tracking-tight text-[#183B3A]">
-            NICE KIDS
-          </span>
+        <div className="md:hidden flex items-center gap-1.5">
+          <span className="text-base font-black tracking-tight text-[#183B3A]">NICE KIDS</span>
         </div>
 
         {/* Period pill */}

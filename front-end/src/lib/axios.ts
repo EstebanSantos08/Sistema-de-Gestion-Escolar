@@ -24,9 +24,20 @@ api.interceptors.response.use(
       axios.isAxiosError(error) &&
       error.response?.status === 401
     ) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      const isLoginRequest = error.config?.url?.includes('/auth/login');
+      if (!isLoginRequest) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        import('@/lib/queryClient')
+          .then(({ queryClient }) => {
+            queryClient.cancelQueries();
+            queryClient.clear();
+          })
+          .catch(() => {});
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
     }
     return Promise.reject(error);
   }

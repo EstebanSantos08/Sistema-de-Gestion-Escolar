@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Plus, BookOpen, Trash2, Clock, FileText, Filter, Pencil, Eye } from 'lucide-react';
+import { Plus, BookOpen, Clock, FileText, Filter, Pencil, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useQuery } from '@tanstack/react-query';
 import { useMyCourses } from '@/hooks/useCourses';
-import { teacherModuleService } from '@/services/teacherModule.service';
+import { activityService } from '@/services/activity.service';
+import { useCreateActivity, useUpdateActivity } from '@/hooks/useActivities';
 import { ClassroomSubmissionsDialog } from '@/components/teacher/ClassroomSubmissionsDialog';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -13,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import type { ClassActivity, ActivityType, ActivityStatus } from '@/types';
+import type { ApiActivity, ActivityType, ActivityStatus } from '@/types';
 
 const getMinDateTimeStr = () => {
   const d = new Date();
@@ -25,7 +27,7 @@ const getMinDateTimeStr = () => {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
-const formatDateTimeDisplay = (dtStr: string) => {
+const formatDateTimeDisplay = (dtStr: string | null) => {
   if (!dtStr) return '—';
   if (dtStr.includes('T')) {
     const [date, time] = dtStr.split('T');
@@ -35,24 +37,36 @@ const formatDateTimeDisplay = (dtStr: string) => {
 };
 
 export default function ActivitiesPage() {
-  const { data: courses } = useMyCourses();
-  const [activities, setActivities] = useState<ClassActivity[]>(() => teacherModuleService.getActivities());
+  const { data: courses = [] } = useMyCourses();
+  const courseIds = courses.map((c) => c.id);
+
+  const { data: rawActivities = [], isLoading: loadingActivities } = useQuery({
+    queryKey: ['activities', 'teacher', courseIds],
+    queryFn: async () => {
+      if (courseIds.length === 0) return [];
+      const results = await Promise.all(
+        courseIds.map((cId) => activityService.list({ courseId: cId }))
+      );
+      return results.flat();
+    },
+    enabled: courseIds.length > 0,
+  });
+
+  const createActivityMutation = useCreateActivity();
+  const updateActivityMutation = useUpdateActivity();
+
   const [selectedCourseFilter, setSelectedCourseFilter] = useState<string>('all');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingActivity, setEditingActivity] = useState<ClassActivity | null>(null);
-  const [selectedActivityForSubmissions, setSelectedActivityForSubmissions] = useState<ClassActivity | null>(null);
+  const [editingActivity, setEditingActivity] = useState<ApiActivity | null>(null);
+  const [selectedActivityForSubmissions, setSelectedActivityForSubmissions] = useState<ApiActivity | null>(null);
 
   const [formCourseId, setFormCourseId] = useState<string>('');
   const [formTitle, setFormTitle] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formDueDate, setFormDueDate] = useState('');
   const [formType, setFormType] = useState<ActivityType>('tarea');
-
-  const refreshActivities = () => {
-    setActivities(teacherModuleService.getActivities());
-  };
 
   const handleOpenCreateModal = () => {
     setEditingActivity(null);
@@ -64,19 +78,24 @@ export default function ActivitiesPage() {
     setIsModalOpen(true);
   };
 
-  const handleOpenEditModal = (act: ClassActivity) => {
+  const handleOpenEditModal = (act: ApiActivity) => {
     setEditingActivity(act);
     setFormCourseId(String(act.courseId));
     setFormTitle(act.title);
     setFormDescription(act.description || '');
-    setFormDueDate(act.dueDate.includes('T') ? act.dueDate : `${act.dueDate}T23:59`);
+    const formattedDue = act.dueDate
+      ? act.dueDate.includes('T')
+        ? act.dueDate
+        : `${act.dueDate}T23:59`
+      : getMinDateTimeStr();
+    setFormDueDate(formattedDue);
     setFormType(act.type || 'tarea');
     setIsModalOpen(true);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formCourseId || !formTitle || !formDueDate) {
+    if (!formCourseId || !formTitle.trim() || !formDueDate) {
       toast.error('Por favor completa los campos requeridos');
       return;
     }
@@ -87,48 +106,55 @@ export default function ActivitiesPage() {
       return;
     }
 
-    const courseObj = courses?.find((c) => c.id === Number(formCourseId));
-
-    if (editingActivity) {
-      teacherModuleService.updateActivity(editingActivity.id, {
-        courseId: Number(formCourseId),
-        courseName: courseObj?.name ?? 'Curso',
-        title: formTitle,
-        description: formDescription,
-        dueDate: formDueDate,
-        type: formType,
-      });
-      toast.success('Actividad actualizada');
-    } else {
-      teacherModuleService.createActivity({
-        courseId: Number(formCourseId),
-        courseName: courseObj?.name ?? 'Curso',
-        title: formTitle,
-        description: formDescription,
-        dueDate: formDueDate,
-        type: formType,
-        status: 'en_curso',
-      });
-      toast.success('Actividad creada exitosamente');
-    }
-
-    setIsModalOpen(false);
-    refreshActivities();
-  };
-
-  const handleDelete = (id: string) => {
-    if (confirm('¿Estás seguro de eliminar esta actividad?')) {
-      teacherModuleService.deleteActivity(id);
-      refreshActivities();
-      toast.success('Actividad eliminada');
+    try {
+      if (editingActivity) {
+        await updateActivityMutation.mutateAsync({
+          id: editingActivity.id,
+          payload: {
+            title: formTitle.trim(),
+            description: formDescription.trim() || undefined,
+            dueDate: formDueDate,
+            type: formType,
+          },
+        });
+        toast.success('Actividad actualizada');
+      } else {
+        await createActivityMutation.mutateAsync({
+          courseId: Number(formCourseId),
+          title: formTitle.trim(),
+          description: formDescription.trim() || undefined,
+          dueDate: formDueDate,
+          type: formType,
+          status: 'en_curso',
+          maxScore: 10,
+        });
+        toast.success('Actividad creada exitosamente');
+      }
+      setIsModalOpen(false);
+    } catch {
+      toast.error('Error al guardar la actividad');
     }
   };
 
-  const handleStatusChange = (id: string, newStatus: ActivityStatus) => {
-    teacherModuleService.updateActivity(id, { status: newStatus });
-    refreshActivities();
-    toast.success('Estado de actividad actualizado');
+  const handleStatusChange = async (act: ApiActivity, newStatus: ActivityStatus) => {
+    try {
+      await updateActivityMutation.mutateAsync({
+        id: act.id,
+        payload: { status: newStatus },
+      });
+      toast.success('Estado de actividad actualizado');
+    } catch {
+      toast.error('Error al actualizar el estado');
+    }
   };
+
+  const activities = rawActivities.map((act) => {
+    const courseObj = courses.find((c) => c.id === act.courseId);
+    return {
+      ...act,
+      courseName: courseObj?.name ?? `Curso #${act.courseId}`,
+    };
+  });
 
   const filteredActivities = activities.filter((act) => {
     if (selectedCourseFilter !== 'all' && act.courseId !== Number(selectedCourseFilter)) {
@@ -230,14 +256,14 @@ export default function ActivitiesPage() {
                 </div>
 
                 <div className="pt-3 border-t border-school-border/60 flex items-center justify-between gap-2">
-                  <Select value={act.status} onValueChange={(val) => handleStatusChange(act.id, val as ActivityStatus)}>
+                  <Select value={act.status} onValueChange={(val) => handleStatusChange(act, val as ActivityStatus)}>
                     <SelectTrigger className="h-9 text-xs font-medium w-32">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="programada">Programada</SelectItem>
                       <SelectItem value="en_curso">En curso</SelectItem>
-                      <SelectItem value="finalizada">Finalizada</SelectItem>
+                      <SelectItem value="completada">Completada</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -247,9 +273,6 @@ export default function ActivitiesPage() {
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => handleOpenEditModal(act)} className="h-9 text-xs font-medium text-school-warning" aria-label="Editar actividad">
                       <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => handleDelete(act.id)} className="h-9 text-xs text-school-error hover:bg-school-error/10" aria-label="Eliminar actividad">
-                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>

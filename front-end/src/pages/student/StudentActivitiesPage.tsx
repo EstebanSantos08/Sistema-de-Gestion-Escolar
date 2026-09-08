@@ -1,55 +1,116 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CalendarCheck, Calendar, BookOpen, Filter, FileCheck, Clock, CheckCircle2, Sparkles, Award } from 'lucide-react';
-import { teacherModuleService } from '@/services/teacherModule.service';
+import { ArrowLeft, CalendarCheck, Calendar, BookOpen, Filter, FileCheck, Clock, CheckCircle2, Sparkles, Award, Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { ActivityStatus, ActivityType } from '@/types';
+import { useAuth } from '@/hooks/useAuth';
+import { useMyGrades } from '@/hooks/useStudents';
+import { activityService } from '@/services/activity.service';
+import type { ApiActivity, SubmissionRecord } from '@/types';
 
-const TYPE_CONFIG: Record<ActivityType, { label: string; variant: 'secondary' | 'outline' | 'purple' | 'pink' | 'warning' }> = {
-  tarea: { label: 'Tarea', variant: 'outline' },
-  examen: { label: 'Examen', variant: 'pink' },
-  taller: { label: 'Taller', variant: 'warning' },
-  proyecto: { label: 'Proyecto', variant: 'purple' },
-  deber: { label: 'Deber', variant: 'secondary' },
-};
+interface ActivityWithMeta extends ApiActivity {
+  courseName: string;
+  submission?: SubmissionRecord | null;
+}
 
 export default function StudentActivitiesPage() {
+  const { user } = useAuth();
   const [courseFilter, setCourseFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const allActivities = teacherModuleService.getActivities();
-  const submissions = teacherModuleService.getSubmissions();
+  // 1. Get enrolled courses for student
+  const { data: myGradesData, isLoading: loadingCourses } = useMyGrades();
+  const enrolledCourses = useMemo(() => {
+    if (!myGradesData?.courses) return [];
+    return myGradesData.courses.map((c) => ({
+      id: c.courseId,
+      name: c.courseName,
+    }));
+  }, [myGradesData]);
 
-  const courses = useMemo(() => {
-    const map = new Map<number, string>();
-    allActivities.forEach((a) => map.set(a.courseId, a.courseName));
-    return Array.from(map, ([id, name]) => ({ id, name }));
-  }, [allActivities]);
+  // 2. Fetch activities for all enrolled courses
+  const courseIds = enrolledCourses.map((c) => c.id);
+  const { data: activitiesWithSubmissions = [], isLoading: loadingActivities } = useQuery<ActivityWithMeta[]>({
+    queryKey: ['student-all-activities', user?.id, courseIds],
+    queryFn: async () => {
+      if (enrolledCourses.length === 0) return [];
+      const courseMap = new Map<number, string>();
+      enrolledCourses.forEach((c) => courseMap.set(c.id, c.name));
+
+      const results = await Promise.all(
+        enrolledCourses.map(async (course) => {
+          try {
+            const courseActs = await activityService.list({ courseId: course.id });
+            const actsWithSubs = await Promise.all(
+              courseActs.map(async (act) => {
+                let sub: SubmissionRecord | null = null;
+                try {
+                  const rawSubs = await activityService.getSubmissions(act.id);
+                  sub = Array.isArray(rawSubs) ? rawSubs[0] || null : rawSubs || null;
+                } catch {
+                  // No submission
+                }
+                return {
+                  ...act,
+                  courseName: courseMap.get(act.courseId) || act.course?.name || `Curso #${act.courseId}`,
+                  submission: sub,
+                } as ActivityWithMeta;
+              })
+            );
+            return actsWithSubs;
+          } catch {
+            return [];
+          }
+        })
+      );
+
+      return results.flat();
+    },
+    enabled: enrolledCourses.length > 0 && !!user,
+  });
+
+  const isLoading = loadingCourses || loadingActivities;
 
   const filtered = useMemo(() => {
-    let list = allActivities;
+    let list = activitiesWithSubmissions;
     if (courseFilter !== 'all') {
       list = list.filter((a) => a.courseId === Number(courseFilter));
     }
     if (statusFilter !== 'all') {
-      list = list.filter((a) => a.status === statusFilter);
+      list = list.filter((a) => {
+        const sub = a.submission;
+        const isGraded = sub?.status === 'CALIFICADO' || sub?.score !== null && sub?.score !== undefined;
+        const isSubmitted = !!sub && !isGraded;
+        if (statusFilter === 'graded') return isGraded;
+        if (statusFilter === 'submitted') return isSubmitted;
+        if (statusFilter === 'pending') return !sub;
+        return a.status === statusFilter;
+      });
     }
-    return list.sort((a, b) => {
-      const order: Record<string, number> = { en_curso: 0, programada: 1, completada: 2 };
-      return (order[a.status] ?? 3) - (order[b.status] ?? 3);
-    });
-  }, [allActivities, courseFilter, statusFilter]);
+    return [...list].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  }, [activitiesWithSubmissions, courseFilter, statusFilter]);
 
-  const stats = {
-    total: allActivities.length,
-    enCurso: allActivities.filter((a) => a.status === 'en_curso').length,
-    programadas: allActivities.filter((a) => a.status === 'programada').length,
-    completadas: allActivities.filter((a) => a.status === 'finalizada' || a.status === 'completada').length,
-  };
+  const stats = useMemo(() => {
+    const total = activitiesWithSubmissions.length;
+    let submitted = 0;
+    let graded = 0;
+    let pending = 0;
+    activitiesWithSubmissions.forEach((a) => {
+      const sub = a.submission;
+      if (sub?.status === 'CALIFICADO' || (sub?.score !== null && sub?.score !== undefined)) {
+        graded++;
+      } else if (sub) {
+        submitted++;
+      } else {
+        pending++;
+      }
+    });
+    return { total, submitted, graded, pending };
+  }, [activitiesWithSubmissions]);
 
   return (
     <div className="space-y-6">
@@ -64,7 +125,7 @@ export default function StudentActivitiesPage() {
       <PageHeader
         eyebrow="Estudiante"
         title="Actividades y Tareas"
-        description="Deberes, talleres, proyectos y evaluaciones asignados por tus docentes"
+        description="Tareas, talleres, proyectos y evaluaciones asignados por tus docentes"
       />
 
       {/* Stats */}
@@ -75,19 +136,19 @@ export default function StudentActivitiesPage() {
           <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Total</p>
         </Card>
         <Card className="p-4 text-center">
-          <Sparkles className="h-5 w-5 mx-auto text-school-warning mb-1" />
-          <p className="text-2xl font-bold text-school-warning">{stats.enCurso}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">En Curso</p>
+          <Clock className="h-5 w-5 mx-auto text-school-warning mb-1" />
+          <p className="text-2xl font-bold text-school-warning">{stats.pending}</p>
+          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Pendientes</p>
         </Card>
         <Card className="p-4 text-center">
-          <Clock className="h-5 w-5 mx-auto text-school-blue mb-1" />
-          <p className="text-2xl font-bold text-school-blue">{stats.programadas}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Programadas</p>
+          <Sparkles className="h-5 w-5 mx-auto text-school-blue mb-1" />
+          <p className="text-2xl font-bold text-school-blue">{stats.submitted}</p>
+          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Entregadas</p>
         </Card>
         <Card className="p-4 text-center">
           <CheckCircle2 className="h-5 w-5 mx-auto text-school-success mb-1" />
-          <p className="text-2xl font-bold text-school-success">{stats.completadas}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Completadas</p>
+          <p className="text-2xl font-bold text-school-success">{stats.graded}</p>
+          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Calificadas</p>
         </Card>
       </div>
 
@@ -103,7 +164,7 @@ export default function StudentActivitiesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas las materias</SelectItem>
-                {courses.map((c) => (
+                {enrolledCourses.map((c) => (
                   <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
                 ))}
               </SelectContent>
@@ -118,17 +179,24 @@ export default function StudentActivitiesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos los estados</SelectItem>
-                <SelectItem value="en_curso">En Curso</SelectItem>
-                <SelectItem value="programada">Programadas</SelectItem>
-                <SelectItem value="finalizada">Finalizadas</SelectItem>
+                <SelectItem value="pending">Pendientes de entrega</SelectItem>
+                <SelectItem value="submitted">Entregadas</SelectItem>
+                <SelectItem value="graded">Calificadas</SelectItem>
+                <SelectItem value="ACTIVE">Activas (En curso)</SelectItem>
+                <SelectItem value="CLOSED">Cerradas</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
       </Card>
 
-      {/* Activities List */}
-      {filtered.length === 0 ? (
+      {/* Loading State */}
+      {isLoading ? (
+        <Card className="p-12 text-center">
+          <Loader2 className="h-8 w-8 mx-auto text-school-primary animate-spin mb-3" />
+          <p className="text-school-muted font-medium">Cargando actividades institucionales...</p>
+        </Card>
+      ) : filtered.length === 0 ? (
         <Card className="p-12 text-center">
           <FileCheck className="h-10 w-10 mx-auto text-school-muted mb-2" />
           <p className="font-semibold text-school-heading text-base">No hay actividades disponibles</p>
@@ -137,10 +205,9 @@ export default function StudentActivitiesPage() {
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           {filtered.map((act) => {
-            const typeCfg = TYPE_CONFIG[act.type] ?? { label: 'Actividad', variant: 'secondary' };
-            const mySub = submissions.find((s) => s.activityId === act.id);
-            const isGraded = mySub?.status === 'calificada' || mySub?.score !== undefined;
-            const isSubmitted = !!mySub;
+            const mySub = act.submission;
+            const isGraded = mySub?.status === 'CALIFICADO' || (mySub?.score !== null && mySub?.score !== undefined);
+            const isSubmitted = !!mySub && !isGraded;
 
             return (
               <Card key={act.id} className="flex flex-col justify-between hover:border-school-accent transition-colors">
@@ -148,14 +215,17 @@ export default function StudentActivitiesPage() {
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-bold text-school-heading text-base leading-snug">{act.title}</h3>
-                      <Badge variant={act.status === 'programada' ? 'warning' : act.status === 'finalizada' ? 'secondary' : 'success'} className="shrink-0">
-                        {act.status === 'programada' ? 'Programada' : act.status === 'finalizada' ? 'Finalizada' : 'En Curso'}
+                      <Badge
+                        variant={act.status === 'ACTIVE' ? 'success' : act.status === 'CLOSED' ? 'secondary' : 'warning'}
+                        className="shrink-0"
+                      >
+                        {act.status === 'ACTIVE' ? 'Activa' : act.status === 'CLOSED' ? 'Cerrada' : 'Borrador'}
                       </Badge>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant={typeCfg.variant}>
-                        {typeCfg.label}
+                      <Badge variant="outline">
+                        {act.type}
                       </Badge>
                       <span className="flex items-center gap-1 text-xs font-medium text-school-muted">
                         <BookOpen className="h-3.5 w-3.5 text-school-primary" />
@@ -165,7 +235,9 @@ export default function StudentActivitiesPage() {
 
                     <div className="flex items-center gap-1.5 text-xs font-medium text-school-muted">
                       <Calendar className="h-3.5 w-3.5 text-school-primary" />
-                      <span>Fecha límite: {act.dueDate}</span>
+                      <span>
+                        Fecha límite: {act.dueDate ? new Date(act.dueDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Sin fecha'}
+                      </span>
                     </div>
 
                     {act.description && (
@@ -181,7 +253,7 @@ export default function StudentActivitiesPage() {
                       <div className="bg-school-subtle/60 p-3 rounded-xl border border-school-border text-xs flex items-center justify-between">
                         <span className="font-semibold text-school-heading flex items-center gap-1.5">
                           <Award className="h-4 w-4 text-school-warning" />
-                          Nota: <strong className="text-school-primary">{mySub.score}/10</strong>
+                          Nota: <strong className="text-school-primary">{mySub?.score}/10</strong>
                         </span>
                         <Link to={`/estudiante/cursos/${act.courseId}`} className="text-school-primary font-semibold hover:underline text-xs">
                           Ver Retroalimentación →

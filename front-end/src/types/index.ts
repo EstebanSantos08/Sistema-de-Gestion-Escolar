@@ -229,3 +229,250 @@ export interface ApiResponse<T = unknown> {
   details?: unknown[];
 }
 
+// ─── Backend Domain Models (Canonical API) ───────────────────────────────────
+
+export interface ApiActivity {
+  id: number;
+  courseId: number;
+  title: string;
+  description: string | null;
+  dueDate: string | null;
+  type: ActivityType;
+  status: ActivityStatus;
+  maxScore: number;
+  createdAt?: string;
+  updatedAt?: string;
+  course?: Course;
+}
+
+export type SubmissionStatus =
+  | 'pendiente'
+  | 'en_proceso'
+  | 'entregada'
+  | 'en_revision'
+  | 'completada'
+  | 'devuelta';
+
+export interface EvidenceRecord {
+  id: number;
+  submissionId: number;
+  type: 'imagen' | 'video' | 'documento' | 'audio';
+  fileName: string;
+  mimeType?: string | null;
+  fileSize?: number | null;
+  caption?: string | null;
+  createdAt: string;
+}
+
+export interface SubmissionRecord {
+  id: number;
+  activityId: number;
+  studentId: number;
+  representativeId?: number | null;
+  status: SubmissionStatus;
+  submittedAt: string | null;
+  studentNotes: string | null;
+  teacherFeedback: string | null;
+  score: number | null;
+  createdAt?: string;
+  updatedAt?: string;
+  student?: {
+    id: number;
+    studentCode?: string;
+    user?: {
+      id: number;
+      name: string;
+      email: string;
+    };
+  };
+  evidences?: EvidenceRecord[];
+  activity?: {
+    id: number;
+    title: string;
+    courseId: number;
+    maxScore: number;
+    dueDate: string | null;
+  };
+}
+
+export type BackendObservationType = 'ACADEMIC' | 'BEHAVIORAL' | 'GENERAL';
+export type BackendObservationVisibility = 'ESTUDIANTE_Y_PADRES' | 'SOLO_ESTUDIANTE' | 'SOLO_DOCENTE';
+
+export interface BackendObservation {
+  id: number;
+  studentId: number;
+  teacherId: number;
+  title: string;
+  description: string;
+  type: BackendObservationType;
+  visibility: BackendObservationVisibility;
+  date?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  student?: {
+    id: number;
+    user?: {
+      id: number;
+      name: string;
+      email: string;
+    };
+  };
+  teacher?: {
+    id: number;
+    user?: {
+      id: number;
+      name: string;
+      email: string;
+    };
+  };
+}
+
+export interface NormalizedAuditLog {
+  id: number;
+  actor: {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+  };
+  action: string;
+  gradeCategory?: 'task' | 'academic';
+  student?: {
+    id: number;
+    name: string;
+  };
+  teacher?: {
+    id: number;
+    name: string;
+  };
+  course?: {
+    id: number;
+    name: string;
+    code?: string;
+  };
+  activity?: {
+    id: number;
+    title: string;
+  };
+  oldValues?: Record<string, unknown>;
+  newValues?: Record<string, unknown>;
+  ipAddress?: string;
+  createdAt: string;
+  details?: Record<string, unknown>;
+}
+
+export interface AuditLogFiltersResponse {
+  teachers: Array<{ id: number; name?: string }>;
+  students: Array<{ id: number; name?: string }>;
+  courses: Array<{ id: number; name: string; code: string }>;
+  activities: Array<{ id: number; title: string; courseId: number }>;
+  gradeCategories: Array<{ value: string; label: string }>;
+  actions: Array<{ value: string; label: string }>;
+}
+
+export interface TeacherDailySummary {
+  date: string;
+  period: string;
+  teacher: { id: number; userId: number };
+  courses: Array<{ id: number; name: string; code: string; enrolledCount: number }>;
+  attendance: Array<{
+    id: number;
+    studentId: number;
+    courseId: number;
+    date: string;
+    status: 'present' | 'absent' | 'late' | 'excused';
+    notes?: string;
+    student?: { id: number; user?: { id: number; name: string } };
+  }>;
+  activities: Array<{
+    id: number;
+    courseId: number;
+    title: string;
+    dueDate?: string;
+    type: ActivityType;
+    status: ActivityStatus;
+    submissionsCount?: number;
+    gradedCount?: number;
+  }>;
+  observations: Array<{
+    id: number;
+    studentId: number;
+    title: string;
+    description: string;
+    type: BackendObservationType;
+    student?: { id: number; user?: { id: number; name: string } };
+  }>;
+  announcements: Array<{
+    id: number;
+    courseId?: number;
+    title: string;
+    content: string;
+    date?: string;
+  }>;
+  summary: {
+    totalStudents: number;
+    presentToday: number;
+    absentToday: number;
+    activitiesToday: number;
+    observationsToday: number;
+    announcementsToday: number;
+  };
+}
+
+export type BackendAttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
+
+export interface BackendAttendance {
+  id: number;
+  studentId: number;
+  courseId: number;
+  date: string;
+  status: BackendAttendanceStatus;
+  remarks: string | null;
+  registeredById: number;
+  createdAt?: string;
+  updatedAt?: string;
+  student?: {
+    id: number;
+    studentCode?: string;
+    user?: {
+      id: number;
+      name: string;
+      email: string;
+    };
+  };
+  course?: {
+    id: number;
+    name: string;
+    code?: string;
+  };
+  registeredBy?: {
+    id: number;
+    name: string;
+  };
+}
+
+export type AnnouncementTargetRole = 'ALL' | 'TEACHER' | 'STUDENT' | 'PARENT';
+
+export interface BackendAnnouncement {
+  id: number;
+  title: string;
+  content: string;
+  targetRole: AnnouncementTargetRole;
+  courseId: number | null;
+  authorId: number;
+  createdAt: string;
+  updatedAt?: string;
+  course?: {
+    id: number;
+    name: string;
+    code?: string;
+  };
+  author?: {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+  };
+}
+
+

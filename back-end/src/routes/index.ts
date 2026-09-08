@@ -11,6 +11,8 @@ import observationRoutes from './observation.routes';
 import activityRoutes from './activity.routes';
 import submissionRoutes from './submission.routes';
 import auditLogRoutes from './auditLog.routes';
+import attendanceRoutes from './attendance.routes';
+import announcementRoutes from './announcement.routes';
 
 const router = Router();
 
@@ -26,5 +28,7 @@ router.use('/observations', observationRoutes);
 router.use('/activities', activityRoutes);
 router.use('/submissions', submissionRoutes);
 router.use('/audit-logs', auditLogRoutes);
+router.use('/attendance', attendanceRoutes);
+router.use('/announcements', announcementRoutes);
 
 export default router;

@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Award } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 
-import { enrollmentService } from '@/services/enrollment.service';
 import { gradeService } from '@/services/grade.service';
 import { useCourse } from '@/hooks/useCourses';
 import { PageHeader } from '@/components/shared/PageHeader';
@@ -20,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import type { GradeType, Grade } from '@/types';
+import type { GradeType } from '@/types';
 import { cn } from '@/lib/utils';
 
 const GRADE_MIN = 0;
@@ -56,13 +55,11 @@ export default function GradeEntryPage() {
 
   const { data: course } = useCourse(id);
 
-  const { data: courseData, isLoading: loadingStudents } = useQuery({
-    queryKey: ['enrollments', 'course', id],
-    queryFn: () => enrollmentService.getCourseEnrollments(id!),
+  const { data: enrollmentsWithGrades, isLoading: loadingStudents } = useQuery({
+    queryKey: ['grades', 'course', id],
+    queryFn: () => gradeService.getByCourse(id!),
     enabled: !!id,
   });
-
-  const students = courseData?.students ?? [];
 
   useEffect(() => {
     const opt = gradeTypeOptions.find((o) => o.value === gradeType);
@@ -70,21 +67,27 @@ export default function GradeEntryPage() {
   }, [gradeType]);
 
   useEffect(() => {
-    if (students.length === 0) return;
-    const initialRows: StudentRow[] = students.map((s) => {
-      const match = s.grades.find((g) => g.gradeType === gradeType);
+    if (!enrollmentsWithGrades || enrollmentsWithGrades.length === 0) {
+      setRows([]);
+      return;
+    }
+    const initialRows: StudentRow[] = enrollmentsWithGrades.map((e) => {
+      const studentName = e.student?.user?.name || `Estudiante #${e.studentId}`;
+      const studentCode = e.student?.studentCode || `EST-${e.studentId}`;
+      const gradesList = e.grades || [];
+      const match = gradesList.find((g) => g.gradeType === gradeType);
       return {
-        enrollmentId: s.enrollmentId,
-        studentId: s.studentId,
-        studentCode: s.studentCode,
-        name: s.name,
-        score: match !== undefined ? String(match.score) : '',
+        enrollmentId: e.id,
+        studentId: e.studentId,
+        studentCode,
+        name: studentName,
+        score: match !== undefined && match.score !== null ? String(match.score) : '',
         comments: match?.comments ?? '',
         existingGradeId: match?.id,
       };
     });
     setRows(initialRows);
-  }, [students, gradeType]);
+  }, [enrollmentsWithGrades, gradeType]);
 
   const updateRow = (index: number, field: 'score' | 'comments', value: string) => {
     setRows((prev) => {
@@ -98,29 +101,47 @@ export default function GradeEntryPage() {
     mutationFn: async () => {
       const parsedWeight = parseFloat(weight);
       const toSave = rows.filter((r) => r.score !== '');
-      const promises = toSave.map((r) => {
-        const payload = {
-          enrollmentId: r.enrollmentId,
-          gradeType,
-          score: parseFloat(r.score),
-          weight: isNaN(parsedWeight) ? 0.3 : parsedWeight,
-          comments: r.comments || undefined,
-        };
-        if (r.existingGradeId) {
-          return gradeService.updateGrade(r.existingGradeId, payload);
+      if (toSave.length === 0) {
+        throw new Error('No hay calificaciones ingresadas para guardar.');
+      }
+      for (const r of toSave) {
+        const val = parseFloat(r.score);
+        if (isNaN(val) || val < GRADE_MIN || val > GRADE_MAX) {
+          throw new Error(`La nota de ${r.name} debe estar entre ${GRADE_MIN} y ${GRADE_MAX}.`);
         }
-        return gradeService.createGrade(payload);
+      }
+      return gradeService.batchCreate({
+        courseId: id!,
+        gradeType,
+        weight: isNaN(parsedWeight) ? 0.3 : parsedWeight,
+        grades: toSave.map((r) => ({
+          enrollmentId: r.enrollmentId,
+          score: parseFloat(r.score),
+          comments: r.comments || undefined,
+        })),
       });
-      return Promise.all(promises);
     },
     onSuccess: () => {
-      toast.success('Calificaciones guardadas exitosamente');
+      toast.success('Calificaciones académicas guardadas exitosamente');
+      qc.invalidateQueries({ queryKey: ['grades', 'course', id] });
       qc.invalidateQueries({ queryKey: ['enrollments', 'course', id] });
+      qc.invalidateQueries({ queryKey: ['audit-logs'] });
     },
-    onError: (err) => {
+    onError: (err: unknown) => {
       if (axios.isAxiosError(err)) {
-        const msg = err.response?.data?.message || 'Error al guardar las notas';
-        toast.error(msg);
+        const status = err.response?.status;
+        const msg = err.response?.data?.error || err.response?.data?.message;
+        if (status === 422) {
+          toast.error(msg || 'Valores de nota o peso fuera del rango permitido (0-10).');
+        } else if (status === 403) {
+          toast.error('No tienes permisos para calificar este curso.');
+        } else if (status === 409) {
+          toast.error(msg || 'Conflicto de calificación existente.');
+        } else {
+          toast.error(msg || 'Error al guardar las calificaciones académicas.');
+        }
+      } else if (err instanceof Error) {
+        toast.error(err.message);
       } else {
         toast.error('Error al guardar las calificaciones');
       }

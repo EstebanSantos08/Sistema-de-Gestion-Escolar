@@ -1,12 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ClipboardCheck, CheckCircle2, XCircle, Clock, FileText, CalendarDays, Filter, BarChart3 } from 'lucide-react';
+import { ArrowLeft, ClipboardCheck, CheckCircle2, XCircle, Clock, FileText, BarChart3, Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
-import { teacherModuleService } from '@/services/teacherModule.service';
+import { useMyGrades } from '@/hooks/useStudents';
+import { attendanceService } from '@/services/attendance.service';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Table,
@@ -16,46 +18,62 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { AttendanceStatus } from '@/types';
+import type { BackendAttendance } from '@/types';
 
 export default function StudentAttendancePage() {
   const { user } = useAuth();
   const [courseFilter, setCourseFilter] = useState<string>('all');
 
-  const allRecords = teacherModuleService.getAttendance();
-
-  const studentRecords = useMemo(() => {
-    return allRecords.filter((r) => {
-      const nameMatch = user?.name && r.studentName.toLowerCase().includes(user.name.split(' ')[0].toLowerCase());
-      return nameMatch || r.studentId === (user?.id ?? 0);
-    });
-  }, [allRecords, user]);
-
+  const { data: myGradesData, isLoading: loadingCourses } = useMyGrades();
   const courses = useMemo(() => {
-    const map = new Map<number, string>();
-    studentRecords.forEach((r) => {
-      if (r.courseName) map.set(r.courseId, r.courseName);
-    });
-    return Array.from(map, ([id, name]) => ({ id, name }));
-  }, [studentRecords]);
+    if (!myGradesData?.courses) return [];
+    return myGradesData.courses.map((c) => ({
+      id: c.courseId,
+      name: c.courseName,
+    }));
+  }, [myGradesData]);
+
+  // Real institutional attendance from /api/attendance
+  const { data: studentRecords = [], isLoading: loadingAttendance } = useQuery({
+    queryKey: ['attendance', user?.id, 'my-attendance'],
+    queryFn: () => attendanceService.list(),
+    enabled: !!user,
+  });
 
   const filteredRecords = useMemo(() => {
     let records = studentRecords;
     if (courseFilter !== 'all') {
       records = records.filter((r) => r.courseId === Number(courseFilter));
     }
-    return records.sort((a, b) => b.date.localeCompare(a.date));
+    return [...records].sort((a, b) => b.date.localeCompare(a.date));
   }, [studentRecords, courseFilter]);
 
   const stats = useMemo(() => {
     const total = filteredRecords.length;
-    const present = filteredRecords.filter((r) => r.status === 'present').length;
-    const absent = filteredRecords.filter((r) => r.status === 'absent').length;
-    const late = filteredRecords.filter((r) => r.status === 'late').length;
-    const excused = filteredRecords.filter((r) => r.status === 'excused').length;
-    const pct = total > 0 ? ((present + excused) / total * 100) : 0;
+    const present = filteredRecords.filter((r) => r.status === 'PRESENT').length;
+    const absent = filteredRecords.filter((r) => r.status === 'ABSENT').length;
+    const late = filteredRecords.filter((r) => r.status === 'LATE').length;
+    const excused = filteredRecords.filter((r) => r.status === 'EXCUSED').length;
+    const pct = total > 0 ? ((present + excused) / total) * 100 : 100;
     return { total, present, absent, late, excused, pct };
   }, [filteredRecords]);
+
+  const isLoading = loadingCourses || loadingAttendance;
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'PRESENT':
+        return <Badge variant="success">Presente</Badge>;
+      case 'ABSENT':
+        return <Badge variant="destructive">Ausente</Badge>;
+      case 'LATE':
+        return <Badge variant="warning">Atraso</Badge>;
+      case 'EXCUSED':
+        return <Badge variant="secondary">Justificado</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -70,7 +88,7 @@ export default function StudentAttendancePage() {
       <PageHeader
         eyebrow="Estudiante"
         title="Registro de Asistencia"
-        description="Historial detallado de asistencias, ausencias y justificaciones por materia"
+        description="Historial oficial de asistencias, atrasos y justificaciones por materia"
       />
 
       {/* Stats Summary */}
@@ -102,10 +120,9 @@ export default function StudentAttendancePage() {
         </Card>
       </div>
 
-      {/* Filter */}
+      {/* Filter Bar */}
       <Card className="p-4">
         <div className="flex items-center gap-3">
-          <Filter className="h-4 w-4 text-school-muted shrink-0" />
           <span className="text-sm font-medium text-school-heading shrink-0">Filtrar por materia:</span>
           <Select value={courseFilter} onValueChange={setCourseFilter}>
             <SelectTrigger className="w-full sm:w-64">
@@ -121,59 +138,42 @@ export default function StudentAttendancePage() {
         </div>
       </Card>
 
-      {/* Attendance Table */}
-      {filteredRecords.length === 0 ? (
+      {/* Records Table */}
+      {isLoading ? (
         <Card className="p-12 text-center">
-          <ClipboardCheck className="h-10 w-10 mx-auto text-school-muted mb-2" />
-          <p className="font-semibold text-school-heading text-base">No hay registros de asistencia disponibles</p>
-          <p className="text-sm text-school-muted mt-1">Tu docente registrará aquí las asistencias del período lectivo.</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-school-primary mb-3" />
+          <p className="text-school-muted font-medium">Cargando registros oficiales de asistencia...</p>
+        </Card>
+      ) : filteredRecords.length === 0 ? (
+        <Card className="p-12 text-center">
+          <ClipboardCheck className="h-10 w-10 mx-auto text-school-success mb-2" />
+          <p className="font-semibold text-school-heading text-base">Asistencia al día</p>
+          <p className="text-sm text-school-muted mt-1">
+            No se registran inasistencias en el sistema para las materias seleccionadas.
+          </p>
         </Card>
       ) : (
         <Card className="overflow-hidden">
-          <CardHeader className="border-b border-school-border/70 pb-3">
-            <CardTitle className="text-base font-semibold text-school-heading flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-school-primary" />
-              Historial de Asistencia ({filteredRecords.length} registros)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader className="bg-school-background">
-                  <TableRow>
-                    <TableHead className="font-semibold text-school-heading">Fecha</TableHead>
-                    <TableHead className="font-semibold text-school-heading">Materia</TableHead>
-                    <TableHead className="font-semibold text-school-heading">Estado</TableHead>
-                    <TableHead className="font-semibold text-school-heading">Observaciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-school-border">
-                  {filteredRecords.map((record) => (
-                    <TableRow key={record.id} className="hover:bg-school-background/40">
-                      <td className="px-5 py-3 font-semibold text-school-heading text-sm">{record.date}</td>
-                      <td className="px-5 py-3 text-school-body text-sm">{record.courseName ?? `Curso ${record.courseId}`}</td>
-                      <td className="px-5 py-3">
-                        <Badge
-                          variant={
-                            record.status === 'present' ? 'success' :
-                            record.status === 'absent' ? 'destructive' :
-                            record.status === 'late' ? 'warning' : 'secondary'
-                          }
-                        >
-                          {record.status === 'present' ? 'Presente' :
-                           record.status === 'absent' ? 'Ausente' :
-                           record.status === 'late' ? 'Atraso' : 'Justificado'}
-                        </Badge>
-                      </td>
-                      <td className="px-5 py-3 text-school-muted text-sm max-w-[240px] truncate">
-                        {record.notes || '—'}
-                      </td>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Fecha</TableHead>
+                <TableHead>Materia</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Observaciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredRecords.map((rec: BackendAttendance) => (
+                <TableRow key={rec.id}>
+                  <TableCell className="font-medium text-school-heading">{rec.date}</TableCell>
+                  <TableCell>{rec.course?.name || `Curso #${rec.courseId}`}</TableCell>
+                  <TableCell>{getStatusBadge(rec.status)}</TableCell>
+                  <TableCell className="text-school-muted">{rec.remarks || '—'}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </Card>
       )}
     </div>

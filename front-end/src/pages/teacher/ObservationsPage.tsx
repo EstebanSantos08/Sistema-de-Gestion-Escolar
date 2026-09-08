@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Plus, ThumbsUp, AlertTriangle, Info, Trash2, Eye, EyeOff, User, BookOpen } from 'lucide-react';
+import { Plus, ThumbsUp, AlertTriangle, Info, Trash2, Eye, EyeOff, User, BookOpen, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { useMyCourses } from '@/hooks/useCourses';
 import { useCourseStudents } from '@/hooks/useEnrollments';
-import { teacherModuleService } from '@/services/teacherModule.service';
+import { useObservations } from '@/hooks/useObservations';
+import { observationService } from '@/services/observation.service';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,64 +15,68 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import type { StudentObservation, ObservationType, ObservationVisibility } from '@/types';
+import type { BackendObservation } from '@/types';
 
 export default function ObservationsPage() {
+  const qc = useQueryClient();
   const { data: courses } = useMyCourses();
-  const [observations, setObservations] = useState<StudentObservation[]>(() => teacherModuleService.getObservations());
+  const { data: observations = [], isLoading, isError } = useObservations();
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('all');
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formCourseId, setFormCourseId] = useState<string>('');
   const [formStudentId, setFormStudentId] = useState<string>('');
-  const [formType, setFormType] = useState<ObservationType>('positiva');
+  const [formType, setFormType] = useState<'ACADEMIC' | 'BEHAVIORAL' | 'GENERAL'>('GENERAL');
   const [formTitle, setFormTitle] = useState('');
   const [formDetail, setFormDetail] = useState('');
-  const [formVisibility, setFormVisibility] = useState<ObservationVisibility>('ESTUDIANTE_Y_PADRES');
+  const [formVisibility, setFormVisibility] = useState<'ESTUDIANTE_Y_PADRES' | 'SOLO_ESTUDIANTE' | 'SOLO_DOCENTE'>('ESTUDIANTE_Y_PADRES');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const courseIdNum = formCourseId ? Number(formCourseId) : null;
   const { data: courseData } = useCourseStudents(courseIdNum);
   const students = courseData?.students ?? [];
 
-  const refreshObservations = () => {
-    setObservations(teacherModuleService.getObservations());
-  };
-
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formCourseId || !formStudentId || !formTitle || !formDetail) {
+    if (!formStudentId || !formTitle || !formDetail) {
       toast.error('Por favor completa todos los campos requeridos');
       return;
     }
 
-    const courseObj = courses?.find((c) => c.id === Number(formCourseId));
-    const studentObj = students.find((s) => s.studentId === Number(formStudentId));
+    try {
+      setIsSubmitting(true);
+      await observationService.create({
+        studentId: Number(formStudentId),
+        title: formTitle.trim(),
+        description: formDetail.trim(),
+        type: formType,
+        visibility: formVisibility,
+      });
 
-    teacherModuleService.createObservation({
-      courseId: Number(formCourseId),
-      courseName: courseObj?.name ?? 'Curso',
-      studentId: Number(formStudentId),
-      studentName: studentObj?.name ?? 'Estudiante',
-      studentCode: studentObj?.studentCode ?? '',
-      type: formType,
-      title: formTitle,
-      detail: formDetail,
-      visibility: formVisibility,
-    });
-
-    toast.success('Observación registrada con éxito');
-    setIsModalOpen(false);
-    setFormTitle('');
-    setFormDetail('');
-    refreshObservations();
+      toast.success('Observación registrada con éxito en el servidor');
+      qc.invalidateQueries({ queryKey: ['observations'] });
+      qc.invalidateQueries({ queryKey: ['daily-summary'] });
+      setIsModalOpen(false);
+      setFormTitle('');
+      setFormDetail('');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Error al registrar observación';
+      toast.error(errorMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('¿Estás seguro de eliminar esta observación?')) {
-      teacherModuleService.deleteObservation(id);
-      refreshObservations();
+  const handleDelete = async (id: number) => {
+    if (!confirm('¿Estás seguro de eliminar esta observación?')) return;
+    try {
+      await observationService.remove(id);
+      qc.invalidateQueries({ queryKey: ['observations'] });
+      qc.invalidateQueries({ queryKey: ['daily-summary'] });
       toast.success('Observación eliminada');
+    } catch {
+      toast.error('Error al eliminar la observación');
     }
   };
 
@@ -79,121 +85,137 @@ export default function ObservationsPage() {
     return true;
   });
 
-  const getObservationBadge = (type: ObservationType) => {
+  const getObservationBadge = (type: string) => {
     switch (type) {
-      case 'positiva':
+      case 'ACADEMIC':
         return (
           <Badge variant="success" className="gap-1">
-            <ThumbsUp className="h-3 w-3" /> Positiva
+            <ThumbsUp className="h-3 w-3" /> Académica
           </Badge>
         );
-      case 'atencion':
+      case 'BEHAVIORAL':
         return (
           <Badge variant="destructive" className="gap-1">
-            <AlertTriangle className="h-3 w-3" /> Atención
+            <AlertTriangle className="h-3 w-3" /> Conductual
           </Badge>
         );
       default:
         return (
           <Badge variant="secondary" className="gap-1">
-            <Info className="h-3 w-3" /> Recomendación
+            <Info className="h-3 w-3" /> General
           </Badge>
         );
     }
   };
 
+  const getVisibilityBadge = (vis: string) => {
+    switch (vis) {
+      case 'ESTUDIANTE_Y_PADRES':
+        return (
+          <Badge variant="outline" className="gap-1 text-xs text-school-muted">
+            <Eye className="h-3 w-3" /> Visible para Estudiante y Familia
+          </Badge>
+        );
+      case 'SOLO_ESTUDIANTE':
+        return (
+          <Badge variant="outline" className="gap-1 text-xs text-school-muted">
+            <Eye className="h-3 w-3" /> Solo Estudiante
+          </Badge>
+        );
+      case 'SOLO_DOCENTE':
+        return (
+          <Badge variant="outline" className="gap-1 text-xs text-amber-700 border-amber-300 bg-amber-50">
+            <EyeOff className="h-3 w-3" /> Solo Docente / Confidencial
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <PageHeader
-        eyebrow="Docente"
-        title="Observaciones Pedagógicas"
-        description="Bitácora de seguimiento conductual, formativo y reconocimientos individuales"
-      >
-        <Button onClick={() => setIsModalOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nueva Observación
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <PageHeader
+          eyebrow="Docente"
+          title="Bitácora de Observaciones"
+          description="Registro oficial de seguimiento pedagógico y conductual de los estudiantes"
+        />
+        <Button onClick={() => setIsModalOpen(true)} className="gap-2 shrink-0">
+          <Plus className="h-4 w-4" /> Nueva Observación
         </Button>
-      </PageHeader>
+      </div>
 
-      {/* Filter Bar */}
-      <Card className="p-4">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-school-heading shrink-0">Filtrar por tipo:</span>
-          <Select value={selectedTypeFilter} onValueChange={setSelectedTypeFilter}>
-            <SelectTrigger className="w-full sm:w-[240px]">
-              <SelectValue placeholder="Todas las Observaciones" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas las Observaciones</SelectItem>
-              <SelectItem value="positiva">Positivas / Felicitaciones</SelectItem>
-              <SelectItem value="recomendacion">Recomendaciones</SelectItem>
-              <SelectItem value="atencion">Atención / Conducta</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* Filter bar */}
+      <div className="flex items-center gap-4 bg-white p-4 rounded-xl border border-school-border/70 shadow-xs">
+        <span className="text-sm font-medium text-school-heading">Filtrar por tipo:</span>
+        <Select value={selectedTypeFilter} onValueChange={setSelectedTypeFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Todos los tipos" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los tipos</SelectItem>
+            <SelectItem value="ACADEMIC">Académica</SelectItem>
+            <SelectItem value="BEHAVIORAL">Conductual</SelectItem>
+            <SelectItem value="GENERAL">General</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Loading state */}
+      {isLoading ? (
+        <div className="py-16 text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-school-primary mb-3" />
+          <p className="text-school-muted">Cargando observaciones institucionales...</p>
         </div>
-      </Card>
-
-      {/* Observations Grid */}
-      {filteredObservations.length === 0 ? (
-        <Card className="p-12 text-center">
-          <p className="text-school-muted text-sm">
-            No se han registrado observaciones con el filtro seleccionado.
-          </p>
+      ) : isError ? (
+        <div className="py-16 text-center text-red-600">
+          <p>No se pudieron cargar las observaciones del servidor.</p>
+        </div>
+      ) : filteredObservations.length === 0 ? (
+        <Card className="text-center py-16">
+          <CardContent className="space-y-3">
+            <Info className="h-10 w-10 text-school-muted mx-auto" />
+            <p className="text-base font-semibold text-school-heading">No hay observaciones registradas</p>
+            <p className="text-sm text-school-muted max-w-md mx-auto">
+              Utiliza el botón superior para crear la primera observación de seguimiento para tus estudiantes.
+            </p>
+          </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {filteredObservations.map((obs) => (
-            <Card key={obs.id} className="flex flex-col justify-between hover:border-school-accent transition-colors">
-              <CardHeader className="pb-3 border-b border-school-border/60">
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  {getObservationBadge(obs.type)}
-                  <span className="text-xs text-school-muted font-medium">{obs.date}</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-school-primary shrink-0" />
-                  <CardTitle className="text-base font-bold text-school-heading">{obs.studentName}</CardTitle>
-                  <span className="text-xs text-school-muted">({obs.studentCode})</span>
-                </div>
-
-                <p className="text-xs text-school-muted flex items-center gap-1 mt-1">
-                  <BookOpen className="h-3.5 w-3.5 text-school-primary shrink-0" />
-                  {obs.courseName}
-                </p>
-              </CardHeader>
-
-              <CardContent className="space-y-4 pt-4 flex-1 flex flex-col justify-between">
-                <div className="rounded-xl bg-school-background p-3.5 border border-school-border/60">
-                  <p className="font-semibold text-sm text-school-heading mb-1">{obs.title}</p>
-                  <p className="text-sm text-school-body leading-relaxed">{obs.detail}</p>
-                </div>
-
-                <div className="flex items-center justify-between text-xs text-school-muted border-t border-school-border/60 pt-3">
-                  <div className="flex items-center gap-1.5 font-medium">
-                    {obs.visibility === 'ESTUDIANTE_Y_PADRES' ? (
-                      <span className="flex items-center gap-1 text-emerald-800">
-                        <Eye className="h-3.5 w-3.5 text-school-success" /> Visible: Estudiante y Padres
-                      </span>
-                    ) : obs.visibility === 'SOLO_ESTUDIANTE' ? (
-                      <span className="flex items-center gap-1 text-sky-800">
-                        <Eye className="h-3.5 w-3.5 text-school-blue" /> Visible: Solo Estudiante
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-school-muted">
-                        <EyeOff className="h-3.5 w-3.5" /> Privado: Docentes
-                      </span>
-                    )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredObservations.map((obs: BackendObservation) => (
+            <Card key={obs.id} className="flex flex-col justify-between hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {getObservationBadge(obs.type)}
+                      {getVisibilityBadge(obs.visibility)}
+                    </div>
+                    <CardTitle className="text-base font-bold text-school-heading pt-1">{obs.title}</CardTitle>
                   </div>
-
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-school-error hover:bg-school-error/10"
                     onClick={() => handleDelete(obs.id)}
-                    aria-label="Eliminar observación"
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3 flex-1 flex flex-col justify-between">
+                <p className="text-sm text-school-body bg-school-subtle/40 p-3 rounded-lg border border-school-border/50">
+                  {obs.description}
+                </p>
+
+                <div className="pt-2 border-t border-school-border/60 text-xs text-school-muted flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5 font-medium text-school-heading">
+                    <User className="h-3.5 w-3.5 text-school-primary" />
+                    <span>{obs.student?.user?.name || `Estudiante #${obs.studentId}`}</span>
+                  </div>
+                  <span>{new Date(obs.date || obs.createdAt).toLocaleDateString('es-ES')}</span>
                 </div>
               </CardContent>
             </Card>
@@ -203,81 +225,94 @@ export default function ObservationsPage() {
 
       {/* Modal Nueva Observación */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-school-heading">Registrar Observación</DialogTitle>
-            <DialogDescription className="text-sm text-school-muted">
-              Añade un registro pedagógico o formativo al expediente del alumno
+            <DialogTitle>Registrar Nueva Observación</DialogTitle>
+            <DialogDescription>
+              Agrega una anotación de seguimiento sobre el desempeño o comportamiento del estudiante.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleCreate} className="space-y-4 pt-2">
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-school-heading">Materia / Aula *</Label>
-              <Select value={formCourseId} onValueChange={(val) => { setFormCourseId(val); setFormStudentId(''); }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar Curso" />
-                </SelectTrigger>
-                <SelectContent>
-                  {courses?.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-school-heading">Estudiante *</Label>
-              <Select value={formStudentId} onValueChange={setFormStudentId} disabled={!formCourseId}>
-                <SelectTrigger>
-                  <SelectValue placeholder={formCourseId ? 'Seleccionar Estudiante' : 'Primero elige un aula'} />
-                </SelectTrigger>
-                <SelectContent>
-                  {students.map((s) => (
-                    <SelectItem key={s.studentId} value={String(s.studentId)}>
-                      {s.name} ({s.studentCode})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-sm font-medium text-school-heading">Tipo de Registro *</Label>
-                <Select value={formType} onValueChange={(v) => setFormType(v as ObservationType)}>
-                  <SelectTrigger>
-                    <SelectValue />
+                <Label htmlFor="course">Curso / Materia *</Label>
+                <Select value={formCourseId} onValueChange={setFormCourseId}>
+                  <SelectTrigger id="course">
+                    <SelectValue placeholder="Selecciona curso" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="positiva">Positiva / Felicitación</SelectItem>
-                    <SelectItem value="recomendacion">Recomendación</SelectItem>
-                    <SelectItem value="atencion">Atención / Conducta</SelectItem>
+                    {courses?.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-sm font-medium text-school-heading">Visibilidad</Label>
-                <Select value={formVisibility} onValueChange={(v) => setFormVisibility(v as ObservationVisibility)}>
-                  <SelectTrigger>
+                <Label htmlFor="student">Estudiante *</Label>
+                <Select
+                  value={formStudentId}
+                  onValueChange={setFormStudentId}
+                  disabled={!formCourseId || students.length === 0}
+                >
+                  <SelectTrigger id="student">
+                    <SelectValue placeholder={!formCourseId ? 'Elige curso primero' : students.length === 0 ? 'Sin alumnos' : 'Selecciona estudiante'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {students.map((s) => (
+                      <SelectItem key={s.studentId} value={String(s.studentId)}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="type">Tipo de Observación *</Label>
+                <Select
+                  value={formType}
+                  onValueChange={(val) => setFormType(val as 'ACADEMIC' | 'BEHAVIORAL' | 'GENERAL')}
+                >
+                  <SelectTrigger id="type">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ESTUDIANTE_Y_PADRES">Familia y Alumno</SelectItem>
-                    <SelectItem value="SOLO_ESTUDIANTE">Solo Alumno</SelectItem>
-                    <SelectItem value="SOLO_DOCENTE">Privado Docente</SelectItem>
+                    <SelectItem value="GENERAL">General</SelectItem>
+                    <SelectItem value="ACADEMIC">Académica</SelectItem>
+                    <SelectItem value="BEHAVIORAL">Conductual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="visibility">Visibilidad *</Label>
+                <Select
+                  value={formVisibility}
+                  onValueChange={(val) => setFormVisibility(val as 'ESTUDIANTE_Y_PADRES' | 'SOLO_ESTUDIANTE' | 'SOLO_DOCENTE')}
+                >
+                  <SelectTrigger id="visibility">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ESTUDIANTE_Y_PADRES">Estudiante y Familia</SelectItem>
+                    <SelectItem value="SOLO_ESTUDIANTE">Solo Estudiante</SelectItem>
+                    <SelectItem value="SOLO_DOCENTE">Confidencial (Solo Docente)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-school-heading">Título o Resumen *</Label>
+              <Label htmlFor="title">Título o Motivo Breve *</Label>
               <Input
-                placeholder="Ej: Excelente participación en clase"
+                id="title"
+                placeholder="Ej. Excelente participación en clase o Entrega tardía reiterada"
                 value={formTitle}
                 onChange={(e) => setFormTitle(e.target.value)}
                 required
@@ -285,12 +320,13 @@ export default function ObservationsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-school-heading">Detalle de la Observación *</Label>
+              <Label htmlFor="detail">Descripción detallada *</Label>
               <Textarea
-                placeholder="Describe la situación observada y recomendaciones pedagógicas..."
+                id="detail"
+                rows={3}
+                placeholder="Describe la situación observada y acuerdos pedagógicos tomados..."
                 value={formDetail}
                 onChange={(e) => setFormDetail(e.target.value)}
-                rows={3}
                 required
               />
             </div>
@@ -299,8 +335,14 @@ export default function ObservationsPage() {
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit">
-                Guardar Observación
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" /> Guardando...
+                  </>
+                ) : (
+                  'Guardar Observación'
+                )}
               </Button>
             </DialogFooter>
           </form>

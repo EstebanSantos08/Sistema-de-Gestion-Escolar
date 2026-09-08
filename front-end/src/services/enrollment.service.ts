@@ -44,4 +44,8 @@ export const enrollmentService = {
     );
     return res.data.data!;
   },
+
+  async getCourseEnrollments(courseId: number): Promise<{ course: { id: number; name: string; period: string }; students: CourseGradeRow[] }> {
+    return this.getByCourse(courseId);
+  },
 };

@@ -1,7 +1,9 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Megaphone, EyeOff, AlertTriangle, ShieldAlert, Trash2, Bell, AlertCircle, Info, Calendar, BookOpen } from 'lucide-react';
-import { teacherModuleService } from '@/services/teacherModule.service';
+import { ArrowLeft, Megaphone, EyeOff, AlertTriangle, ShieldAlert, Bell, AlertCircle, Info, Calendar, Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
+import { announcementService } from '@/services/announcement.service';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,11 +16,11 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import type { AnnouncementPriority } from '@/types';
+import type { BackendAnnouncement } from '@/types';
 
 const HIDDEN_KEY = 'student_hidden_announcements';
 
-function getHiddenIds(): string[] {
+function getHiddenIds(): number[] {
   try {
     const raw = localStorage.getItem(HIDDEN_KEY);
     return raw ? JSON.parse(raw) : [];
@@ -27,7 +29,7 @@ function getHiddenIds(): string[] {
   }
 }
 
-function addHiddenId(id: string): void {
+function addHiddenId(id: number): void {
   const ids = getHiddenIds();
   if (!ids.includes(id)) {
     ids.push(id);
@@ -36,21 +38,22 @@ function addHiddenId(id: string): void {
 }
 
 export default function StudentAnnouncementsPage() {
-  const [hiddenIds, setHiddenIds] = useState<string[]>(getHiddenIds);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const { user } = useAuth();
+  const [hiddenIds, setHiddenIds] = useState<number[]>(getHiddenIds);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [step, setStep] = useState<1 | 2>(1);
 
-  const allAnnouncements = teacherModuleService.getAnnouncements();
+  // Real announcements query from /api/announcements scoped to student
+  const { data: allAnnouncements = [], isLoading } = useQuery({
+    queryKey: ['announcements', user?.id, 'student-announcements'],
+    queryFn: () => announcementService.list(),
+    enabled: !!user,
+  });
 
   const visibleAnnouncements = useMemo(() => {
     return allAnnouncements
       .filter((ann) => !hiddenIds.includes(ann.id))
-      .sort((a, b) => {
-        const order: Record<string, number> = { urgente: 0, importante: 1, normal: 2 };
-        const diff = (order[a.priority] ?? 3) - (order[b.priority] ?? 3);
-        if (diff !== 0) return diff;
-        return b.publishDate.localeCompare(a.publishDate);
-      });
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }, [allAnnouncements, hiddenIds]);
 
   const announcementToDelete = useMemo(() => {
@@ -58,7 +61,7 @@ export default function StudentAnnouncementsPage() {
     return allAnnouncements.find((a) => a.id === confirmDeleteId) ?? null;
   }, [confirmDeleteId, allAnnouncements]);
 
-  const openDeleteDialog = useCallback((id: string) => {
+  const openDeleteDialog = useCallback((id: number) => {
     setConfirmDeleteId(id);
     setStep(1);
   }, []);
@@ -81,29 +84,6 @@ export default function StudentAnnouncementsPage() {
     setStep(1);
   }, []);
 
-  const getPriorityBadge = (priority: AnnouncementPriority) => {
-    switch (priority) {
-      case 'urgente':
-        return (
-          <Badge variant="destructive" className="gap-1">
-            <AlertCircle className="h-3 w-3" /> Urgente
-          </Badge>
-        );
-      case 'importante':
-        return (
-          <Badge variant="warning" className="gap-1">
-            <Bell className="h-3 w-3" /> Importante
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="secondary" className="gap-1">
-            <Info className="h-3 w-3" /> Normal
-          </Badge>
-        );
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -116,60 +96,65 @@ export default function StudentAnnouncementsPage() {
 
       <PageHeader
         eyebrow="Estudiante"
-        title="Comunicados y Circulares"
-        description="Avisos oficiales y noticias publicadas por los docentes y la institución"
+        title="Comunicados y Avisos"
+        description="Circulares institucionales, avisos docentes y notificaciones académicas oficiales"
       />
 
       {/* Summary */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="p-4 text-center">
-          <Info className="h-5 w-5 mx-auto text-school-blue mb-1" />
-          <p className="text-2xl font-bold text-school-blue">{visibleAnnouncements.filter((a) => a.priority === 'normal').length}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Informativos</p>
-        </Card>
+      <div className="grid grid-cols-2 gap-4">
         <Card className="p-4 text-center">
           <Bell className="h-5 w-5 mx-auto text-school-warning mb-1" />
-          <p className="text-2xl font-bold text-school-warning">{visibleAnnouncements.filter((a) => a.priority === 'importante').length}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Importantes</p>
+          <p className="text-2xl font-bold text-school-warning">
+            {visibleAnnouncements.length}
+          </p>
+          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Avisos Activos</p>
         </Card>
         <Card className="p-4 text-center">
-          <AlertCircle className="h-5 w-5 mx-auto text-school-error mb-1" />
-          <p className="text-2xl font-bold text-school-error">{visibleAnnouncements.filter((a) => a.priority === 'urgente').length}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Urgentes</p>
+          <Megaphone className="h-5 w-5 mx-auto text-school-primary mb-1" />
+          <p className="text-2xl font-bold text-school-primary">{allAnnouncements.length}</p>
+          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Total Emitidos</p>
         </Card>
       </div>
 
       {/* Announcements List */}
-      {visibleAnnouncements.length === 0 ? (
+      {isLoading ? (
+        <Card className="p-12 text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-school-primary mb-3" />
+          <p className="text-school-muted font-medium">Cargando circulares oficiales...</p>
+        </Card>
+      ) : visibleAnnouncements.length === 0 ? (
         <Card className="p-12 text-center">
           <Megaphone className="h-10 w-10 mx-auto text-school-muted mb-2" />
-          <p className="font-semibold text-school-heading text-base">No hay comunicados visibles</p>
-          <p className="text-sm text-school-muted mt-1">No hay comunicados publicados o los has ocultado de tu lista personal.</p>
+          <p className="font-semibold text-school-heading text-base">No hay comunicados disponibles</p>
+          <p className="text-sm text-school-muted mt-1">
+            No tienes avisos institucionales pendientes de lectura.
+          </p>
         </Card>
       ) : (
         <div className="space-y-4">
-          {visibleAnnouncements.map((ann) => (
+          {visibleAnnouncements.map((ann: BackendAnnouncement) => (
             <Card key={ann.id} className="hover:border-school-accent transition-colors">
-              <CardContent className="p-6 space-y-4">
+              <CardContent className="p-5 space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1.5 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-bold text-school-heading text-base">{ann.title}</h3>
-                      {getPriorityBadge(ann.priority)}
+                      {ann.course && (
+                        <Badge variant="outline" className="text-xs">
+                          {ann.course.name}
+                        </Badge>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-3 text-xs text-school-muted font-medium flex-wrap">
                       <span className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" /> {ann.publishDate}
+                        <Calendar className="h-3.5 w-3.5 text-school-primary" />
+                        {new Date(ann.createdAt).toLocaleDateString('es-ES')}
                       </span>
-                      <span>·</span>
-                      <span>Docente: {ann.authorName}</span>
-                      {ann.courseName && (
+                      {ann.author?.name && (
                         <>
                           <span>·</span>
-                          <span className="flex items-center gap-1">
-                            <BookOpen className="h-3.5 w-3.5 text-school-primary" /> {ann.courseName}
-                          </span>
+                          <span>Autor: {ann.author.name}</span>
                         </>
                       )}
                     </div>
@@ -187,9 +172,9 @@ export default function StudentAnnouncementsPage() {
                   </Button>
                 </div>
 
-                <div className="text-sm text-school-body bg-school-background p-4 rounded-xl border border-school-border/60 leading-relaxed whitespace-pre-line">
+                <p className="text-sm text-school-body bg-school-background p-3.5 rounded-xl border border-school-border/60 leading-relaxed">
                   {ann.content}
-                </div>
+                </p>
               </CardContent>
             </Card>
           ))}
@@ -214,17 +199,18 @@ export default function StudentAnnouncementsPage() {
               )}
             </DialogTitle>
             <DialogDescription className="text-sm text-school-muted">
-              {step === 1 ? (
-                <>
-                  El comunicado <strong>"{announcementToDelete?.title}"</strong> se ocultará únicamente de tu vista. El comunicado institucional se mantiene intacto.
-                </>
-              ) : (
-                <>
-                  Esta es la confirmación final para no mostrar <strong>"{announcementToDelete?.title}"</strong> en tu panel de alumno.
-                </>
-              )}
+              {step === 1
+                ? 'El aviso ya no aparecerá en tu lista personal. El comunicado institucional se conserva.'
+                : 'Esta acción ocultará definitivamente este comunicado de tu vista de alumno.'}
             </DialogDescription>
           </DialogHeader>
+
+          {announcementToDelete && (
+            <div className="p-3 bg-school-background rounded-xl border border-school-border text-xs text-school-body">
+              <strong className="text-school-heading">{announcementToDelete.title}</strong>
+              <p className="text-school-muted mt-0.5">{announcementToDelete.content.slice(0, 80)}...</p>
+            </div>
+          )}
 
           <DialogFooter className="pt-2">
             <Button variant="outline" onClick={closeDialog}>

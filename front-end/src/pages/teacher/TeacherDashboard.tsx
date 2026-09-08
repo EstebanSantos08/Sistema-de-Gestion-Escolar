@@ -1,8 +1,9 @@
 import { BookOpen, Users, ClipboardCheck, Megaphone, PlusCircle, CheckSquare, MessageSquare, AlertCircle, BookMarked, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useMyCourses } from '@/hooks/useCourses';
-import { teacherModuleService } from '@/services/teacherModule.service';
+import { dailySummaryService } from '@/services/dailySummary.service';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatCard } from '@/components/shared/StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,11 +12,17 @@ import { Button } from '@/components/ui/button';
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
-  const { data: courses, isLoading } = useMyCourses();
+  const { data: courses, isLoading: loadingCourses } = useMyCourses();
+
+  const { data: dailySummary, isLoading: loadingSummary } = useQuery({
+    queryKey: ['daily-summary', user?.id],
+    queryFn: () => dailySummaryService.getTeacherDailySummary({}),
+    enabled: !!user,
+  });
 
   const totalStudents = courses?.reduce((s, c) => s + (c.enrolledCount ?? c.enrollmentsCount ?? 0), 0) ?? 0;
-  const activities = teacherModuleService.getActivities();
-  const announcements = teacherModuleService.getAnnouncements();
+  const activities = dailySummary?.activities ?? [];
+  const announcements = dailySummary?.announcements ?? [];
 
   return (
     <div className="space-y-6">
@@ -29,27 +36,31 @@ export default function TeacherDashboard() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Cursos Asignados"
-          value={isLoading ? '—' : courses?.length ?? 0}
+          value={loadingCourses ? '—' : courses?.length ?? 0}
           description="materias activas este ciclo"
-          icon={<BookOpen className="h-5 w-5 text-school-primary" />}
+          variant="turquoise"
+          icon={<BookOpen className="h-5 w-5" />}
         />
         <StatCard
           title="Estudiantes a cargo"
-          value={isLoading ? '—' : totalStudents}
+          value={loadingCourses ? '—' : totalStudents}
           description="matriculados en tus materias"
-          icon={<Users className="h-5 w-5 text-school-blue" />}
+          variant="lightblue"
+          icon={<Users className="h-5 w-5" />}
         />
         <StatCard
           title="Actividades"
-          value={activities.length}
+          value={loadingSummary ? '—' : activities.length}
           description="registradas en el sistema"
-          icon={<CheckSquare className="h-5 w-5 text-school-violet" />}
+          variant="yellow"
+          icon={<CheckSquare className="h-5 w-5" />}
         />
         <StatCard
           title="Comunicados"
-          value={announcements.length}
+          value={loadingSummary ? '—' : announcements.length}
           description="publicados a las familias"
-          icon={<Megaphone className="h-5 w-5 text-school-pink" />}
+          variant="pink"
+          icon={<Megaphone className="h-5 w-5" />}
         />
       </div>
 
@@ -120,7 +131,7 @@ export default function TeacherDashboard() {
             </Button>
           </CardHeader>
           <CardContent className="pt-4">
-            {isLoading ? (
+            {loadingCourses ? (
               <p className="text-school-muted text-sm py-4">Cargando cursos...</p>
             ) : (courses ?? []).length === 0 ? (
               <p className="text-school-muted text-sm py-4">No tienes cursos asignados este período.</p>
@@ -173,7 +184,9 @@ export default function TeacherDashboard() {
                   <div key={a.id} className="border-b border-school-border/70 last:border-b-0 pb-3 last:pb-0">
                     <p className="text-sm font-medium text-school-heading">{a.title}</p>
                     <p className="text-xs text-school-muted line-clamp-2 mt-0.5">{a.content}</p>
-                    <span className="text-xs text-school-muted font-normal mt-1 block">{a.publishDate}</span>
+                    <span className="text-xs text-school-muted font-normal mt-1 block">
+                      {new Date(a.createdAt).toLocaleDateString('es-ES')}
+                    </span>
                   </div>
                 ))
               )}
@@ -199,10 +212,10 @@ export default function TeacherDashboard() {
                   <div key={act.id} className="flex items-center justify-between border-b border-school-border/70 last:border-b-0 pb-3 last:pb-0 text-sm">
                     <div>
                       <p className="font-medium text-school-heading">{act.title}</p>
-                      <p className="text-xs text-school-muted">{act.courseName}</p>
+                      <p className="text-xs text-school-muted">Curso #{act.courseId}</p>
                     </div>
                     <Badge variant="outline" className="text-xs border-school-warning/50 text-school-warning font-medium">
-                      {act.dueDate}
+                      {new Date(act.dueDate).toLocaleDateString('es-ES')}
                     </Badge>
                   </div>
                 ))

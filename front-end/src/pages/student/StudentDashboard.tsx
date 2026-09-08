@@ -48,19 +48,22 @@ export default function StudentDashboard() {
           title="Materias activas"
           value={isLoading ? '—' : activeCourses}
           description="en curso este período"
-          icon={<BookOpen className="h-5 w-5 text-school-primary" />}
+          variant="turquoise"
+          icon={<BookOpen className="h-5 w-5" />}
         />
         <StatCard
           title="Promedio general"
           value={isLoading ? '—' : generalAverage > 0 ? generalAverage.toFixed(2) : '—'}
           description="calificación ponderada actual"
-          icon={<Star className="h-5 w-5 text-school-warning" />}
+          variant="yellow"
+          icon={<Star className="h-5 w-5" />}
         />
         <StatCard
           title="Materias aprobadas"
           value={isLoading ? '—' : courses.filter((c) => c.passed && c.grades.length > 0).length}
           description="de las materias evaluadas"
-          icon={<Award className="h-5 w-5 text-school-success" />}
+          variant="lime"
+          icon={<Award className="h-5 w-5" />}
         />
       </div>
 

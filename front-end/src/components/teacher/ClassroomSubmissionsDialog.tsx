@@ -5,7 +5,6 @@ import {
   FileText,
   Search,
   Users,
-  X,
   Eye,
   Paperclip,
   AlertTriangle,
@@ -18,6 +17,8 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,34 +26,51 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useCourseStudents } from '@/hooks/useEnrollments';
-import { teacherModuleService, type ClassActivity, type SubmissionItem } from '@/services/teacherModule.service';
+import { activityService } from '@/services/activity.service';
+import { submissionService } from '@/services/submission.service';
+import type { SubmissionRecord, EvidenceRecord } from '@/types';
+
+export interface ClassroomActivityProp {
+  id: number | string;
+  courseId: number;
+  title: string;
+  description?: string | null;
+  dueDate?: string | null;
+  type?: string;
+  maxScore?: number;
+  courseName?: string;
+}
 
 interface ClassroomSubmissionsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  activity: ClassActivity | null;
+  activity: ClassroomActivityProp | null;
 }
-
-const DEFAULT_COURSE_STUDENTS = [
-  { studentId: 1, name: 'Juan Pérez', studentCode: 'EST-2026-001' },
-  { studentId: 2, name: 'María Rodríguez', studentCode: 'EST-2026-002' },
-  { studentId: 3, name: 'Pedro Sánchez', studentCode: 'EST-2026-003' },
-  { studentId: 4, name: 'Ana López', studentCode: 'EST-2026-004' },
-];
 
 export function ClassroomSubmissionsDialog({
   open,
   onOpenChange,
   activity,
 }: ClassroomSubmissionsDialogProps) {
+  const qc = useQueryClient();
   const courseId = activity?.courseId ?? null;
-  const { data: courseData } = useCourseStudents(courseId);
+  const activityIdNum = activity ? Number(activity.id) : null;
+
+  const { data: courseData, isLoading: loadingStudents } = useCourseStudents(courseId);
+
+  const { data: rawSubmissions, isLoading: loadingSubmissions } = useQuery({
+    queryKey: ['submissions', activityIdNum],
+    queryFn: async () => {
+      if (!activityIdNum) return [];
+      const res = await activityService.getSubmissions(activityIdNum);
+      return Array.isArray(res) ? res : res ? [res] : [];
+    },
+    enabled: !!activityIdNum && open,
+  });
 
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'submitted' | 'pending'>('all');
-  const [selectedStudentId, setSelectedStudentId] = useState<number>(1);
-
-  const [submissionsList, setSubmissionsList] = useState<SubmissionItem[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
 
   const [gradeScore, setGradeScore] = useState<string>('');
   const [gradeFeedback, setGradeFeedback] = useState<string>('');
@@ -61,49 +79,48 @@ export function ClassroomSubmissionsDialog({
   const [previewMediaTitle, setPreviewMediaTitle] = useState<string>('');
   const [imageLoadError, setImageLoadError] = useState(false);
 
-  useEffect(() => {
-    if (activity && open) {
-      setSubmissionsList(teacherModuleService.getSubmissions(activity.id));
-    }
-  }, [activity?.id, open]);
+  const enrolledStudents = (courseData?.students ?? []).map((s) => ({
+    studentId: s.studentId,
+    name: s.name,
+    studentCode: s.studentCode,
+  }));
 
-  const enrolledStudents = courseData?.students && courseData.students.length > 0
-    ? courseData.students.map((s) => ({
-        studentId: s.studentId,
-        name: s.name,
-        studentCode: s.studentCode,
-      }))
-    : DEFAULT_COURSE_STUDENTS;
+  const submissionsList: SubmissionRecord[] = Array.isArray(rawSubmissions) ? rawSubmissions : [];
 
-  const submissions = !activity ? [] : submissionsList.length > 0 ? submissionsList : teacherModuleService.getSubmissions(activity.id);
-
+  // Active submission for selected student (if any)
   const allStudentsMap = new Map<number, { studentId: number; name: string; studentCode: string }>();
   enrolledStudents.forEach((st) => allStudentsMap.set(st.studentId, st));
-  submissions.forEach((sub) => {
+  submissionsList.forEach((sub) => {
     if (!allStudentsMap.has(sub.studentId)) {
+      const sName = sub.student?.user?.name || `Estudiante #${sub.studentId}`;
+      const sCode = sub.student?.studentCode || `EST-${sub.studentId}`;
       allStudentsMap.set(sub.studentId, {
         studentId: sub.studentId,
-        name: sub.studentName || `Estudiante #${sub.studentId}`,
-        studentCode: `EST-2026-00${sub.studentId}`,
+        name: sName,
+        studentCode: sCode,
       });
     }
   });
 
   const studentSubmissions = Array.from(allStudentsMap.values()).map((st) => {
-    const sub = submissions.find((s) => s.studentId === st.studentId);
+    const sub = submissionsList.find((s) => s.studentId === st.studentId);
     return {
       studentId: st.studentId,
       name: st.name,
       studentCode: st.studentCode,
       hasSubmitted: !!sub,
-      submission: sub as SubmissionItem | undefined,
+      submission: sub,
     };
   });
 
   const submittedCount = studentSubmissions.filter((s) => s.hasSubmitted).length;
-  const gradedCount = studentSubmissions.filter((s) => s.submission?.status === 'calificada' || s.submission?.score !== undefined).length;
+  const gradedCount = studentSubmissions.filter(
+    (s) => s.submission?.status === 'completada' || s.submission?.score !== null && s.submission?.score !== undefined
+  ).length;
   const pendingCount = studentSubmissions.length - submittedCount;
-  const completionPercentage = Math.round((submittedCount / Math.max(studentSubmissions.length, 1)) * 100);
+  const completionPercentage = Math.round(
+    (submittedCount / Math.max(studentSubmissions.length, 1)) * 100
+  );
 
   const filteredStudents = studentSubmissions.filter((item) => {
     const matchesSearch =
@@ -124,20 +141,70 @@ export function ClassroomSubmissionsDialog({
     firstSubmittedStudent ??
     studentSubmissions[0];
 
+  // Fetch full submission with evidences when a student submission is selected
+  const selectedSubmissionId = selectedItem?.submission?.id ?? null;
+  const { data: fullSubmission } = useQuery({
+    queryKey: ['submission', selectedSubmissionId],
+    queryFn: () => submissionService.get(selectedSubmissionId!),
+    enabled: !!selectedSubmissionId,
+  });
+
+  const activeSubmission = fullSubmission ?? selectedItem?.submission ?? null;
+  const activeEvidences: EvidenceRecord[] = activeSubmission?.evidences ?? [];
+  const primaryEvidence = activeEvidences.length > 0 ? activeEvidences[0] : null;
+
   useEffect(() => {
     setImageLoadError(false);
-    if (selectedItem?.submission) {
-      setGradeScore(selectedItem.submission.score !== undefined ? String(selectedItem.submission.score) : '');
-      setGradeFeedback(selectedItem.submission.feedback || '');
+    if (activeSubmission) {
+      setGradeScore(
+        activeSubmission.score !== null && activeSubmission.score !== undefined
+          ? String(activeSubmission.score)
+          : ''
+      );
+      setGradeFeedback(activeSubmission.teacherFeedback || '');
     } else {
       setGradeScore('');
       setGradeFeedback('');
     }
-  }, [selectedItem?.studentId, selectedItem?.submission?.id, selectedItem?.submission?.score]);
+  }, [activeSubmission?.id, activeSubmission?.score, selectedItem?.studentId]);
+
+  const gradeMutation = useMutation({
+    mutationFn: async ({ submissionId, score, feedback }: { submissionId: number; score: number; feedback?: string }) => {
+      return submissionService.grade(submissionId, {
+        score,
+        teacherFeedback: feedback,
+      });
+    },
+    onSuccess: (_, variables) => {
+      toast.success(`Calificación guardada (${variables.score}/10)`);
+      qc.invalidateQueries({ queryKey: ['submissions', activityIdNum] });
+      qc.invalidateQueries({ queryKey: ['submission', variables.submissionId] });
+      if (activity?.courseId) {
+        qc.invalidateQueries({ queryKey: ['activities', activity.courseId] });
+      }
+      qc.invalidateQueries({ queryKey: ['daily-summary'] });
+      qc.invalidateQueries({ queryKey: ['audit-logs'] });
+    },
+    onError: (err: unknown) => {
+      if (axios.isAxiosError(err)) {
+        const msg = err.response?.data?.error || err.response?.data?.message;
+        toast.error(msg || 'Error al calificar la entrega');
+      } else if (err instanceof Error) {
+        toast.error(err.message);
+      } else {
+        toast.error('Error al guardar la calificación');
+      }
+    },
+  });
 
   const handleSaveGrade = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedItem || !activity) return;
+
+    if (!activeSubmission) {
+      toast.error('El estudiante no ha realizado una entrega para calificar.');
+      return;
+    }
 
     const scoreNum = parseFloat(gradeScore);
     if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > 10) {
@@ -145,20 +212,18 @@ export function ClassroomSubmissionsDialog({
       return;
     }
 
-    teacherModuleService.gradeSubmission({
-      submissionId: selectedItem.submission?.id,
-      activityId: activity.id,
-      studentId: selectedItem.studentId,
-      studentName: selectedItem.name,
-      courseId: activity.courseId,
+    gradeMutation.mutate({
+      submissionId: activeSubmission.id,
       score: scoreNum,
-      feedback: gradeFeedback,
-      maxScore: 10,
+      feedback: gradeFeedback.trim() || undefined,
     });
+  };
 
-    toast.success(`Calificación (${scoreNum}/10) registrada para ${selectedItem.name}`);
-    const updatedSubmissions = teacherModuleService.getSubmissions(activity.id);
-    setSubmissionsList(updatedSubmissions);
+  const handleDownloadEvidenceFile = (ev: EvidenceRecord) => {
+    if (!activeSubmission) return;
+    submissionService.downloadEvidence(activeSubmission.id, ev.id, ev.fileName).catch(() => {
+      toast.error('No se pudo descargar la evidencia');
+    });
   };
 
   if (!activity) return null;
@@ -449,17 +514,18 @@ export function ClassroomSubmissionsDialog({
                       <div className="flex items-center justify-between">
                         <h4 className="text-xs font-semibold uppercase tracking-wider text-school-primary flex items-center gap-1.5">
                           <Paperclip className="h-4 w-4 text-school-primary" />
-                          Evidencia Adjunta
+                          Evidencia Adjunta {activeEvidences.length > 0 && `(${activeEvidences.length})`}
                         </h4>
-                        {selectedItem.submission.evidenceUrl && (
+                        {primaryEvidence && activeSubmission && (
                           <div className="flex items-center gap-2">
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => {
-                                setPreviewMediaUrl(selectedItem.submission!.evidenceUrl!);
+                                const evUrl = submissionService.getEvidenceDownloadUrl(activeSubmission.id, primaryEvidence.id);
+                                setPreviewMediaUrl(evUrl);
                                 setPreviewMediaTitle(
-                                  `${selectedItem.name} — ${selectedItem.submission!.evidenceName ?? 'Evidencia'}`
+                                  `${selectedItem.name} — ${primaryEvidence.fileName}`
                                 );
                               }}
                               className="h-8 text-xs font-medium"
@@ -467,32 +533,34 @@ export function ClassroomSubmissionsDialog({
                               <Maximize2 className="h-3.5 w-3.5 mr-1" />
                               Ver Pantalla Completa
                             </Button>
-                            <a
-                              href={selectedItem.submission.evidenceUrl}
-                              download={selectedItem.submission.evidenceName ?? 'evidencia'}
-                              className="h-8 px-3 inline-flex items-center justify-center bg-white hover:bg-school-background text-school-heading rounded-lg font-medium text-xs border border-school-border transition-colors"
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDownloadEvidenceFile(primaryEvidence)}
+                              className="h-8 text-xs font-medium"
                             >
                               <Download className="h-3.5 w-3.5 mr-1 text-school-primary" />
                               Descargar
-                            </a>
+                            </Button>
                           </div>
                         )}
                       </div>
 
-                      {selectedItem.submission.evidenceUrl ? (
+                      {primaryEvidence && activeSubmission ? (
                         <div className="border border-school-border rounded-xl p-4 bg-school-background/30 flex flex-col items-center justify-center space-y-3">
-                          {selectedItem.submission.evidenceType === 'imagen' && !imageLoadError ? (
+                          {(primaryEvidence.type === 'imagen' || primaryEvidence.mimeType?.startsWith('image/')) && !imageLoadError ? (
                             <div
                               onClick={() => {
-                                setPreviewMediaUrl(selectedItem.submission!.evidenceUrl!);
+                                const evUrl = submissionService.getEvidenceDownloadUrl(activeSubmission.id, primaryEvidence.id);
+                                setPreviewMediaUrl(evUrl);
                                 setPreviewMediaTitle(
-                                  `${selectedItem.name} — ${selectedItem.submission!.evidenceName ?? 'Evidencia'}`
+                                  `${selectedItem.name} — ${primaryEvidence.fileName}`
                                 );
                               }}
                               className="relative group cursor-pointer overflow-hidden rounded-xl border border-school-border bg-white shadow-xs max-h-80 w-full flex items-center justify-center"
                             >
                               <img
-                                src={selectedItem.submission.evidenceUrl}
+                                src={submissionService.getEvidenceDownloadUrl(activeSubmission.id, primaryEvidence.id)}
                                 alt="Evidencia entregada"
                                 onError={() => setImageLoadError(true)}
                                 className="max-h-80 object-contain rounded-xl transition-transform duration-200 group-hover:scale-105"
@@ -508,41 +576,42 @@ export function ClassroomSubmissionsDialog({
                               <FileText className="h-10 w-10 text-school-primary" />
                               <div>
                                 <p className="font-semibold text-sm text-school-heading">
-                                  {selectedItem.submission.evidenceName ?? 'Documento Adjunto'}
+                                  {primaryEvidence.fileName}
                                 </p>
                                 <p className="text-xs text-school-muted mt-0.5">
                                   {imageLoadError
                                     ? 'No se pudo cargar la vista previa directa. Puedes abrirlo en una nueva pestaña o descargarlo.'
-                                    : 'Archivo preparado para revisión'}
+                                    : `Archivo ${primaryEvidence.mimeType || 'adjunto'} (${primaryEvidence.fileSize ? (primaryEvidence.fileSize / 1024).toFixed(1) + ' KB' : 'verificado'})`}
                                 </p>
                               </div>
                               <div className="flex items-center gap-2 flex-wrap justify-center">
                                 <Button
                                   onClick={() => {
-                                    setPreviewMediaUrl(selectedItem.submission!.evidenceUrl!);
+                                    const evUrl = submissionService.getEvidenceDownloadUrl(activeSubmission.id, primaryEvidence.id);
+                                    setPreviewMediaUrl(evUrl);
                                     setPreviewMediaTitle(
-                                      `${selectedItem.name} — ${selectedItem.submission!.evidenceName ?? 'Documento'}`
+                                      `${selectedItem.name} — ${primaryEvidence.fileName}`
                                     );
                                   }}
                                   size="sm"
                                 >
                                   <Eye className="h-4 w-4 mr-1.5" /> Abrir Visor
                                 </Button>
-                                <a
-                                  href={selectedItem.submission.evidenceUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="px-3 py-2 bg-white hover:bg-school-subtle text-school-primary font-medium text-xs rounded-lg border border-school-border inline-flex items-center gap-1.5 transition-colors"
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDownloadEvidenceFile(primaryEvidence)}
+                                  className="h-8 text-xs font-medium"
                                 >
-                                  <ExternalLink className="h-3.5 w-3.5" /> Abrir en Nueva Pestaña
-                                </a>
+                                  <Download className="h-3.5 w-3.5 mr-1.5 text-school-primary" /> Descargar
+                                </Button>
                               </div>
                             </div>
                           )}
 
                           <div className="flex items-center justify-between w-full text-xs text-school-muted font-normal pt-1 border-t border-school-border/60">
-                            <span>Archivo: {selectedItem.submission.evidenceName ?? 'Evidencia'}</span>
-                            <span className="text-school-success font-medium">✓ Archivo Verificado (Máx 1MB)</span>
+                            <span>Archivo: {primaryEvidence.fileName}</span>
+                            <span className="text-school-success font-medium">✓ Evidencia Registrada en Servidor</span>
                           </div>
                         </div>
                       ) : (

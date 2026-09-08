@@ -1,13 +1,16 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { GraduationCap } from 'lucide-react';
-import { navigationForRole, isNavigationActive, navigationLinkClass } from './navigation';
+import {
+  navigationForRole,
+  isNavigationActive,
+  navigationLinkClass,
+} from './navigation';
 
 const roleMeta: Record<string, { label: string; badgeClass: string }> = {
   admin: { label: 'Administrador', badgeClass: 'bg-[#F6EDF8] text-[#9731AC] border-[#E6CAED]' },
-  teacher: { label: 'Docente', badgeClass: 'bg-[#EFF7FC] text-[#1E7BB5] border-[#C7E5F6]' },
-  student: { label: 'Estudiante', badgeClass: 'bg-[#F4FBE8] text-[#557D07] border-[#D6F09F]' },
-  parent: { label: 'Representante', badgeClass: 'bg-[#FDF0F6] text-[#D12B75] border-[#FCC8DF]' },
+  teacher: { label: 'Docente', badgeClass: 'bg-[#EFF7FC] text-[#64B6E5] border-[#C7E5F6]' },
+  student: { label: 'Estudiante', badgeClass: 'bg-[#F4FBE8] text-[#9DD31B] border-[#D6F09F]' },
+  parent: { label: 'Representante', badgeClass: 'bg-[#FDF0F6] text-[#FF5DA0] border-[#FCC8DF]' },
 };
 
 export function Sidebar() {
@@ -19,18 +22,11 @@ export function Sidebar() {
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r border-[#D6E5E3] bg-white md:flex">
       {/* Identidad institucional neutral */}
-      <div className="flex items-center gap-3 border-b border-[#D6E5E3] px-5 py-5">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#E3F5F3] text-[#087F79]">
-          <GraduationCap className="h-6 w-6" aria-hidden="true" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h2 className="text-base font-bold tracking-tight text-[#183B3A] leading-tight truncate">
-            NICE KIDS
-          </h2>
-          <p className="text-xs font-medium text-[#5E7A77] truncate">
-            Gestión Escolar
-          </p>
-        </div>
+      <div className="flex flex-col items-center border-b border-[#D6E5E3] px-4 py-5 bg-gradient-to-b from-[#F4FAF9]/50 to-white text-center">
+        <span className="text-xl font-black tracking-tight text-[#183B3A]">NICE KIDS</span>
+        <span className="text-[10px] font-bold text-[#087F79] uppercase tracking-widest mt-1 bg-[#E3F5F3] px-3 py-0.5 rounded-full">
+          Centro de Desarrollo Infantil
+        </span>
       </div>
 
       {/* Navegación por rol */}

@@ -32,7 +32,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatCard } from '@/components/shared/StatCard';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -44,7 +44,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import api from '@/lib/axios';
-import type { ApiResponse, PaginatedResponse, Enrollment } from '@/types';
+import type { ApiResponse, Enrollment } from '@/types';
 import { formatDate } from '@/lib/utils';
 
 interface DashboardStats {
@@ -64,31 +64,73 @@ function useDashboardStats() {
     queryKey: ['admin-dashboard'],
     queryFn: async () => {
       const period = import.meta.env.VITE_ACTIVE_PERIOD ?? '2026-I';
-      const [studentsRes, teachersRes, coursesRes, enrollmentsRes] = await Promise.all([
+
+      const [studentsResult, teachersResult, coursesResult, enrollmentsResult] = await Promise.allSettled([
         api.get<ApiResponse<{ users: unknown[]; total: number }>>('/users?role=student&active=true&limit=1'),
         api.get<ApiResponse<{ users: unknown[]; total: number }>>('/users?role=teacher&active=true&limit=1'),
-        api.get<ApiResponse<PaginatedResponse<{ id: number; name: string; enrollmentsCount?: number }>>>(
+        api.get<ApiResponse<{ courses?: unknown[]; data?: unknown[]; total?: number }>>(
           `/courses?period=${period}&limit=100`
         ),
-        api.get<ApiResponse<PaginatedResponse<Enrollment & {
-          student?: { user?: { name: string }; studentCode: string };
-          course?: { name: string; period: string };
-        }>>>(`/enrollments?period=${period}&limit=5&status=active`),
+        api.get<ApiResponse<{ enrollments?: unknown[]; data?: unknown[]; total?: number }>>(
+          `/enrollments?period=${period}&limit=5&status=active`
+        ),
       ]);
 
-      const courses = coursesRes.data.data?.data ?? [];
+      let totalStudents = 0;
+      if (studentsResult.status === 'fulfilled') {
+        const d = studentsResult.value.data?.data;
+        totalStudents = d?.total ?? (Array.isArray(d?.users) ? d.users.length : 0);
+      }
+
+      let totalTeachers = 0;
+      if (teachersResult.status === 'fulfilled') {
+        const d = teachersResult.value.data?.data;
+        totalTeachers = d?.total ?? (Array.isArray(d?.users) ? d.users.length : 0);
+      }
+
+      let activeCourses = 0;
+      let courseEnrollments: { name: string; matriculados: number }[] = [];
+      if (coursesResult.status === 'fulfilled') {
+        const d = coursesResult.value.data?.data as any;
+        const list = Array.isArray(d?.courses)
+          ? d.courses
+          : Array.isArray(d?.data)
+          ? d.data
+          : Array.isArray(d)
+          ? d
+          : [];
+        activeCourses = d?.total ?? list.length;
+        courseEnrollments = list.map((c: any) => ({
+          name: c.name?.length > 20 ? c.name.substring(0, 18) + '…' : (c.name || 'Curso'),
+          matriculados: c.enrolledCount ?? c.enrollmentsCount ?? 0,
+        }));
+      }
+
+      let activeEnrollments = 0;
+      let recentEnrollments: any[] = [];
+      if (enrollmentsResult.status === 'fulfilled') {
+        const d = enrollmentsResult.value.data?.data as any;
+        const list = Array.isArray(d?.enrollments)
+          ? d.enrollments
+          : Array.isArray(d?.data)
+          ? d.data
+          : Array.isArray(d)
+          ? d
+          : [];
+        activeEnrollments = d?.total ?? list.length;
+        recentEnrollments = list;
+      }
+
       return {
-        totalStudents: studentsRes.data.data?.total ?? 0,
-        totalTeachers: teachersRes.data.data?.total ?? 0,
-        activeCourses: coursesRes.data.data?.total ?? 0,
-        activeEnrollments: enrollmentsRes.data.data?.total ?? 0,
-        courseEnrollments: courses.map((c) => ({
-          name: c.name.length > 20 ? c.name.substring(0, 18) + '…' : c.name,
-          matriculados: c.enrollmentsCount ?? 0,
-        })),
-        recentEnrollments: enrollmentsRes.data.data?.data ?? [],
+        totalStudents,
+        totalTeachers,
+        activeCourses,
+        activeEnrollments,
+        courseEnrollments,
+        recentEnrollments,
       };
     },
+    staleTime: 30000,
   });
 }
 
@@ -122,30 +164,34 @@ export default function AdminDashboard() {
         description="Supervisión global de estudiantes, personal docente, cursos activos y matrículas del período escolar."
       />
 
-      {/* Stat cards */}
+      {/* Stat cards con los colores del logo */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Estudiantes Registrados"
           value={isLoading ? '—' : data?.totalStudents ?? 0}
           description="Alumnos activos en el período"
+          variant="turquoise"
           icon={<GraduationCap className="h-5 w-5" />}
         />
         <StatCard
           title="Docentes Asignadas"
           value={isLoading ? '—' : data?.totalTeachers ?? 0}
           description="Personal docente activo"
+          variant="lightblue"
           icon={<Users className="h-5 w-5" />}
         />
         <StatCard
           title="Cursos en Curso"
           value={isLoading ? '—' : data?.activeCourses ?? 0}
           description="Período Académico 2026-I"
+          variant="yellow"
           icon={<BookOpen className="h-5 w-5" />}
         />
         <StatCard
           title="Matrículas Activas"
           value={isLoading ? '—' : data?.activeEnrollments ?? 0}
           description="Inscripciones registradas"
+          variant="pink"
           icon={<ClipboardList className="h-5 w-5" />}
         />
       </div>
@@ -520,7 +566,7 @@ export default function AdminDashboard() {
                       color: '#183B3A',
                     }}
                   />
-                  <Bar dataKey="matriculados" fill="#087F79" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="matriculados" fill="#41C4BD" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}

@@ -1,8 +1,6 @@
 import { useState, useMemo } from 'react';
 import {
   Calendar as CalendarIcon,
-  ChevronLeft,
-  ChevronRight,
   Printer,
   FileDown,
   ClipboardCheck,
@@ -13,135 +11,83 @@ import {
   MessageSquare,
   Megaphone,
   CheckSquare,
-  Lock,
-  Sparkles,
-  BookOpen,
   User,
-  CalendarCheck,
+  BookOpen,
+  Filter,
+  Loader2,
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
-import { teacherModuleService, getTodayStr } from '@/services/teacherModule.service';
+import { useMyCourses } from '@/hooks/useCourses';
+import { useCourseStudents } from '@/hooks/useEnrollments';
+import { dailySummaryService } from '@/services/dailySummary.service';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { TeacherDailySummary } from '@/types';
 
-const SOFTWARE_CREATION_DATE = new Date(2026, 7, 1); // Agosto 2026
-
-const MONTH_NAMES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-];
+function getTodayStr(): string {
+  const d = new Date();
+  const yr = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${yr}-${mo}-${day}`;
+}
 
 export default function BitacoraPage() {
   const { user } = useAuth();
   const teacherName = user?.name ?? 'Profesor(a)';
-
   const todayStr = useMemo(() => getTodayStr(), []);
 
-  const [currentYear, setCurrentYear] = useState<number>(SOFTWARE_CREATION_DATE.getFullYear());
-  const [currentMonth, setCurrentMonth] = useState<number>(SOFTWARE_CREATION_DATE.getMonth());
-
+  // Filter states
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('all');
+  const [selectedStudentId, setSelectedStudentId] = useState<string>('all');
 
-  const isMonthDisabled = (year: number, month: number) => {
-    if (year < SOFTWARE_CREATION_DATE.getFullYear()) return true;
-    if (year === SOFTWARE_CREATION_DATE.getFullYear() && month < SOFTWARE_CREATION_DATE.getMonth()) return true;
-    return false;
-  };
+  // Load teacher's authorized courses
+  const { data: courses = [] } = useMyCourses();
 
-  const handlePrevMonth = () => {
-    let newMonth = currentMonth - 1;
-    let newYear = currentYear;
-    if (newMonth < 0) {
-      newMonth = 11;
-      newYear -= 1;
-    }
-    if (!isMonthDisabled(newYear, newMonth)) {
-      setCurrentMonth(newMonth);
-      setCurrentYear(newYear);
-    }
-  };
+  // Load students for selected course if filtered
+  const courseIdNum = selectedCourseId !== 'all' ? Number(selectedCourseId) : null;
+  const { data: courseStudentsData } = useCourseStudents(courseIdNum);
+  const students = courseStudentsData?.students ?? [];
 
-  const handleNextMonth = () => {
-    let newMonth = currentMonth + 1;
-    let newYear = currentYear;
-    if (newMonth > 11) {
-      newMonth = 0;
-      newYear += 1;
-    }
-    setCurrentMonth(newMonth);
-    setCurrentYear(newYear);
-  };
-
-  const calendarDays = useMemo(() => {
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const firstDayIndex = (new Date(currentYear, currentMonth, 1).getDay() + 6) % 7; // Lunes = 0
-
-    const days: {
-      dateStr: string;
-      dayNumber: number;
-      isCurrentMonth: boolean;
-      isDisabled: boolean;
-      isFuture: boolean;
-      hasScheduled: boolean;
-    }[] = [];
-
-    for (let i = 0; i < firstDayIndex; i++) {
-      days.push({
-        dateStr: '',
-        dayNumber: 0,
-        isCurrentMonth: false,
-        isDisabled: true,
-        isFuture: false,
-        hasScheduled: false,
-      });
-    }
-
-    for (let d = 1; d <= daysInMonth; d++) {
-      const monthFormatted = String(currentMonth + 1).padStart(2, '0');
-      const dayFormatted = String(d).padStart(2, '0');
-      const dateStr = `${currentYear}-${monthFormatted}-${dayFormatted}`;
-      const monthBlocked = isMonthDisabled(currentYear, currentMonth);
-
-      const isFuture = dateStr > todayStr;
-      const bData = teacherModuleService.getBitacoraByDate(dateStr);
-      const hasScheduled = isFuture && bData.scheduledActivities.length > 0;
-      const isDisabled = monthBlocked || (isFuture && !hasScheduled);
-
-      days.push({
-        dateStr,
-        dayNumber: d,
-        isCurrentMonth: true,
-        isDisabled,
-        isFuture,
-        hasScheduled,
-      });
-    }
-
-    return days;
-  }, [currentYear, currentMonth, todayStr]);
-
-  const bitacoraData = useMemo(() => {
-    return teacherModuleService.getBitacoraByDate(selectedDate);
-  }, [selectedDate]);
-
-  const getDayEventsIndicator = (dateStr: string) => {
-    if (!dateStr) return { attendance: false, activities: false, observations: false, announcements: false, scheduled: false };
-    const b = teacherModuleService.getBitacoraByDate(dateStr);
-    return {
-      attendance: b.attendance.length > 0,
-      activities: b.activities.length > 0,
-      observations: b.observations.length > 0,
-      announcements: b.announcements.length > 0,
-      scheduled: b.scheduledActivities.length > 0,
-    };
-  };
+  // Query canonical backend daily summary
+  const {
+    data: dailySummary,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery<TeacherDailySummary>({
+    queryKey: ['daily-summary', user?.id, selectedDate, selectedCourseId, selectedStudentId],
+    queryFn: () =>
+      dailySummaryService.getTeacherDailySummary({
+        date: selectedDate,
+        courseId: selectedCourseId !== 'all' ? Number(selectedCourseId) : undefined,
+        studentId: selectedStudentId !== 'all' ? Number(selectedStudentId) : undefined,
+      }),
+    enabled: !!user,
+  });
 
   const handlePrint = () => {
     window.print();
   };
+
+  const attendanceList = dailySummary?.attendance ?? [];
+  const activitiesList = dailySummary?.activities ?? [];
+  const observationsList = dailySummary?.observations ?? [];
+  const announcementsList = dailySummary?.announcements ?? [];
+  const summaryStats = dailySummary?.summary;
+
+  const totalRecords =
+    attendanceList.length +
+    activitiesList.length +
+    observationsList.length +
+    announcementsList.length;
 
   return (
     <div className="space-y-6">
@@ -166,8 +112,8 @@ export default function BitacoraPage() {
 
       <PageHeader
         eyebrow="Docente"
-        title="Bitácora Pedagógica"
-        description="Seguimiento cronológico y justificación de la labor docente: asistencias, actividades, observaciones y comunicados"
+        title="Bitácora Pedagógica Diaria"
+        description="Seguimiento cronológico unificado: asistencias, actividades, observaciones y comunicados registrados en el sistema"
       >
         <Button onClick={handlePrint} variant="outline" className="gap-2">
           <Printer className="h-4 w-4 text-school-primary" />
@@ -175,350 +121,354 @@ export default function BitacoraPage() {
         </Button>
       </PageHeader>
 
-      {/* Barra de Filtro de Meses */}
-      <Card className="p-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-school-subtle text-school-primary font-bold border border-school-border">
-              <CalendarIcon className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-school-heading flex items-center gap-2">
-                <span>Período Seleccionado:</span>
-                <span className="text-school-primary font-bold">{MONTH_NAMES[currentMonth]} {currentYear}</span>
-              </h2>
-              <p className="text-xs text-school-muted">
-                Las fechas futuras están restringidas salvo días con actividades programadas.
-              </p>
-            </div>
+      {/* Barra de Filtros Reales */}
+      <Card className="p-4 shadow-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+          {/* Fecha */}
+          <div className="space-y-1.5">
+            <Label htmlFor="bitacora-date" className="text-xs font-semibold text-school-heading flex items-center gap-1.5">
+              <CalendarIcon className="h-3.5 w-3.5 text-school-primary" />
+              Fecha de la bitácora:
+            </Label>
+            <Input
+              id="bitacora-date"
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="bg-white"
+            />
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handlePrevMonth}
-              disabled={isMonthDisabled(currentMonth === 0 ? currentYear - 1 : currentYear, currentMonth === 0 ? 11 : currentMonth - 1)}
-              title="Mes Anterior"
-              aria-label="Mes anterior"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-
+          {/* Curso */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-school-heading flex items-center gap-1.5">
+              <BookOpen className="h-3.5 w-3.5 text-school-primary" />
+              Curso / Materia:
+            </Label>
             <Select
-              value={`${currentYear}-${currentMonth}`}
+              value={selectedCourseId}
               onValueChange={(val) => {
-                const [y, m] = val.split('-').map(Number);
-                setCurrentYear(y);
-                setCurrentMonth(m);
+                setSelectedCourseId(val);
+                setSelectedStudentId('all'); // reset student filter
               }}
             >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Seleccionar Mes" />
+              <SelectTrigger>
+                <SelectValue placeholder="Todos mis cursos" />
               </SelectTrigger>
               <SelectContent>
-                {[2026, 2027].map((yr) =>
-                  MONTH_NAMES.map((mName, mIdx) => {
-                    const disabled = isMonthDisabled(yr, mIdx);
-                    return (
-                      <SelectItem key={`${yr}-${mIdx}`} value={`${yr}-${mIdx}`} disabled={disabled}>
-                        {mName} {yr} {disabled ? '🔒' : ''}
-                      </SelectItem>
-                    );
-                  })
-                )}
+                <SelectItem value="all">Todos mis cursos</SelectItem>
+                {courses.map((c) => (
+                  <SelectItem key={c.id} value={String(c.id)}>
+                    {c.name} ({c.code})
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+          </div>
 
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleNextMonth}
-              title="Siguiente Mes"
-              aria-label="Siguiente mes"
+          {/* Estudiante */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-school-heading flex items-center gap-1.5">
+              <User className="h-3.5 w-3.5 text-school-primary" />
+              Estudiante:
+            </Label>
+            <Select
+              value={selectedStudentId}
+              onValueChange={setSelectedStudentId}
+              disabled={selectedCourseId === 'all' || students.length === 0}
             >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+              <SelectTrigger>
+                <SelectValue
+                  placeholder={
+                    selectedCourseId === 'all'
+                      ? 'Filtra por curso primero'
+                      : students.length === 0
+                      ? 'Sin estudiantes matriculados'
+                      : 'Todos los estudiantes'
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los estudiantes del curso</SelectItem>
+                {students.map((s) => (
+                  <SelectItem key={s.studentId} value={String(s.studentId)}>
+                    {s.name} ({s.studentCode})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </Card>
 
-      {/* Calendario de Bitácora */}
-      <Card className="p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
-          <h3 className="text-sm font-semibold text-school-heading flex items-center gap-2">
-            <CalendarCheck className="h-4 w-4 text-school-primary" />
-            Calendario de Actividades y Novedades
-          </h3>
-          <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-school-muted">
-            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-school-success" /> Asistencia</span>
-            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-school-primary" /> Finalizada</span>
-            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-school-blue" /> Programada</span>
-            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-school-violet" /> Observaciones</span>
-            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-school-warning" /> Comunicados</span>
-          </div>
-        </div>
+      {/* Resumen numérico */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card className="p-4 text-center">
+          <ClipboardCheck className="h-5 w-5 mx-auto text-school-success mb-1" />
+          <p className="text-2xl font-bold text-school-heading">
+            {summaryStats ? summaryStats.presentToday : attendanceList.length}
+          </p>
+          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Presentes Hoy</p>
+        </Card>
+        <Card className="p-4 text-center">
+          <CheckSquare className="h-5 w-5 mx-auto text-school-primary mb-1" />
+          <p className="text-2xl font-bold text-school-primary">{activitiesList.length}</p>
+          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Actividades</p>
+        </Card>
+        <Card className="p-4 text-center">
+          <MessageSquare className="h-5 w-5 mx-auto text-school-violet mb-1" />
+          <p className="text-2xl font-bold text-school-violet">{observationsList.length}</p>
+          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Observaciones</p>
+        </Card>
+        <Card className="p-4 text-center">
+          <Megaphone className="h-5 w-5 mx-auto text-school-warning mb-1" />
+          <p className="text-2xl font-bold text-school-warning">{announcementsList.length}</p>
+          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Comunicados</p>
+        </Card>
+      </div>
 
-        {/* Grilla de Días */}
-        <div className="grid grid-cols-7 gap-2 text-center">
-          {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((day) => (
-            <div key={day} className="text-xs font-semibold text-school-muted uppercase tracking-wider py-2">
-              {day}
-            </div>
-          ))}
-
-          {calendarDays.map((item, idx) => {
-            if (!item.isCurrentMonth) {
-              return <div key={`empty-${idx}`} className="h-16 rounded-xl bg-school-background/40" />;
-            }
-
-            const isSelected = selectedDate === item.dateStr;
-            const indicators = getDayEventsIndicator(item.dateStr);
-
-            return (
-              <button
-                key={item.dateStr}
-                type="button"
-                disabled={item.isDisabled}
-                onClick={() => setSelectedDate(item.dateStr)}
-                className={`h-16 rounded-xl p-2 flex flex-col justify-between items-center transition-colors relative border ${
-                  isSelected
-                    ? 'bg-school-primary text-white border-school-primary shadow-sm ring-2 ring-school-primary/30 z-10'
-                    : item.isDisabled
-                    ? 'bg-school-background/60 text-slate-400 border-school-border/40 cursor-not-allowed'
-                    : item.hasScheduled
-                    ? 'bg-school-subtle text-school-heading border-school-accent hover:border-school-primary'
-                    : 'bg-white hover:bg-school-subtle/50 text-school-heading border-school-border hover:border-school-accent'
-                }`}
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-school-heading'}`}>
-                    {item.dayNumber}
-                  </span>
-                  {item.isDisabled && <Lock className="h-3 w-3 text-slate-300" />}
-                  {item.hasScheduled && !isSelected && <CalendarCheck className="h-3.5 w-3.5 text-school-blue" />}
-                </div>
-
-                {/* Indicadores de Eventos */}
-                <div className="flex items-center gap-1 mt-1">
-                  {indicators.attendance && (
-                    <span className={`h-1.5 w-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-school-success'}`} title="Asistencias" />
-                  )}
-                  {indicators.activities && (
-                    <span className={`h-1.5 w-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-school-primary'}`} title="Actividad finalizada" />
-                  )}
-                  {indicators.scheduled && (
-                    <span className={`h-1.5 w-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-school-blue'}`} title="Actividad programada" />
-                  )}
-                  {indicators.observations && (
-                    <span className={`h-1.5 w-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-school-violet'}`} title="Observaciones" />
-                  )}
-                  {indicators.announcements && (
-                    <span className={`h-1.5 w-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-school-warning'}`} title="Comunicados" />
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </Card>
-
-      {/* Desglose Detallado del Día Seleccionado */}
-      <Card className="p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-school-border pb-4 mb-6">
-          <div>
-            <h3 className="text-lg font-bold text-school-heading flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-school-primary" />
-              Resumen del Día: <span className="text-school-primary">{selectedDate}</span>
-              {selectedDate === todayStr && <Badge variant="success" className="ml-2">Hoy</Badge>}
-              {selectedDate > todayStr && <Badge variant="secondary" className="ml-2">Fecha Futura</Badge>}
-            </h3>
-            <p className="text-xs text-school-muted font-normal mt-0.5">
-              Docente: <strong>{teacherName}</strong> · Registros archivados: <strong>{bitacoraData.totalRecords}</strong>
-            </p>
-          </div>
-
-          <Button size="sm" onClick={handlePrint} variant="outline" className="gap-1.5">
-            <FileDown className="h-4 w-4 text-school-primary" />
-            Descargar PDF del Día
+      {/* Loading state */}
+      {isLoading ? (
+        <Card className="p-12 text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-school-primary mb-3" />
+          <p className="text-school-muted font-medium">Cargando registros canónicos de bitácora...</p>
+        </Card>
+      ) : isError ? (
+        <Card className="p-12 text-center text-red-600">
+          <AlertCircle className="h-10 w-10 mx-auto text-red-500 mb-2" />
+          <p className="font-semibold text-base">Error al cargar la bitácora</p>
+          <p className="text-sm text-school-muted mt-1">Verifica tu conexión y permisos docentes.</p>
+          <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-4">
+            Reintentar
           </Button>
-        </div>
-
-        {bitacoraData.totalRecords === 0 ? (
-          <div className="py-12 text-center text-school-muted bg-school-background rounded-xl border border-dashed border-school-border">
-            <CalendarIcon className="h-10 w-10 mx-auto text-school-muted mb-2" />
-            <p className="font-semibold text-school-heading text-sm">Sin registros archivados para esta fecha</p>
-            <p className="text-xs text-school-muted max-w-sm mx-auto mt-1">
-              Al guardar asistencias, comunicados u observaciones para esta fecha, se reflejarán automáticamente en esta bitácora.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Actividades Programadas */}
-            {bitacoraData.isFuture && bitacoraData.scheduledActivities.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 border-b border-school-border pb-2">
-                  <CalendarCheck className="h-4 w-4 text-school-blue" />
-                  <h4 className="font-semibold text-school-heading text-sm">Actividades Programadas ({bitacoraData.scheduledActivities.length})</h4>
-                  <Badge variant="outline" className="text-xs">Fecha Futura</Badge>
-                </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {bitacoraData.scheduledActivities.map((act) => (
-                    <div key={act.id} className="p-4 rounded-xl border border-school-border bg-school-background/50 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <Badge variant="secondary" className="text-xs">Programada</Badge>
-                        <span className="text-xs text-school-muted font-medium">{act.courseName}</span>
-                      </div>
-                      <p className="font-semibold text-school-heading text-sm mt-1">{act.title}</p>
-                      <p className="text-xs text-school-muted">{act.description}</p>
-                      <p className="text-xs text-school-primary font-medium mt-1">Límite: {act.dueDate}</p>
-                    </div>
-                  ))}
-                </div>
+        </Card>
+      ) : totalRecords === 0 ? (
+        <Card className="p-12 text-center">
+          <CalendarIcon className="h-10 w-10 mx-auto text-school-muted mb-2" />
+          <p className="font-semibold text-school-heading text-base">
+            No se encontraron registros para el {selectedDate}
+          </p>
+          <p className="text-sm text-school-muted mt-1 max-w-md mx-auto">
+            Las asistencias, actividades, observaciones y comunicados registrados en el sistema para esta fecha aparecerán aquí automáticamente.
+          </p>
+        </Card>
+      ) : (
+        <div className="space-y-6">
+          {/* 1. Asistencias */}
+          {attendanceList.length > 0 && (
+            <Card className="p-6">
+              <div className="flex items-center gap-2 border-b border-school-border pb-3 mb-4">
+                <ClipboardCheck className="h-5 w-5 text-school-success" />
+                <h3 className="font-bold text-school-heading text-base">
+                  Asistencias Registradas ({attendanceList.length})
+                </h3>
               </div>
-            )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {attendanceList.map((rec) => (
+                  <div
+                    key={rec.id}
+                    className="p-3.5 rounded-xl border border-school-border bg-school-background/40 flex items-center justify-between text-xs"
+                  >
+                    <div>
+                      <p className="font-semibold text-school-heading">
+                        {rec.student?.user?.name || `Estudiante #${rec.studentId}`}
+                      </p>
+                      <p className="text-school-muted">Curso #{rec.courseId}</p>
+                    </div>
+                    <Badge
+                      variant={
+                        rec.status === 'present'
+                          ? 'success'
+                          : rec.status === 'absent'
+                          ? 'destructive'
+                          : 'warning'
+                      }
+                    >
+                      {rec.status === 'present'
+                        ? 'Presente'
+                        : rec.status === 'absent'
+                        ? 'Ausente'
+                        : rec.status}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
 
-            {/* 1. Asistencias Tomadas */}
-            {!bitacoraData.isFuture && bitacoraData.attendance.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 border-b border-school-border pb-2">
-                  <ClipboardCheck className="h-4 w-4 text-school-success" />
-                  <h4 className="font-semibold text-school-heading text-sm">Asistencias Registradas ({bitacoraData.attendance.length})</h4>
-                </div>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {bitacoraData.attendance.map((rec) => (
-                    <div key={rec.id} className="p-3 rounded-xl border border-school-border bg-school-background/40 flex items-center justify-between text-xs">
-                      <div>
-                        <p className="font-semibold text-school-heading">{rec.studentName}</p>
-                        <p className="text-school-muted">{rec.courseName} · {rec.studentCode}</p>
-                      </div>
-                      <Badge variant={
-                        rec.status === 'present' ? 'success' :
-                        rec.status === 'absent' ? 'destructive' :
-                        rec.status === 'late' ? 'warning' : 'secondary'
-                      }>
-                        {rec.status === 'present' ? 'Presente' : rec.status === 'absent' ? 'Ausente' : rec.status === 'late' ? 'Atraso' : 'Justificado'}
+          {/* 2. Actividades */}
+          {activitiesList.length > 0 && (
+            <Card className="p-6">
+              <div className="flex items-center gap-2 border-b border-school-border pb-3 mb-4">
+                <CheckSquare className="h-5 w-5 text-school-primary" />
+                <h3 className="font-bold text-school-heading text-base">
+                  Actividades ({activitiesList.length})
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {activitiesList.map((act) => (
+                  <div
+                    key={act.id}
+                    className="p-4 rounded-xl border border-school-border bg-school-background/50 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline">{act.type}</Badge>
+                      <span className="text-xs text-school-muted">Curso #{act.courseId}</span>
+                    </div>
+                    <p className="font-semibold text-school-heading text-sm">{act.title}</p>
+                    <p className="text-xs text-school-muted">
+                      Fecha límite: {new Date(act.dueDate).toLocaleDateString('es-ES')}
+                    </p>
+                    <div className="text-xs text-school-primary font-medium">
+                      Entregas registradas: {act.submissionsCount ?? act.submissions?.length ?? 0}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* 3. Observaciones */}
+          {observationsList.length > 0 && (
+            <Card className="p-6">
+              <div className="flex items-center gap-2 border-b border-school-border pb-3 mb-4">
+                <MessageSquare className="h-5 w-5 text-school-violet" />
+                <h3 className="font-bold text-school-heading text-base">
+                  Observaciones Registradas ({observationsList.length})
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {observationsList.map((obs) => (
+                  <div
+                    key={obs.id}
+                    className="p-4 rounded-xl border border-school-border bg-school-background/50 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="font-semibold text-school-heading text-sm">
+                        {obs.student?.user?.name || `Estudiante #${obs.studentId}`}
+                      </p>
+                      <Badge
+                        variant={
+                          obs.type === 'ACADEMIC'
+                            ? 'success'
+                            : obs.type === 'BEHAVIORAL'
+                            ? 'destructive'
+                            : 'secondary'
+                        }
+                      >
+                        {obs.type}
                       </Badge>
                     </div>
-                  ))}
-                </div>
+                    <p className="font-medium text-xs text-school-heading">{obs.title}</p>
+                    <p className="text-xs text-school-muted bg-white p-2.5 rounded-lg border border-school-border/50">
+                      {obs.description}
+                    </p>
+                  </div>
+                ))}
               </div>
-            )}
+            </Card>
+          )}
 
-            {/* 2. Actividades Finalizadas */}
-            {!bitacoraData.isFuture && bitacoraData.activities.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 border-b border-school-border pb-2">
-                  <CheckSquare className="h-4 w-4 text-school-primary" />
-                  <h4 className="font-semibold text-school-heading text-sm">Actividades Finalizadas ({bitacoraData.activities.length})</h4>
-                </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {bitacoraData.activities.map((act) => (
-                    <div key={act.id} className="p-4 rounded-xl border border-school-border bg-school-background/50 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <Badge variant="success" className="text-xs">Finalizada</Badge>
-                        <span className="text-xs text-school-muted font-medium">{act.courseName}</span>
-                      </div>
-                      <p className="font-semibold text-school-heading text-sm mt-1">{act.title}</p>
-                      <p className="text-xs text-school-muted">{act.description}</p>
-                    </div>
-                  ))}
-                </div>
+          {/* 4. Comunicados */}
+          {announcementsList.length > 0 && (
+            <Card className="p-6">
+              <div className="flex items-center gap-2 border-b border-school-border pb-3 mb-4">
+                <Megaphone className="h-5 w-5 text-school-warning" />
+                <h3 className="font-bold text-school-heading text-base">
+                  Comunicados Publicados ({announcementsList.length})
+                </h3>
               </div>
-            )}
-
-            {/* 3. Observaciones Registradas */}
-            {!bitacoraData.isFuture && bitacoraData.observations.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 border-b border-school-border pb-2">
-                  <MessageSquare className="h-4 w-4 text-school-violet" />
-                  <h4 className="font-semibold text-school-heading text-sm">Observaciones Registradas ({bitacoraData.observations.length})</h4>
-                </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {bitacoraData.observations.map((obs) => (
-                    <div key={obs.id} className="p-4 rounded-xl border border-school-border bg-school-background/50 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <p className="font-semibold text-school-heading text-sm">{obs.studentName} ({obs.studentCode})</p>
-                        <Badge variant={obs.type === 'positiva' ? 'success' : obs.type === 'atencion' ? 'destructive' : 'secondary'} className="text-xs">
-                          {obs.type.toUpperCase()}
-                        </Badge>
-                      </div>
-                      <p className="font-medium text-xs text-school-heading">{obs.title}</p>
-                      <p className="text-xs text-school-muted">{obs.detail}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 4. Comunicados Publicados */}
-            {!bitacoraData.isFuture && bitacoraData.announcements.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 border-b border-school-border pb-2">
-                  <Megaphone className="h-4 w-4 text-school-warning" />
-                  <h4 className="font-semibold text-school-heading text-sm">Comunicados Publicados ({bitacoraData.announcements.length})</h4>
-                </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {bitacoraData.announcements.map((ann) => (
-                    <div key={ann.id} className="p-4 rounded-xl border border-school-border bg-school-background/50 space-y-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {announcementsList.map((ann) => (
+                  <div
+                    key={ann.id}
+                    className="p-4 rounded-xl border border-school-border bg-school-background/50 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
                       <p className="font-semibold text-school-heading text-sm">{ann.title}</p>
-                      <p className="text-xs text-school-muted">{ann.content}</p>
-                      <p className="text-xs text-school-muted mt-1 font-medium">Dirigido a: {ann.courseName ?? 'Todos los cursos'}</p>
+                      <Badge variant="outline">{ann.priority || 'Normal'}</Badge>
                     </div>
-                  ))}
-                </div>
+                    <p className="text-xs text-school-muted">{ann.content}</p>
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
-        )}
-      </Card>
+            </Card>
+          )}
+        </div>
+      )}
 
-      {/* Reporte imprimible oculto */}
+      {/* Reporte Imprimible Idéntico al Dataset Filtrado */}
       <div id="printable-pdf-report" className="hidden">
         <div className="border-b-2 border-slate-800 pb-4 mb-6">
-          <h1 className="text-2xl font-bold text-slate-900 uppercase">Reporte Docente: {teacherName}</h1>
-          <p className="text-sm font-semibold text-slate-600">Bitácora Oficial de Trabajo Pedagógico Diario</p>
+          <h1 className="text-2xl font-bold text-slate-900 uppercase">
+            Bitácora Pedagógica Diaria - Reporte Oficial
+          </h1>
+          <p className="text-sm font-semibold text-slate-600">Docente: {teacherName}</p>
           <div className="flex justify-between items-center text-xs text-slate-500 mt-2">
-            <span>Fecha: <strong>{selectedDate}</strong></span>
-            <span>Institución: Colegio San Andrés / NICE KIDS</span>
+            <span>Fecha del Reporte: <strong>{selectedDate}</strong></span>
+            <span>Sistema Institucional San Andrés / NICE KIDS</span>
           </div>
         </div>
 
         <div className="space-y-6">
           <div>
-            <h2 className="text-base font-bold text-slate-800 border-b pb-1 mb-2">1. Resumen Ejecutivo del Día</h2>
+            <h2 className="text-base font-bold text-slate-800 border-b pb-1 mb-2">Resumen Ejecutivo</h2>
             <ul className="text-xs space-y-1 text-slate-700">
-              <li>• Registros de Asistencia: <strong>{bitacoraData.attendance.length}</strong></li>
-              <li>• Actividades Finalizadas: <strong>{bitacoraData.activities.length}</strong></li>
-              <li>• Actividades Programadas (Futuras): <strong>{bitacoraData.scheduledActivities.length}</strong></li>
-              <li>• Observaciones Registradas: <strong>{bitacoraData.observations.length}</strong></li>
-              <li>• Comunicados Emitidos: <strong>{bitacoraData.announcements.length}</strong></li>
+              <li>• Asistencias Registradas: <strong>{attendanceList.length}</strong></li>
+              <li>• Actividades: <strong>{activitiesList.length}</strong></li>
+              <li>• Observaciones: <strong>{observationsList.length}</strong></li>
+              <li>• Comunicados: <strong>{announcementsList.length}</strong></li>
             </ul>
           </div>
 
-          {bitacoraData.attendance.length > 0 && (
+          {attendanceList.length > 0 && (
             <div>
-              <h2 className="text-base font-bold text-slate-800 border-b pb-1 mb-2">2. Detalle de Asistencias</h2>
+              <h2 className="text-base font-bold text-slate-800 border-b pb-1 mb-2">Detalle de Asistencias</h2>
               <table className="w-full text-xs text-left border-collapse border border-slate-300">
                 <thead>
                   <tr className="bg-slate-100">
                     <th className="border p-2 font-bold">Estudiante</th>
-                    <th className="border p-2 font-bold">Código</th>
                     <th className="border p-2 font-bold">Curso</th>
                     <th className="border p-2 font-bold">Estado</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {bitacoraData.attendance.map((a) => (
+                  {attendanceList.map((a) => (
                     <tr key={a.id}>
-                      <td className="border p-2">{a.studentName}</td>
-                      <td className="border p-2">{a.studentCode}</td>
-                      <td className="border p-2">{a.courseName}</td>
+                      <td className="border p-2">{a.student?.user?.name || `Estudiante #${a.studentId}`}</td>
+                      <td className="border p-2">Curso #{a.courseId}</td>
                       <td className="border p-2 uppercase font-bold">{a.status}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {activitiesList.length > 0 && (
+            <div>
+              <h2 className="text-base font-bold text-slate-800 border-b pb-1 mb-2">Actividades Pedagógicas</h2>
+              <ul className="text-xs space-y-1.5 text-slate-700">
+                {activitiesList.map((act) => (
+                  <li key={act.id} className="border-b border-slate-200 pb-1">
+                    <strong>{act.title}</strong> ({act.type}) - Límite: {new Date(act.dueDate).toLocaleDateString('es-ES')}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {observationsList.length > 0 && (
+            <div>
+              <h2 className="text-base font-bold text-slate-800 border-b pb-1 mb-2">Observaciones Registradas</h2>
+              <ul className="text-xs space-y-1.5 text-slate-700">
+                {observationsList.map((obs) => (
+                  <li key={obs.id} className="border-b border-slate-200 pb-1">
+                    <strong>{obs.title}</strong> ({obs.type}) - Estudiante: {obs.student?.user?.name || obs.studentId}
+                    <p className="text-slate-600 italic">{obs.description}</p>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 

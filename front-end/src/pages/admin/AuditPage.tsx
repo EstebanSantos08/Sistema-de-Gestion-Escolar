@@ -1,84 +1,144 @@
 import { useState } from 'react';
 import {
-  CalendarCheck,
-  Star,
-  MessageSquare,
   ShieldCheck,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  AlertCircle,
   Search,
   FileSpreadsheet,
+  Filter,
+  ChevronDown,
+  ChevronRight,
+  ChevronLeft,
+  Calendar,
+  User,
+  BookOpen,
+  CheckCircle2,
+  AlertTriangle,
+  RotateCcw,
+  Loader2,
 } from 'lucide-react';
-import { useMyCourses } from '@/hooks/useCourses';
-import { teacherModuleService } from '@/services/teacherModule.service';
+import { useQuery } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import type { AttendanceStatus } from '@/types';
-import toast from 'react-hot-toast';
+import { auditLogService, type AuditLogFilters } from '@/services/auditLog.service';
+import type { NormalizedAuditLog } from '@/types';
 
 export default function AuditPage() {
-  const { data: courses } = useMyCourses();
-  const [activeTab, setActiveTab] = useState<'asistencias' | 'notas' | 'observaciones' | 'seguridad'>('asistencias');
+  // Filters state
+  const [page, setPage] = useState<number>(1);
+  const [fromDate, setFromDate] = useState<string>('');
+  const [toDate, setToDate] = useState<string>('');
+  const [selectedTeacher, setSelectedTeacher] = useState<string>('all');
+  const [selectedStudent, setSelectedStudent] = useState<string>('all');
+  const [selectedCourse, setSelectedCourse] = useState<string>('all');
+  const [selectedActivity, setSelectedActivity] = useState<string>('all');
+  const [selectedGradeCat, setSelectedGradeCat] = useState<string>('all');
+  const [selectedAction, setSelectedAction] = useState<string>('all');
 
-  // Filters for Asistencia
-  const [attendanceDate, setAttendanceDate] = useState<string>('');
-  const [attendanceCourse, setAttendanceCourse] = useState<string>('all');
-  const [attendanceStatus, setAttendanceStatus] = useState<string>('all');
+  // Expanded row ID for secondary details
+  const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
 
-  // Filters for Notas
-  const [gradeSearch, setGradeSearch] = useState<string>('');
-  const [gradeCourse, setGradeCourse] = useState<string>('all');
-
-  // Filters for Observaciones & Comunicados
-  const [obsTypeFilter, setObsTypeFilter] = useState<string>('all');
-
-  // Filters for Audit Log
-  const [logActionFilter, setLogActionFilter] = useState<string>('all');
-  const [logSearch, setLogSearch] = useState<string>('');
-
-  // Data fetching from services
-  const allAttendance = teacherModuleService.getAttendance();
-  const allObservations = teacherModuleService.getObservations();
-  const allAuditLogs = teacherModuleService.getAuditLogs();
-
-  // Filtered Attendance List
-  const filteredAttendance = allAttendance.filter((rec) => {
-    if (attendanceDate && rec.date !== attendanceDate) return false;
-    if (attendanceCourse !== 'all' && String(rec.courseId) !== attendanceCourse) return false;
-    if (attendanceStatus !== 'all' && rec.status !== attendanceStatus) return false;
-    return true;
+  // Load available filter options from backend
+  const { data: filterOptions } = useQuery({
+    queryKey: ['audit-log-filters'],
+    queryFn: () => auditLogService.getFilters(),
   });
 
-  // Calculate Attendance Stats for current filter
-  const attendanceCounts = filteredAttendance.reduce(
-    (acc, curr) => {
-      acc[curr.status] = (acc[curr.status] || 0) + 1;
-      return acc;
-    },
-    { present: 0, absent: 0, late: 0, excused: 0 } as Record<AttendanceStatus, number>
-  );
+  // Query audit logs with active filters
+  const activeFilters: AuditLogFilters = {
+    page,
+    limit: 25,
+    from: fromDate || undefined,
+    to: toDate || undefined,
+    teacher: selectedTeacher !== 'all' ? Number(selectedTeacher) : undefined,
+    student: selectedStudent !== 'all' ? Number(selectedStudent) : undefined,
+    course: selectedCourse !== 'all' ? Number(selectedCourse) : undefined,
+    activity: selectedActivity !== 'all' ? Number(selectedActivity) : undefined,
+    gradeCategory: selectedGradeCat !== 'all' ? selectedGradeCat : undefined,
+    action: selectedAction !== 'all' ? selectedAction : undefined,
+  };
 
-  // Filtered Audit Logs
-  const filteredLogs = allAuditLogs.filter((log) => {
-    if (logActionFilter !== 'all' && log.action !== logActionFilter) return false;
-    if (
-      logSearch &&
-      !log.user.toLowerCase().includes(logSearch.toLowerCase()) &&
-      !log.details.toLowerCase().includes(logSearch.toLowerCase())
-    )
-      return false;
-    return true;
+  const {
+    data: auditData,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ['audit-logs', activeFilters],
+    queryFn: () => auditLogService.list(activeFilters),
   });
+
+  const logs = auditData?.logs ?? [];
+  const totalLogs = auditData?.total ?? 0;
+  const totalPages = auditData?.totalPages ?? 1;
+
+  const resetFilters = () => {
+    setPage(1);
+    setFromDate('');
+    setToDate('');
+    setSelectedTeacher('all');
+    setSelectedStudent('all');
+    setSelectedCourse('all');
+    setSelectedActivity('all');
+    setSelectedGradeCat('all');
+    setSelectedAction('all');
+  };
 
   const exportAuditReport = () => {
-    toast.success('Informe de Auditoría exportado exitosamente');
+    if (logs.length === 0) {
+      toast.error('No hay registros para exportar');
+      return;
+    }
+    const headers = ['ID', 'Fecha', 'Actor', 'Rol', 'Acción', 'Estudiante', 'Curso', 'Actividad', 'Detalles'];
+    const csvRows = logs.map((l) => [
+      l.id,
+      new Date(l.createdAt).toLocaleString('es-ES'),
+      `"${l.actor?.name || 'N/A'}"`,
+      l.actor?.role || 'N/A',
+      l.action,
+      `"${l.studentName || ''}"`,
+      `"${l.courseName || ''}"`,
+      `"${l.activityTitle || ''}"`,
+      `"${JSON.stringify({ old: l.oldValues, new: l.newValues }).replace(/"/g, '""')}"`,
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...csvRows.map((e) => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `auditoria_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Informe de auditoría exportado exitosamente en formato CSV');
+  };
+
+  const formatActionBadge = (action: string) => {
+    if (action.includes('TASK_GRADE')) {
+      return (
+        <Badge variant="outline" className="text-xs bg-amber-50 text-amber-800 border-amber-300">
+          Nota Tarea
+        </Badge>
+      );
+    }
+    if (action.includes('ACADEMIC_GRADE')) {
+      return (
+        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-800 border-blue-300">
+          Nota Académica
+        </Badge>
+      );
+    }
+    if (action.includes('CREATED') || action.includes('UPLOAD')) {
+      return <Badge variant="success" className="text-xs">{action}</Badge>;
+    }
+    if (action.includes('UPDATED') || action.includes('REPLACED')) {
+      return <Badge variant="warning" className="text-xs">{action}</Badge>;
+    }
+    return <Badge variant="secondary" className="text-xs">{action}</Badge>;
   };
 
   return (
@@ -86,346 +146,355 @@ export default function AuditPage() {
       <PageHeader
         eyebrow="Administración y Seguridad"
         title="Bitácora & Auditoría del Sistema"
-        description="Consola institucional de auditoría: registro de asistencias diarias, notas, observaciones y bitácora de eventos"
+        description="Consola institucional de trazabilidad: supervisión de cambios en notas, evidencias, actividades y accesos con registro de valores previos y posteriores"
       >
-        <Button onClick={exportAuditReport} className="h-10">
-          <FileSpreadsheet className="mr-2 h-4 w-4" />
-          Exportar Auditoría
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => refetch()} size="sm" className="gap-1.5">
+            <RotateCcw className="h-4 w-4" /> Actualizar
+          </Button>
+          <Button onClick={exportAuditReport} className="h-9 gap-1.5" size="sm">
+            <FileSpreadsheet className="h-4 w-4" /> Exportar Auditoría (CSV)
+          </Button>
+        </div>
       </PageHeader>
 
-      {/* Tabs Selector */}
-      <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-[#D6E5E3] bg-white p-1.5 shadow-2xs">
-        {[
-          { id: 'asistencias', label: 'Asistencias por Día', icon: CalendarCheck },
-          { id: 'notas', label: 'Calificaciones & Notas', icon: Star },
-          { id: 'observaciones', label: 'Observaciones Escolares', icon: MessageSquare },
-          { id: 'seguridad', label: 'Bitácora de Seguridad', icon: ShieldCheck },
-        ].map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setActiveTab(id as typeof activeTab)}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087F79] ${
-              activeTab === id
-                ? 'bg-[#087F79] text-white shadow-xs'
-                : 'text-[#5E7A77] hover:bg-[#F4FAF9] hover:text-[#183B3A]'
-            }`}
+      {/* Filter panel */}
+      <Card className="p-4 sm:p-5 shadow-xs">
+        <div className="flex items-center justify-between pb-3 border-b border-school-border/60 mb-4">
+          <span className="text-sm font-bold text-school-heading flex items-center gap-2">
+            <Filter className="h-4 w-4 text-school-primary" /> Filtros de Auditoría
+          </span>
+          <Button variant="ghost" size="sm" onClick={resetFilters} className="text-xs text-school-muted hover:text-school-primary">
+            Limpiar Filtros
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          {/* Rango Desde */}
+          <div className="space-y-1">
+            <Label className="text-[11px] font-semibold text-school-heading">Desde:</Label>
+            <Input
+              type="date"
+              value={fromDate}
+              onChange={(e) => {
+                setFromDate(e.target.value);
+                setPage(1);
+              }}
+              className="h-8 text-xs bg-white"
+            />
+          </div>
+
+          {/* Rango Hasta */}
+          <div className="space-y-1">
+            <Label className="text-[11px] font-semibold text-school-heading">Hasta:</Label>
+            <Input
+              type="date"
+              value={toDate}
+              onChange={(e) => {
+                setToDate(e.target.value);
+                setPage(1);
+              }}
+              className="h-8 text-xs bg-white"
+            />
+          </div>
+
+          {/* Categoría de Calificación */}
+          <div className="space-y-1">
+            <Label className="text-[11px] font-semibold text-school-heading">Tipo de Calificación:</Label>
+            <Select
+              value={selectedGradeCat}
+              onValueChange={(val) => {
+                setSelectedGradeCat(val);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Todas las notas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas las calificaciones</SelectItem>
+                <SelectItem value="task">Notas de Tareas / Actividades</SelectItem>
+                <SelectItem value="academic">Notas Académicas Oficiales</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Tipo de Acción */}
+          <div className="space-y-1">
+            <Label className="text-[11px] font-semibold text-school-heading">Acción:</Label>
+            <Select
+              value={selectedAction}
+              onValueChange={(val) => {
+                setSelectedAction(val);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Todas las acciones" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas las acciones</SelectItem>
+                <SelectItem value="created">Creaciones (Nuevas notas/evidencias)</SelectItem>
+                <SelectItem value="modified">Modificaciones / Actualizaciones</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Docente */}
+          <div className="space-y-1">
+            <Label className="text-[11px] font-semibold text-school-heading">Docente (Actor):</Label>
+            <Select
+              value={selectedTeacher}
+              onValueChange={(val) => {
+                setSelectedTeacher(val);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Todos los docentes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los docentes</SelectItem>
+                {filterOptions?.teachers?.map((t) => (
+                  <SelectItem key={t.id} value={String(t.id)}>
+                    {t.name || `Docente #${t.id}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Estudiante Afectado */}
+          <div className="space-y-1">
+            <Label className="text-[11px] font-semibold text-school-heading">Estudiante:</Label>
+            <Select
+              value={selectedStudent}
+              onValueChange={(val) => {
+                setSelectedStudent(val);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Todos los estudiantes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los estudiantes</SelectItem>
+                {filterOptions?.students?.map((s) => (
+                  <SelectItem key={s.id} value={String(s.id)}>
+                    {s.name || `Estudiante #${s.id}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Curso */}
+          <div className="space-y-1">
+            <Label className="text-[11px] font-semibold text-school-heading">Curso / Materia:</Label>
+            <Select
+              value={selectedCourse}
+              onValueChange={(val) => {
+                setSelectedCourse(val);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Todos los cursos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los cursos</SelectItem>
+                {filterOptions?.courses?.map((c) => (
+                  <SelectItem key={c.id} value={String(c.id)}>
+                    {c.name} ({c.code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Actividad */}
+          <div className="space-y-1">
+            <Label className="text-[11px] font-semibold text-school-heading">Actividad:</Label>
+            <Select
+              value={selectedActivity}
+              onValueChange={(val) => {
+                setSelectedActivity(val);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Todas las actividades" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas las actividades</SelectItem>
+                {filterOptions?.activities?.map((a) => (
+                  <SelectItem key={a.id} value={String(a.id)}>
+                    {a.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </Card>
+
+      {/* Main Table */}
+      <Card className="overflow-hidden shadow-xs">
+        <div className="p-4 border-b border-school-border/60 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-school-primary" />
+            <span className="font-bold text-sm text-school-heading">Eventos Auditados</span>
+            <Badge variant="secondary" className="text-xs">{totalLogs} en total</Badge>
+          </div>
+          <span className="text-xs text-school-muted">Página {page} de {totalPages}</span>
+        </div>
+
+        {isLoading ? (
+          <div className="py-16 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-school-primary mb-3" />
+            <p className="text-school-muted text-sm font-medium">Cargando registros de auditoría institucional...</p>
+          </div>
+        ) : isError ? (
+          <div className="py-16 text-center text-red-600">
+            <p className="font-semibold text-sm">Error al cargar registros de auditoría.</p>
+          </div>
+        ) : logs.length === 0 ? (
+          <div className="py-16 text-center text-school-muted">
+            <Search className="h-10 w-10 mx-auto text-school-muted mb-2" />
+            <p className="font-semibold text-school-heading text-sm">No se encontraron eventos</p>
+            <p className="text-xs text-school-muted mt-1">Intenta ajustando los filtros de búsqueda.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-school-border bg-school-background text-school-muted uppercase tracking-wider font-semibold">
+                  <th className="py-3 px-3 w-8"></th>
+                  <th className="py-3 px-3">Fecha y Hora</th>
+                  <th className="py-3 px-3">Quién (Actor)</th>
+                  <th className="py-3 px-3">Acción</th>
+                  <th className="py-3 px-3">Estudiante</th>
+                  <th className="py-3 px-3">Curso / Actividad</th>
+                  <th className="py-3 px-3">Valores Anteriores → Nuevos</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-school-border/60">
+                {logs.map((log: NormalizedAuditLog) => {
+                  const isExpanded = expandedRowId === log.id;
+                  const hasValues = log.oldValues || log.newValues;
+
+                  return (
+                    <tr
+                      key={log.id}
+                      className={`hover:bg-school-subtle/30 transition-colors ${isExpanded ? 'bg-school-subtle/40' : ''}`}
+                    >
+                      <td className="py-3 px-3">
+                        <button
+                          type="button"
+                          onClick={() => setExpandedRowId(isExpanded ? null : log.id)}
+                          className="p-1 hover:bg-school-subtle rounded text-school-muted"
+                          title="Ver detalles extendidos"
+                        >
+                          {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                        </button>
+                      </td>
+                      <td className="py-3 px-3 whitespace-nowrap text-school-body">
+                        {new Date(log.createdAt).toLocaleString('es-ES', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                        })}
+                      </td>
+                      <td className="py-3 px-3">
+                        <p className="font-bold text-school-heading">{log.actor?.name || `Usuario #${log.actor?.id}`}</p>
+                        <p className="text-[10px] text-school-muted capitalize">{log.actor?.role || 'Docente'}</p>
+                      </td>
+                      <td className="py-3 px-3">
+                        <div className="space-y-0.5">
+                          {formatActionBadge(log.action)}
+                          <p className="text-[10px] text-school-muted font-mono">{log.action}</p>
+                        </div>
+                      </td>
+                      <td className="py-3 px-3">
+                        {log.studentName ? (
+                          <span className="font-semibold text-school-heading">{log.studentName}</span>
+                        ) : log.studentId ? (
+                          <span className="text-school-muted">ID: {log.studentId}</span>
+                        ) : (
+                          <span className="text-school-muted italic">-</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-3">
+                        <p className="font-semibold text-school-heading">{log.courseName || '-'}</p>
+                        {log.activityTitle && (
+                          <p className="text-[10px] text-school-muted">Tarea: {log.activityTitle}</p>
+                        )}
+                      </td>
+                      <td className="py-3 px-3 max-w-xs">
+                        {hasValues ? (
+                          <div className="space-y-1">
+                            {log.oldValues && (
+                              <div className="text-[11px] text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                                <strong>Antes:</strong> {JSON.stringify(log.oldValues)}
+                              </div>
+                            )}
+                            {log.newValues && (
+                              <div className="text-[11px] text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                <strong>Ahora:</strong> {JSON.stringify(log.newValues)}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-school-muted italic">Sin cambios numéricos</span>
+                        )}
+
+                        {/* Secondary expandable detail */}
+                        {isExpanded && (
+                          <div className="mt-2 pt-2 border-t border-dashed border-school-border text-[10px] text-school-muted bg-white p-2 rounded shadow-2xs">
+                            <p><strong>IP:</strong> {log.ipAddress || '127.0.0.1'}</p>
+                            <p><strong>Log ID:</strong> {log.id}</p>
+                            <p><strong>Categoría:</strong> {log.gradeCategory || 'general'}</p>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Pagination bar */}
+        <div className="p-3.5 border-t border-school-border/60 bg-school-background flex items-center justify-between text-xs">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            className="gap-1"
           >
-            <Icon className="h-4 w-4 shrink-0" />
-            <span>{label}</span>
-          </button>
-        ))}
-      </div>
+            <ChevronLeft className="h-4 w-4" /> Anterior
+          </Button>
 
-      {/* ── TAB 1: ASISTENCIAS DIARIAS ────────────────────────────────────────── */}
-      {activeTab === 'asistencias' && (
-        <div className="space-y-5">
-          {/* Filters Bar */}
-          <div className="rounded-2xl border border-[#D6E5E3] bg-white p-4 sm:p-5 shadow-xs">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-[#183B3A]">Fecha de Asistencia</Label>
-                  <Input
-                    type="date"
-                    max={new Date().toISOString().split('T')[0]}
-                    className="w-44"
-                    aria-label="Filtrar por fecha"
-                    value={attendanceDate}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const todayStr = new Date().toISOString().split('T')[0];
-                      if (val > todayStr) {
-                        toast.error('No se pueden consultar fechas futuras');
-                        setAttendanceDate(todayStr);
-                      } else {
-                        setAttendanceDate(val);
-                      }
-                    }}
-                  />
-                </div>
+          <span className="text-school-muted font-medium">
+            Página {page} de {totalPages}
+          </span>
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-[#183B3A]">Curso / Materia</Label>
-                  <Select value={attendanceCourse} onValueChange={setAttendanceCourse}>
-                    <SelectTrigger className="w-56">
-                      <SelectValue placeholder="Todos los Cursos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos los Cursos</SelectItem>
-                      {courses?.map((c) => (
-                        <SelectItem key={c.id} value={String(c.id)}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-[#183B3A]">Estado de Asistencia</Label>
-                  <Select value={attendanceStatus} onValueChange={setAttendanceStatus}>
-                    <SelectTrigger className="w-44">
-                      <SelectValue placeholder="Todos los Estados" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos los Estados</SelectItem>
-                      <SelectItem value="present">Presente</SelectItem>
-                      <SelectItem value="absent">Ausente</SelectItem>
-                      <SelectItem value="late">Atraso</SelectItem>
-                      <SelectItem value="excused">Justificado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Attendance Quick Stats */}
-              <div className="flex flex-wrap items-center gap-2.5 rounded-xl border border-[#D6E5E3] bg-[#F4FAF9] p-2.5">
-                <div className="flex items-center gap-1 text-xs text-[#287A32] font-semibold">
-                  <CheckCircle2 className="h-4 w-4" /> {attendanceCounts.present} Pres.
-                </div>
-                <div className="flex items-center gap-1 text-xs text-[#B42335] font-semibold">
-                  <XCircle className="h-4 w-4" /> {attendanceCounts.absent} Aus.
-                </div>
-                <div className="flex items-center gap-1 text-xs text-[#805D00] font-semibold">
-                  <Clock className="h-4 w-4" /> {attendanceCounts.late} Atr.
-                </div>
-                <div className="flex items-center gap-1 text-xs text-[#9731AC] font-semibold">
-                  <AlertCircle className="h-4 w-4" /> {attendanceCounts.excused} Just.
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Attendance Table Card */}
-          <Card>
-            <CardHeader className="border-b border-[#D6E5E3] bg-[#F4FAF9]/50 pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-semibold text-[#183B3A] flex items-center gap-2">
-                <CalendarCheck className="h-4 w-4 text-[#087F79]" />
-                Registros de Asistencia Diaria ({filteredAttendance.length})
-              </CardTitle>
-              {attendanceDate && (
-                <Badge variant="secondary">
-                  Fecha: {attendanceDate}
-                </Badge>
-              )}
-            </CardHeader>
-
-            {filteredAttendance.length === 0 ? (
-              <div className="p-10 text-center text-[#5E7A77] text-sm">
-                No hay registros de asistencia con los filtros seleccionados.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm text-[#365451]">
-                  <thead className="bg-[#F4FAF9] text-[#183B3A] font-semibold text-xs uppercase border-b border-[#D6E5E3]">
-                    <tr>
-                      <th className="p-3.5">Estudiante</th>
-                      <th className="p-3.5">Código</th>
-                      <th className="p-3.5">Materia / Curso</th>
-                      <th className="p-3.5">Fecha</th>
-                      <th className="p-3.5">Estado</th>
-                      <th className="p-3.5">Observaciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#D6E5E3]">
-                    {filteredAttendance.map((rec) => (
-                      <tr key={rec.id} className="hover:bg-[#E3F5F3]/30 transition-colors">
-                        <td className="p-3.5 font-semibold text-[#183B3A]">{rec.studentName}</td>
-                        <td className="p-3.5 text-xs font-mono text-[#5E7A77]">{rec.studentCode}</td>
-                        <td className="p-3.5 text-xs font-medium text-[#087F79]">{rec.courseName}</td>
-                        <td className="p-3.5 text-xs text-[#5E7A77]">{rec.date}</td>
-                        <td className="p-3.5">
-                          {rec.status === 'present' && <Badge variant="success">Presente</Badge>}
-                          {rec.status === 'absent' && <Badge variant="destructive">Ausente</Badge>}
-                          {rec.status === 'late' && <Badge variant="warning">Atraso</Badge>}
-                          {rec.status === 'excused' && <Badge variant="purple">Justificado</Badge>}
-                        </td>
-                        <td className="p-3.5 text-xs text-[#5E7A77]">{rec.notes || '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </Card>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="gap-1"
+          >
+            Siguiente <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
-      )}
-
-      {/* ── TAB 2: CALIFICACIONES Y NOTAS ──────────────────────────────────────── */}
-      {activeTab === 'notas' && (
-        <div className="space-y-5">
-          <div className="rounded-2xl border border-[#D6E5E3] bg-white p-4 sm:p-5 shadow-xs">
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="space-y-1.5 flex-1 min-w-[220px]">
-                <Label className="text-xs font-semibold text-[#183B3A]">Buscar Estudiante</Label>
-                <div className="relative">
-                  <Input
-                    className="pl-10"
-                    placeholder="Nombre o código de estudiante..."
-                    aria-label="Buscar estudiante"
-                    value={gradeSearch}
-                    onChange={(e) => setGradeSearch(e.target.value)}
-                  />
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5E7A77]" />
-                </div>
-              </div>
-
-              <div className="space-y-1.5 min-w-[240px]">
-                <Label className="text-xs font-semibold text-[#183B3A]">Curso / Materia</Label>
-                <Select value={gradeCourse} onValueChange={setGradeCourse}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos los Cursos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos los Cursos</SelectItem>
-                    {courses?.map((c) => (
-                      <SelectItem key={c.id} value={String(c.id)}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          <Card className="p-8 text-center">
-            <Star className="h-8 w-8 text-[#087F79] mx-auto mb-3" />
-            <h3 className="font-semibold text-lg text-[#183B3A]">Consola de Auditoría de Calificaciones</h3>
-            <p className="text-sm text-[#5E7A77] max-w-lg mx-auto mt-1">
-              Todas las calificaciones asentadas por los docentes cuentan con marca de agua y registro de cambios en base de datos.
-            </p>
-          </Card>
-        </div>
-      )}
-
-      {/* ── TAB 3: OBSERVACIONES Y COMUNICADOS ─────────────────────────────────── */}
-      {activeTab === 'observaciones' && (
-        <div className="space-y-5">
-          <div className="rounded-2xl border border-[#D6E5E3] bg-white p-4 sm:p-5 shadow-xs">
-            <div className="space-y-1.5 max-w-xs">
-              <Label className="text-xs font-semibold text-[#183B3A]">Filtrar por Tipo</Label>
-              <Select value={obsTypeFilter} onValueChange={setObsTypeFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="positiva">Observaciones Positivas</SelectItem>
-                  <SelectItem value="atencion">Llamados de Atención</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {allObservations.map((obs) => (
-              <Card key={obs.id} className="p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <Badge variant={obs.type === 'positiva' ? 'success' : 'warning'}>
-                    {obs.type === 'positiva' ? 'Positiva' : 'Llamado de Atención'}
-                  </Badge>
-                  <span className="text-xs text-[#5E7A77]">{obs.date}</span>
-                </div>
-                <h4 className="font-semibold text-base text-[#183B3A]">{obs.title}</h4>
-                <p className="text-sm text-[#365451] leading-relaxed">{obs.detail}</p>
-                <div className="text-xs text-[#5E7A77] pt-2 border-t border-[#D6E5E3] flex justify-between">
-                  <span>Estudiante: <strong className="text-[#183B3A] font-semibold">{obs.studentName}</strong></span>
-                  <span>Materia: <strong className="text-[#087F79] font-semibold">{obs.courseName}</strong></span>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── TAB 4: LOG DE SEGURIDAD Y OPERACIONES ─────────────────────────────── */}
-      {activeTab === 'seguridad' && (
-        <div className="space-y-5">
-          <div className="rounded-2xl border border-[#D6E5E3] bg-white p-4 sm:p-5 shadow-xs">
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="space-y-1.5 flex-1 min-w-[220px]">
-                <Label className="text-xs font-semibold text-[#183B3A]">Buscar por Usuario o Detalle</Label>
-                <div className="relative">
-                  <Input
-                    className="pl-10"
-                    placeholder="Filtrar por usuario o detalle..."
-                    aria-label="Buscar en bitácora"
-                    value={logSearch}
-                    onChange={(e) => setLogSearch(e.target.value)}
-                  />
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5E7A77]" />
-                </div>
-              </div>
-
-              <div className="space-y-1.5 min-w-[240px]">
-                <Label className="text-xs font-semibold text-[#183B3A]">Acción Realizada</Label>
-                <Select value={logActionFilter} onValueChange={setLogActionFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todas las Acciones" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas las Acciones</SelectItem>
-                    <SelectItem value="INICIO_SESION">Inicio de Sesión</SelectItem>
-                    <SelectItem value="REGISTRO_ASISTENCIA">Registro de Asistencia</SelectItem>
-                    <SelectItem value="CREAR_OBSERVACION">Crear Observación</SelectItem>
-                    <SelectItem value="MODIFICAR_MATRICULA">Modificar Matrícula</SelectItem>
-                    <SelectItem value="PUBLICAR_COMUNICADO">Publicar Comunicado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          <Card>
-            <CardHeader className="border-b border-[#D6E5E3] bg-[#F4FAF9]/50 pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-semibold text-[#183B3A] flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-[#9731AC]" />
-                Historial de Operaciones y Bitácora de Seguridad ({filteredLogs.length})
-              </CardTitle>
-            </CardHeader>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-[#365451]">
-                <thead className="bg-[#F4FAF9] text-[#183B3A] font-semibold text-xs uppercase border-b border-[#D6E5E3]">
-                  <tr>
-                    <th className="p-3.5">Marca de Tiempo</th>
-                    <th className="p-3.5">Usuario</th>
-                    <th className="p-3.5">Rol</th>
-                    <th className="p-3.5">Acción</th>
-                    <th className="p-3.5">Entidad</th>
-                    <th className="p-3.5">Detalles</th>
-                    <th className="p-3.5">IP Origen</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#D6E5E3]">
-                  {filteredLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-[#E3F5F3]/30 transition-colors">
-                      <td className="p-3.5 text-xs text-[#5E7A77] font-mono">{log.timestamp}</td>
-                      <td className="p-3.5 font-semibold text-[#183B3A]">{log.user}</td>
-                      <td className="p-3.5">
-                        <Badge variant="purple" className="text-[11px]">
-                          {log.role}
-                        </Badge>
-                      </td>
-                      <td className="p-3.5">
-                        <span className="font-mono text-xs bg-[#F4FAF9] px-2 py-1 rounded border border-[#D6E5E3] text-[#183B3A]">
-                          {log.action}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-xs font-semibold text-[#087F79]">{log.entity}</td>
-                      <td className="p-3.5 text-xs text-[#365451]">{log.details}</td>
-                      <td className="p-3.5 text-xs font-mono text-[#5E7A77]">{log.ip}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </div>
-      )}
+      </Card>
     </div>
   );
 }

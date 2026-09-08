@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, FileText, Users, Sparkles, CheckCircle2, Clock, Eye, Pencil, Trash2, Award } from 'lucide-react';
+import { ArrowLeft, Plus, FileText, Users, CheckCircle2, Clock, Eye, Pencil, Trash2, Award } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCourse } from '@/hooks/useCourses';
 import { useCourseStudents } from '@/hooks/useEnrollments';
-import { teacherModuleService, type ClassActivity, type SubmissionItem } from '@/services/teacherModule.service';
+import { useActivities, useCreateActivity, useUpdateActivity } from '@/hooks/useActivities';
 import { ClassroomSubmissionsDialog } from '@/components/teacher/ClassroomSubmissionsDialog';
 import { DataTable, type Column } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import type { CourseGradeRow } from '@/types';
+import type { CourseGradeRow, ApiActivity } from '@/types';
 
 const getMinDateTimeStr = () => {
   const d = new Date();
@@ -32,7 +32,7 @@ const getMinDateTimeStr = () => {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
-const formatDateTimeDisplay = (dtStr: string) => {
+const formatDateTimeDisplay = (dtStr: string | null) => {
   if (!dtStr) return '—';
   if (dtStr.includes('T')) {
     const [date, time] = dtStr.split('T');
@@ -47,33 +47,24 @@ export default function CourseDetailPage() {
 
   const { data: course, isLoading: loadingCourse } = useCourse(id);
   const { data: courseData, isLoading: loadingStudents } = useCourseStudents(id);
+  const { data: activities = [], isLoading: loadingActivities } = useActivities({
+    courseId: id ?? 0,
+  });
+
+  const createActivityMutation = useCreateActivity();
+  const updateActivityMutation = useUpdateActivity();
 
   const [activeTab, setActiveTab] = useState<'tasks' | 'students'>('tasks');
 
   // Modals & forms
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingActivity, setEditingActivity] = useState<ClassActivity | null>(null);
+  const [editingActivity, setEditingActivity] = useState<ApiActivity | null>(null);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
 
-  const [selectedActivityForSubmissions, setSelectedActivityForSubmissions] = useState<ClassActivity | null>(null);
-
-  const [activities, setActivities] = useState<ClassActivity[]>(() =>
-    id ? teacherModuleService.getActivities(id) : []
-  );
-
-  const [submissions, setSubmissions] = useState<SubmissionItem[]>(() =>
-    teacherModuleService.getSubmissions()
-  );
-
-  const refreshActivities = () => {
-    if (id) {
-      setActivities(teacherModuleService.getActivities(id));
-    }
-    setSubmissions(teacherModuleService.getSubmissions());
-  };
+  const [selectedActivityForSubmissions, setSelectedActivityForSubmissions] = useState<ApiActivity | null>(null);
 
   const handleOpenCreateModal = () => {
     setEditingActivity(null);
@@ -83,15 +74,20 @@ export default function CourseDetailPage() {
     setModalOpen(true);
   };
 
-  const handleOpenEditModal = (act: ClassActivity) => {
+  const handleOpenEditModal = (act: ApiActivity) => {
     setEditingActivity(act);
     setTitle(act.title);
     setDescription(act.description || '');
-    setDueDate(act.dueDate.includes('T') ? act.dueDate : `${act.dueDate}T23:59`);
+    const formattedDue = act.dueDate
+      ? act.dueDate.includes('T')
+        ? act.dueDate
+        : `${act.dueDate}T23:59`
+      : getMinDateTimeStr();
+    setDueDate(formattedDue);
     setModalOpen(true);
   };
 
-  const handleSaveActivity = (e: React.FormEvent) => {
+  const handleSaveActivity = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !dueDate || !id) {
       toast.error('Por favor completa el título y la fecha/hora límite');
@@ -104,35 +100,32 @@ export default function CourseDetailPage() {
       return;
     }
 
-    if (editingActivity) {
-      teacherModuleService.updateActivity(editingActivity.id, {
-        title,
-        description,
-        dueDate,
-      });
-      toast.success('Deber actualizado correctamente');
-    } else {
-      teacherModuleService.createActivity({
-        title,
-        description,
-        dueDate,
-        type: 'deber',
-        courseId: id,
-        courseName: course?.name ?? 'Curso',
-        status: 'en_curso',
-      });
-      toast.success('Deber asignado correctamente');
-    }
-
-    setModalOpen(false);
-    refreshActivities();
-  };
-
-  const handleDeleteActivity = (actId: string) => {
-    if (confirm('¿Estás seguro de eliminar este deber?')) {
-      teacherModuleService.deleteActivity(actId);
-      toast.success('Deber eliminado');
-      refreshActivities();
+    try {
+      if (editingActivity) {
+        await updateActivityMutation.mutateAsync({
+          id: editingActivity.id,
+          payload: {
+            title: title.trim(),
+            description: description.trim() || undefined,
+            dueDate,
+          },
+        });
+        toast.success('Deber actualizado correctamente');
+      } else {
+        await createActivityMutation.mutateAsync({
+          courseId: id,
+          title: title.trim(),
+          description: description.trim() || undefined,
+          dueDate,
+          type: 'deber',
+          status: 'en_curso',
+          maxScore: 10,
+        });
+        toast.success('Deber asignado correctamente');
+      }
+      setModalOpen(false);
+    } catch {
+      toast.error('Error al guardar la actividad');
     }
   };
 
@@ -249,81 +242,60 @@ export default function CourseDetailPage() {
             </Card>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {activities.map((act) => {
-                const submissionsForAct = submissions.filter((s) => s.activityId === act.id);
-                const gradedForAct = submissionsForAct.filter((s) => s.status === 'calificada' || s.score !== undefined).length;
-                return (
-                  <Card key={act.id} className="flex flex-col justify-between hover:border-school-accent transition-colors">
-                    <CardContent className="p-5 space-y-4 flex flex-col justify-between flex-1">
-                      <div className="space-y-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className="font-bold text-school-heading text-base leading-snug">{act.title}</h4>
-                          <Badge variant={act.status === 'programada' ? 'warning' : 'success'} className="shrink-0">
-                            {act.status === 'programada' ? 'Programada' : 'En Curso'}
-                          </Badge>
-                        </div>
-
-                        <div className="flex items-center gap-1.5 text-xs font-medium text-school-primary bg-school-subtle px-2.5 py-1.5 rounded-lg border border-school-border/50">
-                          <Clock className="h-3.5 w-3.5 text-school-primary" />
-                          <span>Límite: {formatDateTimeDisplay(act.dueDate)}</span>
-                        </div>
-
-                        {act.description && (
-                          <p className="text-sm text-school-body bg-school-background p-3 rounded-xl border border-school-border/60 leading-relaxed">
-                            {act.description}
-                          </p>
-                        )}
+              {activities.map((act) => (
+                <Card key={act.id} className="flex flex-col justify-between hover:border-school-accent transition-colors">
+                  <CardContent className="p-5 space-y-4 flex flex-col justify-between flex-1">
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="font-bold text-school-heading text-base leading-snug">{act.title}</h4>
+                        <Badge variant={act.status === 'programada' ? 'warning' : 'success'} className="shrink-0">
+                          {act.status === 'programada' ? 'Programada' : 'En Curso'}
+                        </Badge>
                       </div>
 
-                      {/* Footer: Acciones del Docente */}
-                      <div className="pt-3 border-t border-school-border/60 flex items-center justify-between gap-2 text-xs">
-                        <div className="flex flex-col text-xs font-medium text-school-body">
-                          <span className="flex items-center gap-1">
-                            <CheckCircle2 className="h-3.5 w-3.5 text-school-success" />
-                            {submissionsForAct.length} Entregas
-                          </span>
-                          {gradedForAct > 0 && (
-                            <span className="flex items-center gap-1 text-school-warning font-semibold">
-                              <Award className="h-3.5 w-3.5" />
-                              {gradedForAct} Calificadas
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-1.5">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setSelectedActivityForSubmissions(act)}
-                            className="h-8 text-xs font-medium border-school-border text-school-heading hover:bg-school-subtle hover:text-school-primary"
-                          >
-                            <Eye className="h-3.5 w-3.5 mr-1 text-school-primary" /> Evidencias ({submissionsForAct.length})
-                          </Button>
-
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleOpenEditModal(act)}
-                            className="h-8 text-xs font-medium text-school-warning border-school-border hover:bg-school-subtle"
-                          >
-                            <Pencil className="h-3.5 w-3.5 mr-1" /> Plazo
-                          </Button>
-
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDeleteActivity(act.id)}
-                            className="h-8 text-xs text-school-error hover:bg-school-error/10"
-                            aria-label="Eliminar deber"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-school-primary bg-school-subtle px-2.5 py-1.5 rounded-lg border border-school-border/50">
+                        <Clock className="h-3.5 w-3.5 text-school-primary" />
+                        <span>Límite: {formatDateTimeDisplay(act.dueDate)}</span>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+
+                      {act.description && (
+                        <p className="text-sm text-school-body bg-school-background p-3 rounded-xl border border-school-border/60 leading-relaxed">
+                          {act.description}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Footer: Acciones del Docente */}
+                    <div className="pt-3 border-t border-school-border/60 flex items-center justify-between gap-2 text-xs">
+                      <div className="flex flex-col text-xs font-medium text-school-body">
+                        <span className="text-xs text-school-muted font-medium">
+                          Puntaje máx: <strong className="text-school-heading">{act.maxScore || 10} pts</strong>
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedActivityForSubmissions(act)}
+                          className="h-8 text-xs font-medium border-school-border text-school-heading hover:bg-school-subtle hover:text-school-primary"
+                        >
+                          <Eye className="h-3.5 w-3.5 mr-1 text-school-primary" /> Ver Entregas
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleOpenEditModal(act)}
+                          className="h-8 text-xs font-medium text-school-warning border-school-border hover:bg-school-subtle"
+                        >
+                          <Pencil className="h-3.5 w-3.5 mr-1" /> Editar
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
         </div>
