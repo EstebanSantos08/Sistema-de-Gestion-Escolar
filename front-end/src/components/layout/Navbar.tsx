@@ -61,7 +61,7 @@ export function Navbar() {
             <Button
               variant="outline"
               size="icon"
-              className="h-11 w-11 border-[#D6E5E3] text-[#087F79] hover:bg-[#E3F5F3] md:hidden"
+              className="h-11 w-11 border-[#D6E5E3] text-[#41C4BD] hover:bg-[#E3F5F3] md:hidden"
               aria-label="Abrir menú de navegación"
             >
               <Menu aria-hidden="true" className="h-5 w-5" />
@@ -88,7 +88,7 @@ export function Navbar() {
                     <Icon
                       aria-hidden="true"
                       className={`h-5 w-5 shrink-0 ${
-                        active ? 'text-[#087F79]' : 'text-[#5E7A77]'
+                        active ? 'text-[#41C4BD]' : 'text-[#5E7A77]'
                       }`}
                     />
                     <span>{label}</span>
@@ -104,8 +104,8 @@ export function Navbar() {
         </div>
 
         {/* Period pill */}
-        <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#BBE5E1] bg-[#E3F5F3] px-3.5 py-1 text-xs font-medium text-[#087F79]">
-          <span className="h-2 w-2 rounded-full bg-[#087F79]" />
+        <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#BBE5E1] bg-[#E3F5F3] px-3.5 py-1 text-xs font-medium text-[#41C4BD]">
+          <span className="h-2 w-2 rounded-full bg-[#41C4BD]" />
           <span>
             Período Académico: <strong className="font-semibold text-[#183B3A]">2026-I</strong>
           </span>
@@ -124,10 +124,10 @@ export function Navbar() {
             <Button
               aria-label="Abrir menú de usuario"
               variant="ghost"
-              className="relative h-11 w-11 rounded-full border border-[#D6E5E3] bg-[#E3F5F3] p-0.5 text-[#087F79] hover:bg-[#D4EFEA] focus-visible:ring-2 focus-visible:ring-[#087F79]"
+              className="relative h-11 w-11 rounded-full border border-[#D6E5E3] bg-[#E3F5F3] p-0.5 text-[#41C4BD] hover:bg-[#D4EFEA] focus-visible:ring-2 focus-visible:ring-[#41C4BD]"
             >
               <Avatar className="h-9 w-9">
-                <AvatarFallback className="bg-white text-[#087F79] font-bold text-sm">
+                <AvatarFallback className="bg-white text-[#41C4BD] font-bold text-sm">
                   {getInitials(user.name)}
                 </AvatarFallback>
               </Avatar>
@@ -146,7 +146,7 @@ export function Navbar() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-[#D6E5E3]" />
             <DropdownMenuItem disabled className="rounded-lg text-sm text-[#5E7A77]">
-              <UserIcon className="mr-2 h-4 w-4 text-[#087F79]" />
+              <UserIcon className="mr-2 h-4 w-4 text-[#41C4BD]" />
               Mi perfil
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-[#D6E5E3]" />

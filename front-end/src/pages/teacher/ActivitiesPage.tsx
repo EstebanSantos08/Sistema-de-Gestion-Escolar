@@ -211,7 +211,7 @@ export default function ActivitiesPage() {
                 <SelectItem value="all">Todos los estados</SelectItem>
                 <SelectItem value="programada">Programadas</SelectItem>
                 <SelectItem value="en_curso">En curso</SelectItem>
-                <SelectItem value="finalizada">Finalizadas</SelectItem>
+                <SelectItem value="completada">Completadas</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -238,8 +238,8 @@ export default function ActivitiesPage() {
                       </span>
                       <h4 className="font-bold text-school-heading text-base mt-2 leading-snug">{act.title}</h4>
                     </div>
-                    <Badge variant={act.status === 'programada' ? 'warning' : act.status === 'finalizada' ? 'secondary' : 'success'} className="shrink-0">
-                      {act.status === 'programada' ? 'Programada' : act.status === 'finalizada' ? 'Finalizada' : 'En Curso'}
+                    <Badge variant={act.status === 'programada' ? 'warning' : act.status === 'completada' ? 'secondary' : 'success'} className="shrink-0">
+                      {act.status === 'programada' ? 'Programada' : act.status === 'completada' ? 'Completada' : 'En Curso'}
                     </Badge>
                   </div>
 
@@ -350,7 +350,7 @@ export default function ActivitiesPage() {
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit">
+              <Button type="submit" disabled={createActivityMutation.isPending || updateActivityMutation.isPending}>
                 {editingActivity ? 'Guardar Cambios' : 'Crear Actividad'}
               </Button>
             </DialogFooter>

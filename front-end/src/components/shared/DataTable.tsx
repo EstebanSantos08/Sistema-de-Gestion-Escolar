@@ -55,7 +55,7 @@ export function DataTable<T>({
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-32 text-center">
                   <div className="flex flex-col items-center justify-center gap-2 text-[#5E7A77]">
-                    <span className="h-6 w-6 animate-spin rounded-full border-2 border-[#087F79] border-t-transparent" />
+                    <span className="h-6 w-6 animate-spin rounded-full border-2 border-[#41C4BD] border-t-transparent" />
                     <span className="text-sm font-medium">Cargando información...</span>
                   </div>
                 </TableCell>

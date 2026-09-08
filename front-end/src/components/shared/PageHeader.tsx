@@ -20,18 +20,19 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        'mb-6 sm:mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between',
+        'mb-6 sm:mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between relative',
         className
       )}
     >
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         {eyebrow && (
-          <p className="text-xs font-semibold uppercase tracking-wider text-[#087F79]">
-            {eyebrow}
-          </p>
+          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#E3F5F3] text-[#41C4BD] border border-[#BBE5E1] text-xs font-bold uppercase tracking-wider shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-[#41C4BD] animate-pulse" />
+            <span>{eyebrow}</span>
+          </div>
         )}
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#183B3A]">
-          {title}
+        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#183B3A] flex items-center gap-2">
+          <span>{title}</span>
         </h1>
         {description && (
           <p className="text-sm sm:text-base text-[#5E7A77] max-w-3xl">

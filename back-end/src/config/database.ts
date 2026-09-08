@@ -27,10 +27,8 @@ export const sequelize = dbUrl
       },
     })
   : new Sequelize({
-      dialect: 'postgres',
-      dialectOptions: {
-        ssl: postgresSslOptions,
-      },
+      dialect: 'sqlite',
+      storage: process.env.DB_PATH || './database.sqlite',
       logging: false,
       define: {
         timestamps: true,

@@ -79,9 +79,23 @@ export function isNavigationActive(pathname: string, destination: string) {
   return destination.split('/').length > 2 && pathname.startsWith(`${destination}/`);
 }
 
-export const navigationLinkClass = (active: boolean) =>
-  `group flex min-h-[44px] items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087F79] focus-visible:ring-offset-1 ${
+export const navColors = [
+  { text: 'text-[#41C4BD]', bg: 'bg-[#E3F5F3]', border: 'border-[#41C4BD]/40' },
+  { text: 'text-[#D12B75]', bg: 'bg-[#FDF0F6]', border: 'border-[#FF5DA0]/40' },
+  { text: 'text-[#B38F00]', bg: 'bg-[#FEF8E7]', border: 'border-[#F2C700]/40' },
+  { text: 'text-[#557D07]', bg: 'bg-[#F4FBE8]', border: 'border-[#9DD31B]/40' },
+  { text: 'text-[#9731AC]', bg: 'bg-[#F6EDF8]', border: 'border-[#9731AC]/40' },
+  { text: 'text-[#D4592B]', bg: 'bg-[#FFF2ED]', border: 'border-[#FF8A5B]/40' },
+  { text: 'text-[#1E7BB5]', bg: 'bg-[#EFF7FC]', border: 'border-[#64B6E5]/40' },
+];
+
+export const getNavColor = (index: number) => navColors[index % navColors.length];
+
+export const navigationLinkClass = (active: boolean, index: number = 0) => {
+  const color = getNavColor(index);
+  return `group flex min-h-[44px] items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#41C4BD] ${
     active
-      ? 'bg-[#E3F5F3] text-[#087F79] font-semibold shadow-2xs border-l-4 border-[#087F79] pl-2.5'
-      : 'text-[#365451] hover:bg-[#F4FAF9] hover:text-[#183B3A] border-l-4 border-transparent'
+      ? `${color.bg} ${color.text} font-bold shadow-xs scale-[1.02] border-2 ${color.border}`
+      : `text-[#365451] hover:${color.bg} hover:${color.text} hover:translate-x-1 border-2 border-transparent`
   }`;
+};

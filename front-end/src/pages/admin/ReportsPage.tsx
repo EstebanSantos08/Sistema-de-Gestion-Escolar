@@ -52,7 +52,7 @@ function ReportButton({
       disabled={disabled || loading}
     >
       {loading ? (
-        <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#087F79] border-t-transparent" />
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#41C4BD] border-t-transparent" />
       ) : (
         icon
       )}
@@ -129,7 +129,7 @@ export default function ReportsPage() {
       <Card>
         <CardHeader className="border-b border-[#D6E5E3] bg-[#F4FAF9]/50 pb-4">
           <CardTitle className="text-base font-semibold text-[#183B3A] flex items-center gap-2">
-            <FileSpreadsheet className="h-5 w-5 text-[#087F79]" />
+            <FileSpreadsheet className="h-5 w-5 text-[#41C4BD]" />
             Reportes por Curso
           </CardTitle>
           <CardDescription>
@@ -178,7 +178,7 @@ export default function ReportsPage() {
             />
             <ReportButton
               label="Descargar Acta Oficial PDF"
-              icon={<FileText className="h-4 w-4 text-[#087F79]" />}
+              icon={<FileText className="h-4 w-4 text-[#41C4BD]" />}
               disabled={!selectedCourseId}
               onClick={() =>
                 reportService.downloadCoursePdf(
@@ -195,7 +195,7 @@ export default function ReportsPage() {
       <Card>
         <CardHeader className="border-b border-[#D6E5E3] bg-[#F4FAF9]/50 pb-4">
           <CardTitle className="text-base font-semibold text-[#183B3A] flex items-center gap-2">
-            <GraduationCap className="h-5 w-5 text-[#087F79]" />
+            <GraduationCap className="h-5 w-5 text-[#41C4BD]" />
             Reportes Individuales por Estudiante
           </CardTitle>
           <CardDescription>
@@ -207,7 +207,7 @@ export default function ReportsPage() {
             {/* Filter by course */}
             <div className="space-y-1.5 min-w-[260px]">
               <Label className="text-xs font-semibold text-[#183B3A] flex items-center gap-1.5">
-                <Users className="h-4 w-4 text-[#087F79]" />
+                <Users className="h-4 w-4 text-[#41C4BD]" />
                 Filtrar por Curso
               </Label>
               <Select
@@ -234,7 +234,7 @@ export default function ReportsPage() {
             {/* Select student */}
             <div className="space-y-1.5 min-w-[300px] flex-1">
               <Label className="text-xs font-semibold text-[#183B3A] flex items-center gap-1.5">
-                <GraduationCap className="h-4 w-4 text-[#087F79]" />
+                <GraduationCap className="h-4 w-4 text-[#41C4BD]" />
                 Seleccionar Estudiante
               </Label>
               <Select
@@ -279,7 +279,7 @@ export default function ReportsPage() {
             />
             <ReportButton
               label="Boletín de Notas PDF"
-              icon={<FileText className="h-4 w-4 text-[#087F79]" />}
+              icon={<FileText className="h-4 w-4 text-[#41C4BD]" />}
               disabled={!selectedStudentId}
               onClick={() =>
                 reportService.downloadStudentBulletinPdf(
@@ -307,7 +307,7 @@ export default function ReportsPage() {
       <Card>
         <CardHeader className="border-b border-[#D6E5E3] bg-[#F4FAF9]/50 pb-4">
           <CardTitle className="text-base font-semibold text-[#183B3A] flex items-center gap-2">
-            <Download className="h-5 w-5 text-[#087F79]" />
+            <Download className="h-5 w-5 text-[#41C4BD]" />
             Reporte Consolidado del Período
           </CardTitle>
           <CardDescription>

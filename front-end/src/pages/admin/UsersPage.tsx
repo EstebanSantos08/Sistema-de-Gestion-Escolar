@@ -538,7 +538,7 @@ export default function UsersPage() {
             aria-label={`Editar usuario ${u.name}`}
             onClick={() => openEdit(u)}
           >
-            <Pencil className="h-4 w-4 text-[#087F79]" />
+            <Pencil className="h-4 w-4 text-[#41C4BD]" />
           </Button>
           <Button
             variant="ghost"

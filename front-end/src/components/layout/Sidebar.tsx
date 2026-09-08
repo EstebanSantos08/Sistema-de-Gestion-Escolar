@@ -4,6 +4,7 @@ import {
   navigationForRole,
   isNavigationActive,
   navigationLinkClass,
+  getNavColor,
 } from './navigation';
 
 const roleMeta: Record<string, { label: string; badgeClass: string }> = {
@@ -21,29 +22,38 @@ export function Sidebar() {
 
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r border-[#D6E5E3] bg-white md:flex">
-      {/* Identidad institucional neutral */}
-      <div className="flex flex-col items-center border-b border-[#D6E5E3] px-4 py-5 bg-gradient-to-b from-[#F4FAF9]/50 to-white text-center">
-        <span className="text-xl font-black tracking-tight text-[#183B3A]">NICE KIDS</span>
-        <span className="text-[10px] font-bold text-[#087F79] uppercase tracking-widest mt-1 bg-[#E3F5F3] px-3 py-0.5 rounded-full">
-          Centro de Desarrollo Infantil
+      {/* Identidad institucional festiva */}
+      <div className="flex flex-col items-center border-b border-[#D6E5E3] px-4 py-5 bg-gradient-to-b from-[#E3F5F3]/40 to-white text-center relative overflow-hidden">
+        <div className="flex items-center justify-center gap-1 mb-1">
+          <span className="text-xl font-black tracking-wider drop-shadow-2xs">
+            <span className="text-[#41C4BD]">N</span>
+            <span className="text-[#F2C700]">I</span>
+            <span className="text-[#FF5DA0]">C</span>
+            <span className="text-[#9DD31B]">E</span>
+            <span className="text-[#183B3A] ml-1.5">KIDS</span>
+          </span>
+        </div>
+        <span className="text-[10px] font-bold text-[#183B3A] uppercase tracking-widest bg-white/90 px-3 py-0.5 rounded-full border border-[#BBE5E1] shadow-2xs">
+          Centro Infantil
         </span>
       </div>
 
       {/* Navegación por rol */}
       <nav aria-label="Navegación principal" className="flex-1 space-y-1.5 overflow-y-auto p-3.5">
-        {navigationForRole(user?.role).map(({ to, label, icon: Icon }) => {
+        {navigationForRole(user?.role).map(({ to, label, icon: Icon }, index) => {
           const active = isNavigationActive(pathname, to);
+          const color = getNavColor(index);
           return (
             <Link
               key={to}
               to={to}
               aria-current={active ? 'page' : undefined}
-              className={navigationLinkClass(active)}
+              className={navigationLinkClass(active, index)}
             >
               <Icon
                 aria-hidden="true"
                 className={`h-5 w-5 shrink-0 transition-colors ${
-                  active ? 'text-[#087F79]' : 'text-[#5E7A77] group-hover:text-[#183B3A]'
+                  active ? color.text : `text-[#5E7A77] group-hover:${color.text}`
                 }`}
               />
               <span className="truncate">{label}</span>

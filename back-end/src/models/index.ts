@@ -104,13 +104,6 @@ Attendance.belongsTo(Course, { foreignKey: 'courseId', as: 'course' });
 User.hasMany(Attendance, { foreignKey: 'registeredById', as: 'registeredAttendances' });
 Attendance.belongsTo(User, { foreignKey: 'registeredById', as: 'registeredBy' });
 
-// Course ↔ Announcement (1:N)
-Course.hasMany(Announcement, { foreignKey: 'courseId', as: 'announcements' });
-Announcement.belongsTo(Course, { foreignKey: 'courseId', as: 'course' });
-
-// User ↔ Announcement (author)
-User.hasMany(Announcement, { foreignKey: 'authorId', as: 'authoredAnnouncements' });
-Announcement.belongsTo(User, { foreignKey: 'authorId', as: 'author' });
 
 // User ↔ Notification (1:N)
 User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });

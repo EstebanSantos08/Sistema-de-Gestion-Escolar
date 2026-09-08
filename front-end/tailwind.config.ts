@@ -52,8 +52,8 @@ const config: Config = {
         school: {
           bg: '#F4FAF9',
           surface: '#FFFFFF',
-          primary: '#087F79',
-          'primary-hover': '#066863',
+          primary: '#41C4BD',
+          'primary-hover': '#3AA8A2',
           'primary-subtle': '#E3F5F3',
           accent: '#41C4BD',
           heading: '#183B3A',
@@ -107,10 +107,35 @@ const config: Config = {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        'float-delayed': {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(10px)' },
+        },
+        'bounce-soft': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-5px)' },
+        },
+        'pulse-soft': {
+          '0%, 100%': { transform: 'scale(1)', opacity: '1' },
+          '50%': { transform: 'scale(1.03)', opacity: '0.9' },
+        },
+        wiggle: {
+          '0%, 100%': { transform: 'rotate(-3deg)' },
+          '50%': { transform: 'rotate(3deg)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        float: 'float 4s ease-in-out infinite',
+        'float-delayed': 'float-delayed 5s ease-in-out infinite 1s',
+        'bounce-soft': 'bounce-soft 2s ease-in-out infinite',
+        'pulse-soft': 'pulse-soft 3s ease-in-out infinite',
+        wiggle: 'wiggle 2s ease-in-out infinite',
       },
     },
   },

@@ -266,7 +266,7 @@ export default function CoursesPage() {
             size="icon"
             onClick={() => { setEditCourse(c); setFormOpen(true); }}
             aria-label={`Editar curso ${c.name}`}
-            className="text-[#087F79] hover:bg-[#E3F5F3]"
+            className="text-[#41C4BD] hover:bg-[#E3F5F3]"
           >
             <Pencil className="h-4 w-4" />
           </Button>
@@ -331,7 +331,7 @@ export default function CoursesPage() {
               onClick={() => setViewMode('cards')}
               className={`rounded-lg px-3 text-xs font-semibold ${
                 viewMode === 'cards'
-                  ? 'bg-white text-[#087F79] shadow-xs'
+                  ? 'bg-white text-[#41C4BD] shadow-xs'
                   : 'text-[#5E7A77] hover:text-[#183B3A]'
               }`}
             >
@@ -343,7 +343,7 @@ export default function CoursesPage() {
               onClick={() => setViewMode('table')}
               className={`rounded-lg px-3 text-xs font-semibold ${
                 viewMode === 'table'
-                  ? 'bg-white text-[#087F79] shadow-xs'
+                  ? 'bg-white text-[#41C4BD] shadow-xs'
                   : 'text-[#5E7A77] hover:text-[#183B3A]'
               }`}
             >
@@ -357,7 +357,7 @@ export default function CoursesPage() {
       {viewMode === 'cards' ? (
         isLoading ? (
           <div className="flex justify-center py-16">
-            <span className="h-8 w-8 animate-spin rounded-full border-4 border-[#087F79] border-t-transparent" />
+            <span className="h-8 w-8 animate-spin rounded-full border-4 border-[#41C4BD] border-t-transparent" />
           </div>
         ) : coursesList.length === 0 ? (
           <div className="rounded-2xl border border-[#D6E5E3] bg-white p-12 text-center shadow-xs">
@@ -378,7 +378,7 @@ export default function CoursesPage() {
                       <span className="text-xs font-mono font-semibold text-[#5E7A77]">
                         {c.code}
                       </span>
-                      <h3 className="font-semibold text-[#183B3A] text-lg truncate group-hover:text-[#087F79] transition-colors mt-0.5">
+                      <h3 className="font-semibold text-[#183B3A] text-lg truncate group-hover:text-[#41C4BD] transition-colors mt-0.5">
                         {c.name}
                       </h3>
                     </div>
@@ -388,7 +388,7 @@ export default function CoursesPage() {
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center justify-between rounded-lg border border-[#D6E5E3] bg-[#F4FAF9]/50 p-2.5">
                       <span className="flex items-center gap-1.5 text-xs text-[#5E7A77]">
-                        <User className="h-4 w-4 text-[#087F79]" />
+                        <User className="h-4 w-4 text-[#41C4BD]" />
                         Docente:
                       </span>
                       <span className="font-semibold text-xs text-[#183B3A] truncate max-w-[55%]">
@@ -397,8 +397,8 @@ export default function CoursesPage() {
                     </div>
 
                     <div className="flex items-center justify-between rounded-lg border border-[#BBE5E1] bg-[#E3F5F3]/50 p-2.5">
-                      <span className="flex items-center gap-1.5 text-xs font-medium text-[#087F79]">
-                        <Users className="h-4 w-4 text-[#087F79]" />
+                      <span className="flex items-center gap-1.5 text-xs font-medium text-[#41C4BD]">
+                        <Users className="h-4 w-4 text-[#41C4BD]" />
                         Estudiantes matriculados:
                       </span>
                       <Badge variant="default" className="font-semibold">
@@ -420,7 +420,7 @@ export default function CoursesPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => { setEditCourse(c); setFormOpen(true); }}
-                      className="text-[#087F79] hover:bg-[#E3F5F3]"
+                      className="text-[#41C4BD] hover:bg-[#E3F5F3]"
                     >
                       <Pencil className="mr-1.5 h-3.5 w-3.5" /> Editar
                     </Button>

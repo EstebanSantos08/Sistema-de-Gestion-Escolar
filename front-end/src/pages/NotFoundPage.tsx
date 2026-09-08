@@ -7,13 +7,13 @@ export default function NotFoundPage() {
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-4 bg-[#F4FAF9] text-center font-sans">
       <div className="flex flex-col items-center text-center">
         <span className="text-2xl font-black tracking-tight text-[#183B3A]">NICE KIDS</span>
-        <span className="text-[10px] font-bold text-[#087F79] uppercase tracking-widest mt-1 bg-[#E3F5F3] px-3 py-0.5 rounded-full">
+        <span className="text-[10px] font-bold text-[#41C4BD] uppercase tracking-widest mt-1 bg-[#E3F5F3] px-3 py-0.5 rounded-full">
           Centro de Desarrollo Infantil
         </span>
       </div>
 
       <div className="rounded-3xl border border-[#D6E5E3] bg-white p-8 sm:p-10 shadow-xs max-w-md w-full space-y-3">
-        <span className="text-6xl font-bold tracking-tight text-[#087F79]">404</span>
+        <span className="text-6xl font-bold tracking-tight text-[#41C4BD]">404</span>
         <h1 className="text-2xl font-semibold text-[#183B3A]">Página no encontrada</h1>
         <p className="text-sm text-[#5E7A77]">
           La dirección que buscas no existe o ha sido reubicada dentro del sistema.

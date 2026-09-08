@@ -119,7 +119,7 @@ export const getAuditLogs = async (req: Request, res: Response): Promise<void> =
 
       return {
         id: log.id,
-        when: log.createdAt,
+        createdAt: log.createdAt,
         what: log.action,
         resource: log.resource,
         resourceId: log.resourceId,

@@ -13,6 +13,7 @@ import {
 import { useMyGrades } from '@/hooks/useStudents';
 import { useAuth } from '@/hooks/useAuth';
 import { PageHeader } from '@/components/shared/PageHeader';
+import { WelcomeBanner } from '@/components/shared/WelcomeBanner';
 import { StatCard } from '@/components/shared/StatCard';
 import { GradeBadge } from '@/components/shared/GradeBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,10 +38,11 @@ export default function StudentDashboard() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        eyebrow={isParent ? 'Portal de Familias' : 'Portal del Estudiante'}
-        title={`¡Hola, ${user?.name?.split(' ')[0] ?? 'Estudiante'}!`}
-        description={`Período académico ${data?.period ?? '2026-I'} · Resumen de rendimiento y actividades`}
+      <WelcomeBanner
+        userName={user?.name ?? 'Estudiante'}
+        roleLabel={isParent ? 'Portal de Familias' : 'Portal del Estudiante'}
+        description={`Resumen escolar del período ${data?.period ?? '2026-I'} — Notas, actividades y avisos`}
+        variant={isParent ? 'pink' : 'lime'}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

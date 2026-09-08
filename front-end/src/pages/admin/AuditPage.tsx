@@ -96,7 +96,7 @@ export default function AuditPage() {
     const headers = ['ID', 'Fecha', 'Actor', 'Rol', 'Acción', 'Estudiante', 'Curso', 'Actividad', 'Detalles'];
     const csvRows = logs.map((l) => [
       l.id,
-      new Date(l.createdAt).toLocaleString('es-ES'),
+      new Date(l.createdAt || (l as any).when).toLocaleString('es-ES'),
       `"${l.actor?.name || 'N/A'}"`,
       l.actor?.role || 'N/A',
       l.action,
@@ -399,7 +399,7 @@ export default function AuditPage() {
                         </button>
                       </td>
                       <td className="py-3 px-3 whitespace-nowrap text-school-body">
-                        {new Date(log.createdAt).toLocaleString('es-ES', {
+                        {new Date(log.createdAt || (log as any).when).toLocaleString('es-ES', {
                           day: '2-digit',
                           month: '2-digit',
                           year: 'numeric',

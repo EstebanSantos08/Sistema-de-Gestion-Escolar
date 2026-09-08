@@ -31,6 +31,7 @@ import {
 import toast from 'react-hot-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { PageHeader } from '@/components/shared/PageHeader';
+import { WelcomeBanner } from '@/components/shared/WelcomeBanner';
 import { StatCard } from '@/components/shared/StatCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -158,10 +159,11 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <PageHeader
-        eyebrow="Panel de Administración"
-        title={`Bienvenida, ${user?.name ?? 'Directora'}`}
+      <WelcomeBanner
+        userName={user?.name ?? 'Directora'}
+        roleLabel="Gestión Directiva Institucional"
         description="Supervisión global de estudiantes, personal docente, cursos activos y matrículas del período escolar."
+        variant="violet"
       />
 
       {/* Stat cards con los colores del logo */}
@@ -202,7 +204,7 @@ export default function AdminDashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <CardTitle className="flex items-center gap-2 text-lg font-semibold text-[#183B3A]">
-                <ShieldCheck className="h-5 w-5 text-[#087F79]" />
+                <ShieldCheck className="h-5 w-5 text-[#41C4BD]" />
                 Centro de Gestiones Directivas
               </CardTitle>
               <CardDescription className="text-sm text-[#5E7A77] mt-0.5">
@@ -224,9 +226,9 @@ export default function AdminDashboard() {
                   key={cat.id}
                   type="button"
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087F79] ${
+                  className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#41C4BD] ${
                     activeCategory === cat.id
-                      ? 'bg-[#087F79] text-white shadow-xs'
+                      ? 'bg-[#41C4BD] text-white shadow-xs'
                       : 'text-[#5E7A77] hover:bg-[#F4FAF9] hover:text-[#183B3A]'
                   }`}
                 >
@@ -314,7 +316,7 @@ export default function AdminDashboard() {
 
               <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#E3F5F3] text-[#087F79]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#E3F5F3] text-[#41C4BD]">
                     <Layers className="h-5 w-5" />
                   </div>
                   <div>
@@ -378,7 +380,7 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#E3F5F3] text-[#087F79]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#E3F5F3] text-[#41C4BD]">
                     <ClipboardList className="h-5 w-5" />
                   </div>
                   <div>
@@ -456,7 +458,7 @@ export default function AdminDashboard() {
 
               <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#E3F5F3] text-[#087F79]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#E3F5F3] text-[#41C4BD]">
                     <Settings className="h-5 w-5" />
                   </div>
                   <div>
@@ -500,7 +502,7 @@ export default function AdminDashboard() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-[#087F79]" />
+              <ShieldCheck className="h-5 w-5 text-[#41C4BD]" />
               {modalFeature}
             </DialogTitle>
             <DialogDescription>
@@ -508,7 +510,7 @@ export default function AdminDashboard() {
             </DialogDescription>
           </DialogHeader>
           <div className="py-2">
-            <div className="rounded-xl border border-[#BBE5E1] bg-[#E3F5F3] p-4 text-xs font-medium text-[#087F79] leading-relaxed">
+            <div className="rounded-xl border border-[#BBE5E1] bg-[#E3F5F3] p-4 text-xs font-medium text-[#41C4BD] leading-relaxed">
               El panel de <strong>{modalFeature}</strong> está disponible para la gestión actual. Todas las operaciones realizadas quedan registradas en la bitácora de auditoría.
             </div>
           </div>
@@ -533,7 +535,7 @@ export default function AdminDashboard() {
         <Card>
           <CardHeader className="border-b border-[#D6E5E3] pb-3 bg-[#F4FAF9]/50">
             <CardTitle className="text-base font-semibold text-[#183B3A] flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#087F79]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#41C4BD]" />
               Matriculados por curso
             </CardTitle>
           </CardHeader>

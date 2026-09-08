@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMyCourses } from '@/hooks/useCourses';
 import { dailySummaryService } from '@/services/dailySummary.service';
 import { PageHeader } from '@/components/shared/PageHeader';
+import { WelcomeBanner } from '@/components/shared/WelcomeBanner';
 import { StatCard } from '@/components/shared/StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,10 +27,11 @@ export default function TeacherDashboard() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        eyebrow="Portal del Docente"
-        title={`Bienvenido, ${user?.name ?? 'docente'}`}
-        description="Panel de control docente — Período académico activo 2026-I"
+      <WelcomeBanner
+        userName={user?.name ?? 'docente'}
+        roleLabel="Portal de Aula Docente"
+        description="Panel de control docente — Seguimiento de bitácora, asistencia y tareas"
+        variant="turquoise"
       />
 
       {/* Metrics Row */}
