@@ -1,5 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/database';
+import type User from './User';
 
 export interface TeacherAttributes {
   id: number;
@@ -23,7 +24,7 @@ class Teacher extends Model<TeacherAttributes, TeacherCreationAttributes> implem
   declare updatedAt: Date;
 
   // Associations (populated by include)
-  declare user?: unknown;
+  declare user?: User;
   declare courses?: unknown[];
 }
 

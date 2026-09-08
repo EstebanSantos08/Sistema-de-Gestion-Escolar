@@ -102,20 +102,29 @@ export const getActivityById = async (req: Request, res: Response): Promise<void
 export const createActivity = async (req: Request, res: Response): Promise<void> => {
   const tx = await sequelize.transaction();
   try {
-    const teacher = await resolveTeacherOrFail(req.user!.id, res);
-    if (!teacher) { await tx.rollback(); return; }
-
     const { courseId, title, description, dueDate, type, status, maxScore } = req.body as {
       courseId: number; title: string; description?: string;
       dueDate?: string; type?: Activity['type']; status?: Activity['status'];
       maxScore?: number;
     };
 
-    const course = await requireTeacherOwnsCourse(teacher.id, courseId);
-    if (!course) {
-      await tx.rollback();
-      res.status(403).json({ success: false, error: 'No tienes permiso para crear actividades en este curso' });
-      return;
+    if (req.user!.role === 'teacher') {
+      const teacher = await resolveTeacherOrFail(req.user!.id, res);
+      if (!teacher) { await tx.rollback(); return; }
+      const course = await requireTeacherOwnsCourse(teacher.id, courseId);
+      if (!course) {
+        await tx.rollback();
+        res.status(403).json({ success: false, error: 'No tienes permiso para crear actividades en este curso' });
+        return;
+      }
+    } else {
+      // admin
+      const course = await Course.findByPk(courseId);
+      if (!course) {
+        await tx.rollback();
+        res.status(404).json({ success: false, error: 'Curso no encontrado' });
+        return;
+      }
     }
 
     const activity = await Activity.create(
@@ -160,9 +169,6 @@ export const createActivity = async (req: Request, res: Response): Promise<void>
 export const updateActivity = async (req: Request, res: Response): Promise<void> => {
   const tx = await sequelize.transaction();
   try {
-    const teacher = await resolveTeacherOrFail(req.user!.id, res);
-    if (!teacher) { await tx.rollback(); return; }
-
     const activity = await Activity.findByPk(req.params.id, { transaction: tx });
     if (!activity) {
       await tx.rollback();
@@ -170,11 +176,15 @@ export const updateActivity = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const course = await requireTeacherOwnsCourse(teacher.id, activity.courseId);
-    if (!course) {
-      await tx.rollback();
-      res.status(403).json({ success: false, error: 'Acceso denegado' });
-      return;
+    if (req.user!.role === 'teacher') {
+      const teacher = await resolveTeacherOrFail(req.user!.id, res);
+      if (!teacher) { await tx.rollback(); return; }
+      const course = await requireTeacherOwnsCourse(teacher.id, activity.courseId);
+      if (!course) {
+        await tx.rollback();
+        res.status(403).json({ success: false, error: 'Acceso denegado' });
+        return;
+      }
     }
 
     const oldValues = {

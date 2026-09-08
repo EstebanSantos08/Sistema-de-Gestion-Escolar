@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Award } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import axios from 'axios';
@@ -58,68 +58,33 @@ export default function GradeEntryPage() {
 
   const { data: courseData, isLoading: loadingStudents } = useQuery({
     queryKey: ['enrollments', 'course', id],
-    queryFn: () => enrollmentService.getByCourse(id!),
-    enabled: id !== null,
+    queryFn: () => enrollmentService.getCourseEnrollments(id!),
+    enabled: !!id,
   });
 
-  const { data: existingGrades } = useQuery({
-    queryKey: ['grades', 'course', id, gradeType],
-    queryFn: () => gradeService.getByCourse(id!, undefined),
-    enabled: id !== null,
-  });
+  const students = courseData?.students ?? [];
 
-  // Build row list when students or grade type changes
   useEffect(() => {
-    const students = courseData?.students ?? [];
-    const gradesMap = new Map<number, Grade>();
-    if (existingGrades) {
-      existingGrades.forEach((g) => {
-        if (g.gradeType === gradeType) gradesMap.set(g.enrollmentId, g);
-      });
-    }
-    setRows(
-      students.map((s) => {
-        const existing = gradesMap.get(s.enrollmentId);
-        return {
-          enrollmentId: s.enrollmentId,
-          studentId: s.studentId,
-          studentCode: s.studentCode,
-          name: s.name,
-          score: existing ? String(existing.score) : '',
-          comments: existing?.comments ?? '',
-          existingGradeId: existing?.id,
-        };
-      })
-    );
-    // Also set default weight
     const opt = gradeTypeOptions.find((o) => o.value === gradeType);
-    if (opt) setWeight(String(opt.defaultWeight));
-  }, [courseData, existingGrades, gradeType]);
+    if (opt) setWeight(opt.defaultWeight.toFixed(2));
+  }, [gradeType]);
 
-  const batchMutation = useMutation({
-    mutationFn: () =>
-      gradeService.batchCreate({
-        courseId: id!,
-        gradeType,
-        weight: parseFloat(weight),
-        grades: rows
-          .filter((r) => r.score !== '')
-          .map((r) => ({
-            enrollmentId: r.enrollmentId,
-            score: parseFloat(r.score),
-            comments: r.comments,
-          })),
-      }),
-    onSuccess: () => {
-      toast.success('Calificaciones guardadas');
-      void qc.invalidateQueries({ queryKey: ['grades'] });
-    },
-    onError: (err: unknown) => {
-      let msg = 'Error al guardar calificaciones';
-      if (axios.isAxiosError(err)) msg = (err.response?.data as { error?: string })?.error ?? msg;
-      toast.error(msg);
-    },
-  });
+  useEffect(() => {
+    if (students.length === 0) return;
+    const initialRows: StudentRow[] = students.map((s) => {
+      const match = s.grades.find((g) => g.gradeType === gradeType);
+      return {
+        enrollmentId: s.enrollmentId,
+        studentId: s.studentId,
+        studentCode: s.studentCode,
+        name: s.name,
+        score: match !== undefined ? String(match.score) : '',
+        comments: match?.comments ?? '',
+        existingGradeId: match?.id,
+      };
+    });
+    setRows(initialRows);
+  }, [students, gradeType]);
 
   const updateRow = (index: number, field: 'score' | 'comments', value: string) => {
     setRows((prev) => {
@@ -129,34 +94,70 @@ export default function GradeEntryPage() {
     });
   };
 
+  const batchMutation = useMutation({
+    mutationFn: async () => {
+      const parsedWeight = parseFloat(weight);
+      const toSave = rows.filter((r) => r.score !== '');
+      const promises = toSave.map((r) => {
+        const payload = {
+          enrollmentId: r.enrollmentId,
+          gradeType,
+          score: parseFloat(r.score),
+          weight: isNaN(parsedWeight) ? 0.3 : parsedWeight,
+          comments: r.comments || undefined,
+        };
+        if (r.existingGradeId) {
+          return gradeService.updateGrade(r.existingGradeId, payload);
+        }
+        return gradeService.createGrade(payload);
+      });
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
+      toast.success('Calificaciones guardadas exitosamente');
+      qc.invalidateQueries({ queryKey: ['enrollments', 'course', id] });
+    },
+    onError: (err) => {
+      if (axios.isAxiosError(err)) {
+        const msg = err.response?.data?.message || 'Error al guardar las notas';
+        toast.error(msg);
+      } else {
+        toast.error('Error al guardar las calificaciones');
+      }
+    },
+  });
+
   const getScoreColor = (score: string) => {
     const n = parseFloat(score);
     if (isNaN(n)) return '';
-    return n >= GRADE_PASS ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300';
+    return n >= GRADE_PASS
+      ? 'bg-emerald-50 text-emerald-900 border-emerald-300 font-semibold'
+      : 'bg-rose-50 text-rose-900 border-rose-300 font-semibold';
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Button asChild variant="ghost" size="sm">
+        <Button asChild variant="ghost" size="sm" className="text-school-body font-medium hover:bg-school-subtle">
           <Link to={`/docente/cursos/${courseId}`}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Volver al curso
+            <ArrowLeft className="h-4 w-4 mr-1 text-school-primary" /> Volver al curso
           </Link>
         </Button>
       </div>
 
       <PageHeader
+        eyebrow="Evaluación Continua"
         title="Ingreso de Calificaciones"
-        description={course ? `${course.name} (${course.code}) · ${course.period}` : ''}
+        description={course ? `${course.name} (${course.code}) · Período ${course.period}` : 'Registro de notas por componente evaluativo'}
       />
 
       {/* Controls */}
       <Card>
-        <CardContent className="p-4 flex flex-wrap gap-4 items-end">
-          <div className="space-y-1">
-            <Label>Tipo de nota</Label>
+        <CardContent className="p-5 flex flex-wrap gap-5 items-end">
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium text-school-heading">Tipo de Evaluación</Label>
             <Select value={gradeType} onValueChange={(v) => setGradeType(v as GradeType)}>
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -168,10 +169,11 @@ export default function GradeEntryPage() {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1">
-            <Label>Peso ponderado (0–1)</Label>
+
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium text-school-heading">Peso ponderado (0–1)</Label>
             <Input
-              className="w-28"
+              className="w-32 font-medium"
               type="number"
               min={0}
               max={1}
@@ -180,9 +182,11 @@ export default function GradeEntryPage() {
               onChange={(e) => setWeight(e.target.value)}
             />
           </div>
+
           <Button
             onClick={() => batchMutation.mutate()}
             disabled={batchMutation.isPending || rows.every((r) => r.score === '')}
+            className="h-10"
           >
             {batchMutation.isPending ? (
               <span className="flex items-center gap-2">
@@ -192,7 +196,7 @@ export default function GradeEntryPage() {
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                Guardar todas las notas
+                Guardar Calificaciones
               </>
             )}
           </Button>
@@ -201,53 +205,61 @@ export default function GradeEntryPage() {
 
       {/* Grade table */}
       {loadingStudents ? (
-        <div className="flex justify-center py-10">
-          <span className="h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-        </div>
+        <Card className="p-10 text-center">
+          <div className="flex items-center justify-center gap-3 text-school-muted">
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-school-primary border-t-transparent" />
+            <span className="text-sm">Cargando lista de estudiantes...</span>
+          </div>
+        </Card>
       ) : rows.length === 0 ? (
-        <p className="text-muted-foreground">No hay estudiantes matriculados.</p>
+        <Card className="p-8 text-center">
+          <p className="text-school-muted text-sm">No hay estudiantes matriculados en este curso.</p>
+        </Card>
       ) : (
-        <div className="rounded-md border overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/50">
-              <tr>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Código</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Estudiante</th>
-                <th className="px-4 py-3 text-center font-medium text-muted-foreground w-32">
-                  Calificación (0–{GRADE_MAX})
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Observaciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, i) => (
-                <tr key={row.enrollmentId} className="border-b last:border-0">
-                  <td className="px-4 py-2 text-muted-foreground">{row.studentCode}</td>
-                  <td className="px-4 py-2 font-medium">{row.name}</td>
-                  <td className="px-4 py-2">
-                    <Input
-                      type="number"
-                      min={GRADE_MIN}
-                      max={GRADE_MAX}
-                      step={0.01}
-                      value={row.score}
-                      onChange={(e) => updateRow(i, 'score', e.target.value)}
-                      className={cn('text-center', getScoreColor(row.score))}
-                      placeholder="—"
-                    />
-                  </td>
-                  <td className="px-4 py-2">
-                    <Input
-                      value={row.comments}
-                      onChange={(e) => updateRow(i, 'comments', e.target.value)}
-                      placeholder="Observación opcional"
-                    />
-                  </td>
+        <Card className="overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="border-b border-school-border bg-school-background">
+                <tr>
+                  <th className="px-5 py-3.5 text-left font-semibold text-school-heading">Código</th>
+                  <th className="px-5 py-3.5 text-left font-semibold text-school-heading">Estudiante</th>
+                  <th className="px-5 py-3.5 text-center font-semibold text-school-heading w-36">
+                    Nota (0–{GRADE_MAX})
+                  </th>
+                  <th className="px-5 py-3.5 text-left font-semibold text-school-heading">Observaciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-school-border">
+                {rows.map((row, i) => (
+                  <tr key={row.enrollmentId} className="hover:bg-school-background/50 transition-colors">
+                    <td className="px-5 py-3 text-school-muted text-xs font-mono">{row.studentCode}</td>
+                    <td className="px-5 py-3 font-medium text-school-heading">{row.name}</td>
+                    <td className="px-5 py-3">
+                      <Input
+                        type="number"
+                        min={GRADE_MIN}
+                        max={GRADE_MAX}
+                        step={0.01}
+                        value={row.score}
+                        onChange={(e) => updateRow(i, 'score', e.target.value)}
+                        className={cn('text-center font-bold text-sm', getScoreColor(row.score))}
+                        placeholder="—"
+                      />
+                    </td>
+                    <td className="px-5 py-3">
+                      <Input
+                        value={row.comments}
+                        onChange={(e) => updateRow(i, 'comments', e.target.value)}
+                        placeholder="Observación opcional..."
+                        className="text-xs"
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       )}
     </div>
   );

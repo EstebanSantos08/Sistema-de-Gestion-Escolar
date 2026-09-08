@@ -35,7 +35,14 @@ import { StatCard } from '@/components/shared/StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import api from '@/lib/axios';
 import type { ApiResponse, PaginatedResponse, Enrollment } from '@/types';
 import { formatDate } from '@/lib/utils';
@@ -85,10 +92,16 @@ function useDashboardStats() {
   });
 }
 
-const statusLabel: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  active: { label: 'Activa', variant: 'default' },
-  withdrawn: { label: 'Retirada', variant: 'destructive' },
-  completed: { label: 'Completada', variant: 'secondary' },
+const statusBadgeVariant: Record<string, 'success' | 'destructive' | 'secondary'> = {
+  active: 'success',
+  withdrawn: 'destructive',
+  completed: 'secondary',
+};
+
+const statusLabelText: Record<string, string> = {
+  active: 'Activa',
+  withdrawn: 'Retirada',
+  completed: 'Completada',
 };
 
 export default function AdminDashboard() {
@@ -102,167 +115,334 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:space-y-8">
       <PageHeader
-        title={`Bienvenida, Directora ${user?.name ?? ''}`}
-        description="Panel Principal de Administración Escolar — Gestión Global NICE KIDS"
+        eyebrow="Panel de Administración"
+        title={`Bienvenida, ${user?.name ?? 'Directora'}`}
+        description="Supervisión global de estudiantes, personal docente, cursos activos y matrículas del período escolar."
       />
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          title="Niños / Estudiantes"
+          title="Estudiantes Registrados"
           value={isLoading ? '—' : data?.totalStudents ?? 0}
+          description="Alumnos activos en el período"
           icon={<GraduationCap className="h-5 w-5" />}
         />
         <StatCard
-          title="Maestras"
+          title="Docentes Asignadas"
           value={isLoading ? '—' : data?.totalTeachers ?? 0}
+          description="Personal docente activo"
           icon={<Users className="h-5 w-5" />}
         />
         <StatCard
-          title="Cursos Activos"
+          title="Cursos en Curso"
           value={isLoading ? '—' : data?.activeCourses ?? 0}
+          description="Período Académico 2026-I"
           icon={<BookOpen className="h-5 w-5" />}
         />
         <StatCard
-          title="Matrículas Registradas"
+          title="Matrículas Activas"
           value={isLoading ? '—' : data?.activeEnrollments ?? 0}
+          description="Inscripciones registradas"
           icon={<ClipboardList className="h-5 w-5" />}
         />
       </div>
 
       {/* CENTRO DE GESTIONES ADMINISTRATIVAS */}
-      <Card className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border border-white/60 overflow-hidden">
-        <CardHeader className="pb-4 border-b border-slate-100 bg-gradient-to-r from-teal-50/80 via-sky-50/80 to-purple-50/80">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <Card>
+        <CardHeader className="border-b border-[#D6E5E3] bg-[#F4FAF9]/60 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <CardTitle className="text-lg font-black text-slate-800 flex items-center gap-2">
-                <ShieldCheck className="h-6 w-6 text-[#09A9C2]" />
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold text-[#183B3A]">
+                <ShieldCheck className="h-5 w-5 text-[#087F79]" />
                 Centro de Gestiones Directivas
               </CardTitle>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Acceso simplificado a todas las herramientas de gestión escolar
-              </p>
+              <CardDescription className="text-sm text-[#5E7A77] mt-0.5">
+                Acceso directo a los módulos de administración y configuración escolar
+              </CardDescription>
             </div>
 
-            <div className="flex flex-wrap items-center gap-1 bg-white p-1 rounded-2xl border border-slate-200/70 shadow-xs">
-              <button type="button" onClick={() => setActiveCategory('personas')} className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${activeCategory === 'personas' ? 'bg-[#E84B5B] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>Personas</button>
-              <button type="button" onClick={() => setActiveCategory('academica')} className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${activeCategory === 'academica' ? 'bg-[#008BC1] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>Académica</button>
-              <button type="button" onClick={() => setActiveCategory('escolar')} className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${activeCategory === 'escolar' ? 'bg-[#F4B51B] text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>Escolar & Promoción</button>
-              <button type="button" onClick={() => setActiveCategory('control')} className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${activeCategory === 'control' ? 'bg-[#7D5AA6] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>Control & Config</button>
+            {/* Category tabs */}
+            <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-[#D6E5E3] bg-white p-1 shadow-2xs">
+              {(
+                [
+                  { id: 'personas', label: 'Personas' },
+                  { id: 'academica', label: 'Académica' },
+                  { id: 'escolar', label: 'Escolar & Ciclos' },
+                  { id: 'control', label: 'Control & Seguridad' },
+                ] as const
+              ).map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087F79] ${
+                    activeCategory === cat.id
+                      ? 'bg-[#087F79] text-white shadow-xs'
+                      : 'text-[#5E7A77] hover:bg-[#F4FAF9] hover:text-[#183B3A]'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className="p-6">
+        <CardContent className="p-5 sm:p-6">
           {activeCategory === 'personas' && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-4 rounded-2xl border border-rose-100 bg-rose-50/40 hover:bg-rose-50 transition-all group">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2.5 rounded-xl bg-[#E84B5B] text-white shadow-md"><UserPlus className="h-5 w-5" /></div>
-                  <div><h4 className="font-extrabold text-slate-800 text-sm">Gestionar Padres</h4><p className="text-xs text-slate-500 font-medium">Registro de apoderados</p></div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#FDF0F6] text-[#D12B75]">
+                    <UserPlus className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm text-[#183B3A]">Padres y Apoderados</h4>
+                    <p className="text-xs text-[#5E7A77]">Registro y contactos</p>
+                  </div>
                 </div>
-                <Button asChild size="sm" className="w-full mt-3 bg-white text-[#E84B5B] hover:bg-[#E84B5B] hover:text-white border border-rose-200 font-bold rounded-xl shadow-2xs"><Link to="/admin/usuarios?role=student">Acceder <ChevronRight className="ml-1 h-4 w-4" /></Link></Button>
+                <Button asChild variant="outline" size="sm" className="w-full mt-3">
+                  <Link to="/admin/usuarios?role=student">
+                    Acceder <ChevronRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
               </div>
-              <div className="p-4 rounded-2xl border border-sky-100 bg-sky-50/40 hover:bg-sky-50 transition-all group">
+
+              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2.5 rounded-xl bg-[#008BC1] text-white shadow-md"><GraduationCap className="h-5 w-5" /></div>
-                  <div><h4 className="font-extrabold text-slate-800 text-sm">Gestionar Niños</h4><p className="text-xs text-slate-500 font-medium">Ficha de niños y expediente</p></div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F4FBE8] text-[#557D07]">
+                    <GraduationCap className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm text-[#183B3A]">Ficha de Estudiantes</h4>
+                    <p className="text-xs text-[#5E7A77]">Expediente e historial</p>
+                  </div>
                 </div>
-                <Button asChild size="sm" className="w-full mt-3 bg-white text-[#008BC1] hover:bg-[#008BC1] hover:text-white border border-sky-200 font-bold rounded-xl shadow-2xs"><Link to="/admin/usuarios?role=student">Acceder <ChevronRight className="ml-1 h-4 w-4" /></Link></Button>
+                <Button asChild variant="outline" size="sm" className="w-full mt-3">
+                  <Link to="/admin/usuarios?role=student">
+                    Acceder <ChevronRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
               </div>
-              <div className="p-4 rounded-2xl border border-emerald-100 bg-emerald-50/40 hover:bg-emerald-50 transition-all group">
+
+              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2.5 rounded-xl bg-[#31B45A] text-white shadow-md"><Users className="h-5 w-5" /></div>
-                  <div><h4 className="font-extrabold text-slate-800 text-sm">Gestionar Maestras</h4><p className="text-xs text-slate-500 font-medium">Asignaciones docentes</p></div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EFF7FC] text-[#1E7BB5]">
+                    <Users className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm text-[#183B3A]">Personal Docente</h4>
+                    <p className="text-xs text-[#5E7A77]">Asignaciones docentes</p>
+                  </div>
                 </div>
-                <Button asChild size="sm" className="w-full mt-3 bg-white text-[#31B45A] hover:bg-[#31B45A] hover:text-white border border-emerald-200 font-bold rounded-xl shadow-2xs"><Link to="/admin/usuarios?role=teacher">Acceder <ChevronRight className="ml-1 h-4 w-4" /></Link></Button>
+                <Button asChild variant="outline" size="sm" className="w-full mt-3">
+                  <Link to="/admin/usuarios?role=teacher">
+                    Acceder <ChevronRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
               </div>
             </div>
           )}
 
           {activeCategory === 'academica' && (
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-              <div className="p-4 rounded-2xl border border-sky-100 bg-sky-50/40 hover:bg-sky-50 transition-all">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2.5 rounded-xl bg-[#008BC1] text-white shadow-md"><FolderPlus className="h-5 w-5" /></div>
-                  <div><h4 className="font-extrabold text-slate-800 text-sm">Gestionar Cursos</h4><p className="text-xs text-slate-500 font-medium">Asignaturas y horarios</p></div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EFF7FC] text-[#1E7BB5]">
+                    <FolderPlus className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm text-[#183B3A]">Cursos Escolares</h4>
+                    <p className="text-xs text-[#5E7A77]">Horarios y asignaturas</p>
+                  </div>
                 </div>
-                <Button asChild size="sm" className="w-full mt-3 bg-white text-[#008BC1] hover:bg-[#008BC1] hover:text-white border border-sky-200 font-bold rounded-xl shadow-2xs"><Link to="/admin/cursos">Ir a Cursos <ChevronRight className="ml-1 h-4 w-4" /></Link></Button>
+                <Button asChild variant="outline" size="sm" className="w-full mt-3">
+                  <Link to="/admin/cursos">
+                    Ir a Cursos <ChevronRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
               </div>
-              <div className="p-4 rounded-2xl border border-teal-100 bg-teal-50/40 hover:bg-teal-50 transition-all">
+
+              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2.5 rounded-xl bg-[#09A9C2] text-white shadow-md"><Layers className="h-5 w-5" /></div>
-                  <div><h4 className="font-extrabold text-slate-800 text-sm">Niveles & Paralelos</h4><p className="text-xs text-slate-500 font-medium">Configuración de grupos</p></div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#E3F5F3] text-[#087F79]">
+                    <Layers className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm text-[#183B3A]">Niveles y Aulas</h4>
+                    <p className="text-xs text-[#5E7A77]">Configuración de grupos</p>
+                  </div>
                 </div>
-                <Button size="sm" onClick={() => handleActionClick('Niveles y Paralelos')} className="w-full mt-3 bg-white text-[#09A9C2] hover:bg-[#09A9C2] hover:text-white border border-teal-200 font-bold rounded-xl shadow-2xs">Configurar <ChevronRight className="ml-1 h-4 w-4" /></Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleActionClick('Niveles y Aulas')}
+                  className="w-full mt-3"
+                >
+                  Configurar <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
               </div>
-              <div className="p-4 rounded-2xl border border-amber-100 bg-amber-50/40 hover:bg-amber-50 transition-all">
+
+              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2.5 rounded-xl bg-[#F4B51B] text-slate-900 shadow-md"><Calendar className="h-5 w-5" /></div>
-                  <div><h4 className="font-extrabold text-slate-800 text-sm">Periodos</h4><p className="text-xs text-slate-500 font-medium">Ciclo 2026-I</p></div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#FEF8E7] text-[#805D00]">
+                    <Calendar className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm text-[#183B3A]">Períodos Escolares</h4>
+                    <p className="text-xs text-[#5E7A77]">Ciclo lectivo activo</p>
+                  </div>
                 </div>
-                <Button size="sm" onClick={() => handleActionClick('Periodos Académicos')} className="w-full mt-3 bg-white text-[#D4990B] hover:bg-[#F4B51B] hover:text-slate-900 border border-amber-200 font-bold rounded-xl shadow-2xs">Gestionar <ChevronRight className="ml-1 h-4 w-4" /></Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleActionClick('Períodos Académicos')}
+                  className="w-full mt-3"
+                >
+                  Gestionar <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
               </div>
-              <div className="p-4 rounded-2xl border border-orange-100 bg-orange-50/40 hover:bg-orange-50 transition-all">
+
+              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2.5 rounded-xl bg-orange-500 text-white shadow-md"><Sun className="h-5 w-5" /></div>
-                  <div><h4 className="font-extrabold text-slate-800 text-sm">Vacacionales</h4><p className="text-xs text-slate-500 font-medium">Talleres de verano</p></div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#FEF8E7] text-[#805D00]">
+                    <Sun className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm text-[#183B3A]">Vacacionales</h4>
+                    <p className="text-xs text-[#5E7A77]">Talleres y actividades</p>
+                  </div>
                 </div>
-                <Button size="sm" onClick={() => handleActionClick('Cursos Vacacionales')} className="w-full mt-3 bg-white text-orange-600 hover:bg-orange-500 hover:text-white border border-orange-200 font-bold rounded-xl shadow-2xs">Abrir <ChevronRight className="ml-1 h-4 w-4" /></Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleActionClick('Cursos Vacacionales')}
+                  className="w-full mt-3"
+                >
+                  Abrir <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
               </div>
             </div>
           )}
 
           {activeCategory === 'escolar' && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-4 rounded-2xl border border-amber-100 bg-amber-50/40 hover:bg-amber-50 transition-all">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2.5 rounded-xl bg-[#F4B51B] text-slate-900 shadow-md"><ClipboardList className="h-5 w-5" /></div>
-                  <div><h4 className="font-extrabold text-slate-800 text-sm">Gestionar Matrículas</h4><p className="text-xs text-slate-500 font-medium">Inscripciones activas</p></div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#E3F5F3] text-[#087F79]">
+                    <ClipboardList className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm text-[#183B3A]">Matrículas</h4>
+                    <p className="text-xs text-[#5E7A77]">Inscripciones y cupos</p>
+                  </div>
                 </div>
-                <Button asChild size="sm" className="w-full mt-3 bg-white text-[#D4990B] hover:bg-[#F4B51B] hover:text-slate-900 border border-amber-200 font-bold rounded-xl shadow-2xs"><Link to="/admin/matriculas">Ir a Matrículas <ChevronRight className="ml-1 h-4 w-4" /></Link></Button>
+                <Button asChild variant="outline" size="sm" className="w-full mt-3">
+                  <Link to="/admin/matriculas">
+                    Ir a Matrículas <ChevronRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
               </div>
-              <div className="p-4 rounded-2xl border border-emerald-100 bg-emerald-50/40 hover:bg-emerald-50 transition-all">
+
+              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2.5 rounded-xl bg-[#31B45A] text-white shadow-md"><Sparkles className="h-5 w-5" /></div>
-                  <div><h4 className="font-extrabold text-slate-800 text-sm">Promover Estudiantes</h4><p className="text-xs text-slate-500 font-medium">Pasaje de nivel</p></div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EAF5EB] text-[#287A32]">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm text-[#183B3A]">Promoción</h4>
+                    <p className="text-xs text-[#5E7A77]">Pase de nivel escolar</p>
+                  </div>
                 </div>
-                <Button size="sm" onClick={() => handleActionClick('Promover Estudiantes')} className="w-full mt-3 bg-white text-[#31B45A] hover:bg-[#31B45A] hover:text-white border border-emerald-200 font-bold rounded-xl shadow-2xs">Promover <ChevronRight className="ml-1 h-4 w-4" /></Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleActionClick('Promover Estudiantes')}
+                  className="w-full mt-3"
+                >
+                  Promover <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
               </div>
-              <div className="p-4 rounded-2xl border border-purple-100 bg-purple-50/40 hover:bg-purple-50 transition-all">
+
+              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2.5 rounded-xl bg-[#7D5AA6] text-white shadow-md"><Award className="h-5 w-5" /></div>
-                  <div><h4 className="font-extrabold text-slate-800 text-sm">Graduaciones & Retiros</h4><p className="text-xs text-slate-500 font-medium">Registro de salidas</p></div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F6EDF8] text-[#9731AC]">
+                    <Award className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm text-[#183B3A]">Graduaciones & Salidas</h4>
+                    <p className="text-xs text-[#5E7A77]">Cierres de ciclo</p>
+                  </div>
                 </div>
-                <Button size="sm" onClick={() => handleActionClick('Graduaciones y Retiros')} className="w-full mt-3 bg-white text-[#7D5AA6] hover:bg-[#7D5AA6] hover:text-white border border-purple-200 font-bold rounded-xl shadow-2xs">Registrar <ChevronRight className="ml-1 h-4 w-4" /></Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleActionClick('Graduaciones y Retiros')}
+                  className="w-full mt-3"
+                >
+                  Registrar <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
               </div>
             </div>
           )}
 
           {activeCategory === 'control' && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-4 rounded-2xl border border-purple-100 bg-purple-50/40 hover:bg-purple-50 transition-all">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2.5 rounded-xl bg-[#7D5AA6] text-white shadow-md"><FileBarChart className="h-5 w-5" /></div>
-                  <div><h4 className="font-extrabold text-slate-800 text-sm">Consultar Reportes</h4><p className="text-xs text-slate-500 font-medium">Informes institucionales</p></div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F6EDF8] text-[#9731AC]">
+                    <FileBarChart className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm text-[#183B3A]">Reportes Oficiales</h4>
+                    <p className="text-xs text-[#5E7A77]">Exportación PDF y Excel</p>
+                  </div>
                 </div>
-                <Button asChild size="sm" className="w-full mt-3 bg-white text-[#7D5AA6] hover:bg-[#7D5AA6] hover:text-white border border-purple-200 font-bold rounded-xl shadow-2xs"><Link to="/admin/reportes">Ver Reportes <ChevronRight className="ml-1 h-4 w-4" /></Link></Button>
+                <Button asChild variant="outline" size="sm" className="w-full mt-3">
+                  <Link to="/admin/reportes">
+                    Ver Reportes <ChevronRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
               </div>
-              <div className="p-4 rounded-2xl border border-[#09A9C2]/20 bg-teal-50/40 hover:bg-teal-50 transition-all">
+
+              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2.5 rounded-xl bg-[#09A9C2] text-white shadow-md"><Settings className="h-5 w-5" /></div>
-                  <div><h4 className="font-extrabold text-slate-800 text-sm">Configuración</h4><p className="text-xs text-slate-500 font-medium">Parámetros globales</p></div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#E3F5F3] text-[#087F79]">
+                    <Settings className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm text-[#183B3A]">Configuración General</h4>
+                    <p className="text-xs text-[#5E7A77]">Parámetros institucionales</p>
+                  </div>
                 </div>
-                <Button size="sm" onClick={() => handleActionClick('Administrar Configuración')} className="w-full mt-3 bg-white text-[#09A9C2] hover:bg-[#09A9C2] hover:text-white border border-teal-200 font-bold rounded-xl shadow-2xs">Configurar <ChevronRight className="ml-1 h-4 w-4" /></Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleActionClick('Administrar Configuración')}
+                  className="w-full mt-3"
+                >
+                  Configurar <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
               </div>
-              <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/70 hover:bg-slate-100 transition-all">
+
+              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2.5 rounded-xl bg-slate-800 text-white shadow-md"><History className="h-5 w-5" /></div>
-                  <div><h4 className="font-extrabold text-slate-800 text-sm">Auditoría</h4><p className="text-xs text-slate-500 font-medium">Bitácora de seguridad</p></div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F6EDF8] text-[#9731AC]">
+                    <History className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm text-[#183B3A]">Auditoría y Bitácora</h4>
+                    <p className="text-xs text-[#5E7A77]">Registro de eventos</p>
+                  </div>
                 </div>
-                <Button size="sm" onClick={() => handleActionClick('Consultar Auditoría')} className="w-full mt-3 bg-white text-slate-800 hover:bg-slate-800 hover:text-white border border-slate-300 font-bold rounded-xl shadow-2xs">Ver Log <ChevronRight className="ml-1 h-4 w-4" /></Button>
+                <Button asChild variant="outline" size="sm" className="w-full mt-3">
+                  <Link to="/admin/auditoria">
+                    Ver Registro <ChevronRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
               </div>
             </div>
           )}
@@ -271,48 +451,76 @@ export default function AdminDashboard() {
 
       {/* DIÁLOGO MODAL PARA ACCIONES RÁPIDAS */}
       <Dialog open={!!modalFeature} onOpenChange={() => setModalFeature(null)}>
-        <DialogContent className="bg-white rounded-3xl p-6 shadow-2xl max-w-md border border-slate-100">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-lg font-black text-slate-800 flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-[#09A9C2]" />
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-[#087F79]" />
               {modalFeature}
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-500 font-medium">Módulo de gestión administrativa oficial.</DialogDescription>
+            <DialogDescription>
+              Módulo de gestión administrativa oficial.
+            </DialogDescription>
           </DialogHeader>
-          <div className="py-4 space-y-3">
-            <div className="p-4 rounded-2xl bg-teal-50/60 border border-teal-100 text-xs text-teal-800 font-semibold leading-relaxed">
-              El panel de <strong>{modalFeature}</strong> está disponible para la gestión actual. Toda actividad será registrada en el historial.
+          <div className="py-2">
+            <div className="rounded-xl border border-[#BBE5E1] bg-[#E3F5F3] p-4 text-xs font-medium text-[#087F79] leading-relaxed">
+              El panel de <strong>{modalFeature}</strong> está disponible para la gestión actual. Todas las operaciones realizadas quedan registradas en la bitácora de auditoría.
             </div>
           </div>
-          <DialogFooter className="flex gap-2">
-            <Button variant="outline" onClick={() => setModalFeature(null)} className="rounded-xl font-bold">Cerrar</Button>
-            <Button onClick={() => { toast.success(`Acción realizada en ${modalFeature}`); setModalFeature(null); }} className="bg-[#09A9C2] hover:bg-[#0896AC] text-white font-bold rounded-xl">Confirmar</Button>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalFeature(null)}>
+              Cerrar
+            </Button>
+            <Button
+              onClick={() => {
+                toast.success(`Acción realizada en ${modalFeature}`);
+                setModalFeature(null);
+              }}
+            >
+              Confirmar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Bar chart */}
-        <Card className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/60 overflow-hidden">
-          <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-3">
-            <CardTitle className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-[#008BC1]" />
+        <Card>
+          <CardHeader className="border-b border-[#D6E5E3] pb-3 bg-[#F4FAF9]/50">
+            <CardTitle className="text-base font-semibold text-[#183B3A] flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#087F79]" />
               Matriculados por curso
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
             {isLoading ? (
-              <div className="flex h-48 items-center justify-center text-slate-400 font-medium">
+              <div className="flex h-52 items-center justify-center text-[#5E7A77] text-sm">
                 Cargando métricas...
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={data?.courseEnrollments ?? []} margin={{ top: 10, right: 10, left: -20, bottom: 40 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} angle={-25} textAnchor="end" />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }} />
-                  <Bar dataKey="matriculados" fill="#09A9C2" radius={[8, 8, 0, 0]} />
+              <ResponsiveContainer width="100%" height={230}>
+                <BarChart
+                  data={data?.courseEnrollments ?? []}
+                  margin={{ top: 10, right: 10, left: -20, bottom: 40 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#D6E5E3" vertical={false} />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 12, fill: '#5E7A77' }}
+                    angle={-25}
+                    textAnchor="end"
+                  />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#5E7A77' }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#FFFFFF',
+                      borderRadius: '12px',
+                      borderColor: '#D6E5E3',
+                      boxShadow: '0 4px 6px -1px rgba(0,0,0,0.06)',
+                      fontSize: '13px',
+                      color: '#183B3A',
+                    }}
+                  />
+                  <Bar dataKey="matriculados" fill="#087F79" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -320,36 +528,42 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Recent enrollments */}
-        <Card className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/60 overflow-hidden">
-          <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-3">
-            <CardTitle className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-[#31B45A]" />
-              Últimas matrículas
+        <Card>
+          <CardHeader className="border-b border-[#D6E5E3] pb-3 bg-[#F4FAF9]/50">
+            <CardTitle className="text-base font-semibold text-[#183B3A] flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#41C4BD]" />
+              Últimas matrículas registradas
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
             {isLoading ? (
-              <p className="text-slate-400 text-sm font-medium">Cargando matrículas...</p>
+              <p className="text-[#5E7A77] text-sm py-8 text-center">Cargando matrículas...</p>
             ) : (data?.recentEnrollments ?? []).length === 0 ? (
-              <p className="text-slate-400 text-sm font-medium">Sin matrículas registradas.</p>
+              <p className="text-[#5E7A77] text-sm py-8 text-center">Sin matrículas recientes.</p>
             ) : (
-              <ul className="space-y-3">
+              <ul className="divide-y divide-[#D6E5E3]">
                 {data!.recentEnrollments.map((e) => {
-                  const s = statusLabel[e.status] ?? statusLabel.active;
+                  const variant = statusBadgeVariant[e.status] ?? 'secondary';
+                  const label = statusLabelText[e.status] ?? e.status;
                   return (
-                    <li key={e.id} className="flex items-center justify-between text-sm p-2 rounded-xl hover:bg-teal-50/50 transition-colors">
-                      <div>
-                        <p className="font-bold text-slate-800">
+                    <li
+                      key={e.id}
+                      className="flex items-center justify-between py-3 px-2 rounded-lg transition-colors hover:bg-[#E3F5F3]/30 text-sm"
+                    >
+                      <div className="space-y-0.5">
+                        <p className="font-semibold text-[#183B3A]">
                           {e.student?.user?.name ?? 'Estudiante'}{' '}
-                          <span className="text-slate-400 font-normal">
+                          <span className="text-xs text-[#5E7A77] font-normal">
                             ({e.student?.studentCode})
                           </span>
                         </p>
-                        <p className="text-xs text-slate-500 font-medium">
+                        <p className="text-xs text-[#5E7A77]">
                           {e.course?.name} · {formatDate(e.enrolledAt)}
                         </p>
                       </div>
-                      <Badge variant={s.variant} className="rounded-full px-3 font-bold">{s.label}</Badge>
+                      <Badge variant={variant}>
+                        {label}
+                      </Badge>
                     </li>
                   );
                 })}
@@ -361,4 +575,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-

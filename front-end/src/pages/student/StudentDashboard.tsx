@@ -1,4 +1,4 @@
-import { BookOpen, Star, Award, GraduationCap, FileText, ScrollText, Sparkles, ClipboardCheck, Megaphone, MessageSquare } from 'lucide-react';
+import { BookOpen, Star, Award, GraduationCap, FileText, ScrollText, Sparkles, ClipboardCheck, Megaphone, MessageSquare, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   BarChart,
@@ -17,6 +17,7 @@ import { StatCard } from '@/components/shared/StatCard';
 import { GradeBadge } from '@/components/shared/GradeBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -32,121 +33,127 @@ export default function StudentDashboard() {
     passed: c.passed,
   }));
 
+  const isParent = user?.role === 'parent';
+
   return (
     <div className="space-y-6">
       <PageHeader
+        eyebrow={isParent ? 'Portal de Familias' : 'Portal del Estudiante'}
         title={`¡Hola, ${user?.name?.split(' ')[0] ?? 'Estudiante'}!`}
-        description={`Período ${data?.period ?? '2026-I'} · Resumen de tu rendimiento académico`}
+        description={`Período académico ${data?.period ?? '2026-I'} · Resumen de rendimiento y actividades`}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           title="Materias activas"
           value={isLoading ? '—' : activeCourses}
-          icon={<BookOpen className="h-5 w-5" />}
+          description="en curso este período"
+          icon={<BookOpen className="h-5 w-5 text-school-primary" />}
         />
         <StatCard
           title="Promedio general"
           value={isLoading ? '—' : generalAverage > 0 ? generalAverage.toFixed(2) : '—'}
-          icon={<Star className="h-5 w-5" />}
+          description="calificación ponderada actual"
+          icon={<Star className="h-5 w-5 text-school-warning" />}
         />
         <StatCard
           title="Materias aprobadas"
           value={isLoading ? '—' : courses.filter((c) => c.passed && c.grades.length > 0).length}
-          icon={<Award className="h-5 w-5" />}
+          description="de las materias evaluadas"
+          icon={<Award className="h-5 w-5 text-school-success" />}
         />
       </div>
 
-      {/* Quick Action Buttons for Padre / Estudiante */}
-      <Card className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/60 overflow-hidden">
-        <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50 flex flex-row items-center justify-between">
-          <CardTitle className="text-xs font-black uppercase tracking-wider text-[#09A9C2] flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-[#F4B51B]" />
-            Consultas de Padre & Representado
+      {/* Quick Action Buttons */}
+      <Card>
+        <CardHeader className="pb-3 border-b border-school-border/70 flex flex-row items-center justify-between">
+          <CardTitle className="text-base font-semibold text-school-heading">
+            {isParent ? 'Consultas del Representado' : 'Accesos y Herramientas'}
           </CardTitle>
-          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-            Acceso Privado & Seguro
-          </span>
+          <Badge variant="outline" className="text-xs font-normal text-school-muted">
+            Acceso Académico
+          </Badge>
         </CardHeader>
         <CardContent className="pt-4">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <Button asChild variant="outline" className="w-full justify-start bg-white hover:bg-sky-50 hover:border-sky-300 shadow-sm rounded-xl font-bold transition-all text-xs">
+            <Button asChild variant="outline" className="h-12 w-full justify-start rounded-xl font-medium text-sm text-school-heading hover:bg-school-subtle hover:text-school-primary hover:border-school-accent transition-colors">
               <Link to="/estudiante/mis-cursos">
-                <GraduationCap className="mr-1.5 h-4 w-4 text-[#008BC1]" />
-                Mis Hijos / Curso
+                <GraduationCap className="mr-2 h-4 w-4 text-school-primary shrink-0" />
+                {isParent ? 'Mis Hijos / Cursos' : 'Mis Cursos'}
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="w-full justify-start bg-white hover:bg-emerald-50 hover:border-emerald-300 shadow-sm rounded-xl font-bold transition-all text-xs">
+            <Button asChild variant="outline" className="h-12 w-full justify-start rounded-xl font-medium text-sm text-school-heading hover:bg-school-subtle hover:text-school-primary hover:border-school-accent transition-colors">
               <Link to="/estudiante/asistencia">
-                <ClipboardCheck className="mr-1.5 h-4 w-4 text-[#31B45A]" />
+                <ClipboardCheck className="mr-2 h-4 w-4 text-school-success shrink-0" />
                 Asistencia
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="w-full justify-start bg-white hover:bg-rose-50 hover:border-rose-300 shadow-sm rounded-xl font-bold transition-all text-xs">
+            <Button asChild variant="outline" className="h-12 w-full justify-start rounded-xl font-medium text-sm text-school-heading hover:bg-school-subtle hover:text-school-primary hover:border-school-accent transition-colors">
               <Link to="/estudiante/actividades">
-                <FileText className="mr-1.5 h-4 w-4 text-[#E84B5B]" />
-                Actividades & Notas
+                <FileText className="mr-2 h-4 w-4 text-school-pink shrink-0" />
+                Actividades
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="w-full justify-start bg-white hover:bg-amber-50 hover:border-amber-300 shadow-sm rounded-xl font-bold transition-all text-xs">
+            <Button asChild variant="outline" className="h-12 w-full justify-start rounded-xl font-medium text-sm text-school-heading hover:bg-school-subtle hover:text-school-primary hover:border-school-accent transition-colors">
               <Link to="/estudiante/comunicados">
-                <Megaphone className="mr-1.5 h-4 w-4 text-[#F4B51B]" />
+                <Megaphone className="mr-2 h-4 w-4 text-school-warning shrink-0" />
                 Comunicados
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="w-full justify-start bg-white hover:bg-purple-50 hover:border-purple-300 shadow-sm rounded-xl font-bold transition-all text-xs">
+            <Button asChild variant="outline" className="h-12 w-full justify-start rounded-xl font-medium text-sm text-school-heading hover:bg-school-subtle hover:text-school-primary hover:border-school-accent transition-colors">
               <Link to="/estudiante/observaciones">
-                <MessageSquare className="mr-1.5 h-4 w-4 text-[#7D5AA6]" />
+                <MessageSquare className="mr-2 h-4 w-4 text-school-violet shrink-0" />
                 Observaciones
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="w-full justify-start bg-white hover:bg-teal-50 hover:border-teal-300 shadow-sm rounded-xl font-bold transition-all text-xs">
+            <Button asChild variant="outline" className="h-12 w-full justify-start rounded-xl font-medium text-sm text-school-heading hover:bg-school-subtle hover:text-school-primary hover:border-school-accent transition-colors">
               <Link to="/estudiante/historial">
-                <ScrollText className="mr-1.5 h-4 w-4 text-[#09A9C2]" />
-                Historial & Docs
+                <ScrollText className="mr-2 h-4 w-4 text-school-blue shrink-0" />
+                Historial
               </Link>
             </Button>
           </div>
         </CardContent>
       </Card>
 
-
-
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Bar chart */}
-        <Card className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/60 overflow-hidden">
-          <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-3">
-            <CardTitle className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-[#008BC1]" />
-              Promedios por materia
+        <Card>
+          <CardHeader className="border-b border-school-border/70 pb-3">
+            <CardTitle className="text-base font-semibold text-school-heading flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-school-primary" />
+              Promedios por Materia
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
             {isLoading ? (
-              <div className="flex h-48 items-center justify-center text-slate-400 font-medium">
-                Cargando...
+              <div className="flex h-56 items-center justify-center text-school-muted text-sm">
+                Cargando rendimiento...
               </div>
             ) : chartData.length === 0 ? (
-              <p className="text-sm text-slate-400 font-medium py-8 text-center">
-                Aún no tienes calificaciones registradas.
+              <p className="text-sm text-school-muted py-12 text-center">
+                Aún no tienes calificaciones registradas en este período.
               </p>
             ) : (
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer width="100%" height={230}>
                 <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 40 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} angle={-25} textAnchor="end" />
-                  <YAxis domain={[0, 10]} allowDecimals={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                  <Tooltip formatter={(v: number) => [v.toFixed(2), 'Promedio']} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }} />
-                  <Bar dataKey="promedio" radius={[8, 8, 0, 0]}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#D6E5E3" opacity={0.6} />
+                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#365451' }} angle={-20} textAnchor="end" />
+                  <YAxis domain={[0, 10]} allowDecimals={false} tick={{ fontSize: 12, fill: '#365451' }} />
+                  <Tooltip
+                    formatter={(v: number) => [v.toFixed(2), 'Promedio']}
+                    contentStyle={{ borderRadius: '12px', border: '1px solid #D6E5E3', backgroundColor: '#FFFFFF', fontSize: '13px' }}
+                  />
+                  <Bar dataKey="promedio" radius={[6, 6, 0, 0]}>
                     {chartData.map((entry, index) => (
                       <Cell
                         key={index}
-                        fill={entry.passed ? '#31B45A' : '#E84B5B'}
+                        fill={entry.passed ? '#287A32' : '#B42335'}
                       />
                     ))}
                   </Bar>
@@ -157,36 +164,39 @@ export default function StudentDashboard() {
         </Card>
 
         {/* Course list */}
-        <Card className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/60 overflow-hidden">
-          <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-3">
-            <CardTitle className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-[#31B45A]" />
-              Mis materias
+        <Card>
+          <CardHeader className="border-b border-school-border/70 pb-3 flex flex-row items-center justify-between">
+            <CardTitle className="text-base font-semibold text-school-heading flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-school-primary" />
+              Mis Materias
             </CardTitle>
+            <Button asChild variant="ghost" size="sm" className="text-school-primary font-medium hover:bg-school-subtle text-xs">
+              <Link to="/estudiante/mis-cursos">Ver todas <ArrowRight className="ml-1 h-3 w-3" /></Link>
+            </Button>
           </CardHeader>
           <CardContent className="pt-4">
             {isLoading ? (
-              <p className="text-sm text-slate-400 font-medium">Cargando...</p>
+              <p className="text-sm text-school-muted py-4">Cargando materias...</p>
             ) : courses.length === 0 ? (
-              <p className="text-sm text-slate-400 font-medium">No tienes materias matriculadas.</p>
+              <p className="text-sm text-school-muted py-8 text-center">No tienes materias matriculadas.</p>
             ) : (
-              <ul className="space-y-3">
+              <ul className="space-y-2.5">
                 {courses.map((c) => (
-                  <li key={c.courseId} className="flex items-center justify-between text-sm p-2 rounded-xl hover:bg-teal-50/50 transition-colors">
+                  <li key={c.courseId} className="flex items-center justify-between text-sm p-3 rounded-xl border border-school-border/70 hover:border-school-accent hover:bg-school-subtle/40 transition-colors">
                     <div>
-                      <p className="font-bold text-slate-800">{c.courseName}</p>
-                      <p className="text-xs text-slate-500 font-medium">{c.teacherName}</p>
+                      <p className="font-semibold text-school-heading">{c.courseName}</p>
+                      <p className="text-xs text-school-muted">{c.teacherName || 'Docente asignado'}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       {c.grades.length > 0 ? (
                         <>
-                          <span className={`font-black ${c.passed ? 'text-[#31B45A]' : 'text-[#E84B5B]'}`}>
+                          <span className={`font-bold ${c.passed ? 'text-school-success' : 'text-school-error'}`}>
                             {c.weightedAverage.toFixed(2)}
                           </span>
                           <GradeBadge passed={c.passed} />
                         </>
                       ) : (
-                        <span className="text-xs text-slate-400 font-medium">Sin notas</span>
+                        <span className="text-xs text-school-muted">Sin notas</span>
                       )}
                     </div>
                   </li>
@@ -198,11 +208,12 @@ export default function StudentDashboard() {
       </div>
 
       <div className="flex justify-end">
-        <Button asChild variant="outline" className="bg-white/90 shadow-md rounded-xl border-[#09A9C2] text-[#09A9C2] hover:bg-[#09A9C2] hover:text-white font-bold">
-          <Link to="/estudiante/mis-notas">Ver calificaciones detalladas</Link>
+        <Button asChild>
+          <Link to="/estudiante/mis-notas">
+            Ver Calificaciones Detalladas <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
         </Button>
       </div>
     </div>
   );
 }
-

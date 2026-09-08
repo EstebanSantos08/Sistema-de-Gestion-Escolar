@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-interface NavItem {
+export interface NavItem {
   to: string;
   label: string;
   icon: LucideIcon;
@@ -54,8 +54,21 @@ const studentNav: NavItem[] = [
   { to: '/estudiante/historial', label: 'Historial', icon: ScrollText },
 ];
 
+const parentNav: NavItem[] = [
+  { to: '/estudiante', label: 'Resumen Escolar', icon: LayoutDashboard },
+  { to: '/estudiante/mis-cursos', label: 'Cursos del Estudiante', icon: GraduationCap },
+  { to: '/estudiante/mis-notas', label: 'Calificaciones', icon: Star },
+  { to: '/estudiante/asistencia', label: 'Registro de Asistencia', icon: ClipboardCheck },
+  { to: '/estudiante/actividades', label: 'Tareas y Tareas', icon: CalendarCheck },
+  { to: '/estudiante/observaciones', label: 'Observaciones', icon: MessageSquare },
+  { to: '/estudiante/comunicados', label: 'Comunicados Oficiales', icon: Megaphone },
+];
+
 export function navigationForRole(role?: string) {
-  return role === 'admin' ? adminNav : role === 'teacher' ? teacherNav : studentNav;
+  if (role === 'admin') return adminNav;
+  if (role === 'teacher') return teacherNav;
+  if (role === 'parent') return parentNav;
+  return studentNav;
 }
 
 export function isNavigationActive(pathname: string, destination: string) {
@@ -67,4 +80,8 @@ export function isNavigationActive(pathname: string, destination: string) {
 }
 
 export const navigationLinkClass = (active: boolean) =>
-  `flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#087F79] ${active ? 'bg-[#E3F5F3] text-[#087F79] font-semibold' : 'text-[#365451] hover:bg-[#F4FAF9]'}`;
+  `group flex min-h-[44px] items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087F79] focus-visible:ring-offset-1 ${
+    active
+      ? 'bg-[#E3F5F3] text-[#087F79] font-semibold shadow-2xs border-l-4 border-[#087F79] pl-2.5'
+      : 'text-[#365451] hover:bg-[#F4FAF9] hover:text-[#183B3A] border-l-4 border-transparent'
+  }`;

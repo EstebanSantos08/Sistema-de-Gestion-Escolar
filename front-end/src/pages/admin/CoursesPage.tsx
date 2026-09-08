@@ -53,18 +53,18 @@ interface CourseFormProps {
 function getLevelBadge(name: string, code: string) {
   const text = `${name} ${code}`.toLowerCase();
   if (text.includes('inicial 1') || text.includes('parvularia')) {
-    return <Badge className="bg-emerald-500 text-white font-black text-xs">Inicial 1 · Guardería</Badge>;
+    return <Badge variant="lime">Inicial 1 · Guardería</Badge>;
   }
   if (text.includes('inicial 2') || text.includes('kinder')) {
-    return <Badge className="bg-sky-600 text-white font-black text-xs">Inicial 2 · Guardería</Badge>;
+    return <Badge variant="secondary">Inicial 2 · Guardería</Badge>;
   }
   if (text.includes('inicial 3')) {
-    return <Badge className="bg-purple-600 text-white font-black text-xs">Inicial 3 · Guardería</Badge>;
+    return <Badge variant="purple">Inicial 3 · Guardería</Badge>;
   }
   if (text.includes('1ro') || text.includes('primero')) {
-    return <Badge className="bg-amber-500 text-white font-black text-xs">1º Grado · Primaria</Badge>;
+    return <Badge variant="warning">1º Grado · Primaria</Badge>;
   }
-  return <Badge className="bg-[#008BC1] text-white font-black text-xs">Nivel Académico</Badge>;
+  return <Badge variant="default">Nivel Académico</Badge>;
 }
 
 function CourseFormModal({ open, onOpenChange, course, onSaved }: CourseFormProps) {
@@ -122,43 +122,43 @@ function CourseFormModal({ open, onOpenChange, course, onSaved }: CourseFormProp
     <Dialog open={open} onOpenChange={(v) => { reset(); onOpenChange(v); }}>
       <DialogContent className="sm:max-w-lg bg-white rounded-2xl shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="text-lg font-black text-slate-800 flex items-center gap-2">
-            <GraduationCap className="h-5 w-5 text-[#008BC1]" />
+          <DialogTitle className="text-xl font-bold text-school-heading flex items-center gap-2">
+            <GraduationCap className="h-5 w-5 text-school-primary" />
             {isEditing ? 'Editar Curso / Aula' : 'Nuevo Curso / Aula'}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-2 gap-4">
-          <div className="col-span-2 space-y-1">
-            <Label className="text-xs font-bold text-slate-700">Nombre del Curso / Nivel</Label>
-            <Input {...register('name')} placeholder="Ej: Inicial 2 - Paralelo A" className="rounded-xl border-slate-200" />
-            {errors.name && <p className="text-xs text-destructive font-bold">{errors.name.message}</p>}
+          <div className="col-span-2 space-y-1.5">
+            <Label className="text-sm font-semibold text-school-heading">Nombre del Curso / Nivel</Label>
+            <Input {...register('name')} placeholder="Ej: Inicial 2 - Paralelo A" className="rounded-xl border-school-border" />
+            {errors.name && <p className="text-xs text-school-error font-medium">{errors.name.message}</p>}
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-xs font-bold text-slate-700">Código</Label>
-            <Input {...register('code')} placeholder="Ej: INI-2A" className="rounded-xl border-slate-200" />
-            {errors.code && <p className="text-xs text-destructive font-bold">{errors.code.message}</p>}
+          <div className="space-y-1.5">
+            <Label className="text-sm font-semibold text-school-heading">Código</Label>
+            <Input {...register('code')} placeholder="Ej: INI-2A" className="rounded-xl border-school-border" />
+            {errors.code && <p className="text-xs text-school-error font-medium">{errors.code.message}</p>}
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-xs font-bold text-slate-700">Período Lectivo</Label>
-            <Input {...register('period')} placeholder="2026-I" className="rounded-xl border-slate-200" />
-            {errors.period && <p className="text-xs text-destructive font-bold">{errors.period.message}</p>}
+          <div className="space-y-1.5">
+            <Label className="text-sm font-semibold text-school-heading">Período Lectivo</Label>
+            <Input {...register('period')} placeholder="2026-I" className="rounded-xl border-school-border" />
+            {errors.period && <p className="text-xs text-school-error font-medium">{errors.period.message}</p>}
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-xs font-bold text-slate-700">Créditos / Carga</Label>
-            <Input type="number" min={1} max={10} {...register('credits')} className="rounded-xl border-slate-200" />
-            {errors.credits && <p className="text-xs text-destructive font-bold">{errors.credits.message}</p>}
+          <div className="space-y-1.5">
+            <Label className="text-sm font-semibold text-school-heading">Créditos / Carga</Label>
+            <Input type="number" min={1} max={10} {...register('credits')} className="rounded-xl border-school-border" />
+            {errors.credits && <p className="text-xs text-school-error font-medium">{errors.credits.message}</p>}
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-xs font-bold text-slate-700">Docente Guía Asignado</Label>
+          <div className="space-y-1.5">
+            <Label className="text-sm font-semibold text-school-heading">Docente Guía Asignado</Label>
             <Select
               value={watch('teacherId') ? String(watch('teacherId')) : undefined}
               onValueChange={(v) => setValue('teacherId', Number(v))}
             >
-              <SelectTrigger className="rounded-xl border-slate-200">
+              <SelectTrigger className="rounded-xl border-school-border">
                 <SelectValue placeholder="Seleccionar Docente Guía" />
               </SelectTrigger>
               <SelectContent className="bg-white rounded-xl">
@@ -169,19 +169,19 @@ function CourseFormModal({ open, onOpenChange, course, onSaved }: CourseFormProp
                 ))}
               </SelectContent>
             </Select>
-            {errors.teacherId && <p className="text-xs text-destructive font-bold">{errors.teacherId.message}</p>}
+            {errors.teacherId && <p className="text-xs text-school-error font-medium">{errors.teacherId.message}</p>}
           </div>
 
-          <div className="col-span-2 space-y-1">
-            <Label className="text-xs font-bold text-slate-700">Descripción / Detalles del Aula</Label>
-            <Input {...register('description')} placeholder="Ej: Aula de Educación Inicial 4 años" className="rounded-xl border-slate-200" />
+          <div className="col-span-2 space-y-1.5">
+            <Label className="text-sm font-semibold text-school-heading">Descripción / Detalles del Aula</Label>
+            <Input {...register('description')} placeholder="Ej: Aula de Educación Inicial 4 años" className="rounded-xl border-school-border" />
           </div>
 
-          <DialogFooter className="col-span-2 pt-2">
-            <Button type="button" variant="outline" onClick={() => { reset(); onOpenChange(false); }} className="rounded-xl font-bold">
+          <DialogFooter className="col-span-2 pt-3">
+            <Button type="button" variant="outline" onClick={() => { reset(); onOpenChange(false); }} className="rounded-xl font-medium">
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="bg-[#008BC1] hover:bg-[#0073A0] text-white font-bold rounded-xl shadow-md">
+            <Button type="submit" disabled={isSubmitting} className="bg-school-primary hover:bg-school-primary-hover text-white font-medium rounded-xl shadow-sm">
               {isSubmitting ? 'Guardando...' : isEditing ? 'Actualizar Curso' : 'Crear Curso'}
             </Button>
           </DialogFooter>
@@ -250,17 +250,33 @@ export default function CoursesPage() {
     {
       header: 'Estado',
       render: (c) =>
-        c.active ? <Badge className="bg-[#31B45A] text-white font-bold">Activo</Badge> : <Badge variant="secondary">Inactivo</Badge>,
+        c.active ? (
+          <Badge variant="success">Activo</Badge>
+        ) : (
+          <Badge variant="secondary">Inactivo</Badge>
+        ),
     },
     {
       header: '',
       className: 'w-24 text-right',
       render: (c) => (
         <div className="flex justify-end gap-1">
-          <Button variant="ghost" size="icon" onClick={() => { setEditCourse(c); setFormOpen(true); }} className="hover:bg-sky-50 text-[#008BC1]">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => { setEditCourse(c); setFormOpen(true); }}
+            aria-label={`Editar curso ${c.name}`}
+            className="text-[#087F79] hover:bg-[#E3F5F3]"
+          >
             <Pencil className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setDeleteId(c.id)} className="hover:bg-rose-50 text-rose-600">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setDeleteId(c.id)}
+            aria-label={`Eliminar curso ${c.name}`}
+            className="text-[#B42335] hover:bg-[#FDF0F1]"
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -270,110 +286,150 @@ export default function CoursesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Gestión de Cursos y Aulas" description="Administración de cursos en Educación Inicial y Primer Grado">
-        <Button onClick={() => { setEditCourse(null); setFormOpen(true); }} className="bg-[#008BC1] hover:bg-[#0073A0] text-white font-bold shadow-md rounded-xl">
+      <PageHeader
+        eyebrow="Administración"
+        title="Cursos Escolares"
+        description="Gestión y asignación de aulas, niveles y docentes guía de Educación Inicial y Primer Grado"
+      >
+        <Button
+          onClick={() => { setEditCourse(null); setFormOpen(true); }}
+          className="h-10"
+        >
           <Plus className="mr-2 h-4 w-4" />
           Nuevo curso
         </Button>
       </PageHeader>
 
-      <Card className="bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-white/60">
+      {/* Filter and view mode bar */}
+      <div className="rounded-2xl border border-[#D6E5E3] bg-white p-4 sm:p-5 shadow-xs">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-1 gap-3">
+          <div className="flex flex-1 flex-col gap-3 sm:flex-row">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5E7A77]" />
               <Input
-                placeholder="Buscar curso o nivel..."
-                className="pl-9 bg-white border-slate-200 text-slate-800 font-medium rounded-xl shadow-xs"
+                placeholder="Buscar curso por nombre o código..."
+                className="pl-10"
+                aria-label="Buscar curso"
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               />
             </div>
             <Input
               placeholder="Período (ej: 2026-I)"
-              className="w-full sm:w-44 bg-white border-slate-200 text-slate-800 font-bold rounded-xl shadow-xs"
+              className="w-full sm:w-44"
+              aria-label="Filtrar por período"
               value={period}
               onChange={(e) => { setPeriod(e.target.value); setPage(1); }}
             />
           </div>
 
           {/* Toggle de Modo de Vista Tarjetas / Tabla */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+          <div className="flex items-center gap-1 rounded-xl border border-[#D6E5E3] bg-[#F4FAF9] p-1 self-start sm:self-auto">
             <Button
               size="sm"
-              variant={viewMode === 'cards' ? 'default' : 'ghost'}
+              variant="ghost"
               onClick={() => setViewMode('cards')}
-              className={viewMode === 'cards' ? 'bg-white text-slate-800 font-bold shadow-xs rounded-lg' : 'text-slate-500'}
+              className={`rounded-lg px-3 text-xs font-semibold ${
+                viewMode === 'cards'
+                  ? 'bg-white text-[#087F79] shadow-xs'
+                  : 'text-[#5E7A77] hover:text-[#183B3A]'
+              }`}
             >
-              <LayoutGrid className="mr-1.5 h-4 w-4 text-[#008BC1]" /> Tarjetas
+              <LayoutGrid className="mr-1.5 h-4 w-4" /> Tarjetas
             </Button>
             <Button
               size="sm"
-              variant={viewMode === 'table' ? 'default' : 'ghost'}
+              variant="ghost"
               onClick={() => setViewMode('table')}
-              className={viewMode === 'table' ? 'bg-white text-slate-800 font-bold shadow-xs rounded-lg' : 'text-slate-500'}
+              className={`rounded-lg px-3 text-xs font-semibold ${
+                viewMode === 'table'
+                  ? 'bg-white text-[#087F79] shadow-xs'
+                  : 'text-[#5E7A77] hover:text-[#183B3A]'
+              }`}
             >
-              <TableIcon className="mr-1.5 h-4 w-4 text-[#008BC1]" /> Tabla
+              <TableIcon className="mr-1.5 h-4 w-4" /> Tabla
             </Button>
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Renderizado de Cursos: Tarjetas (Grid) o Tabla */}
       {viewMode === 'cards' ? (
         isLoading ? (
           <div className="flex justify-center py-16">
-            <span className="h-8 w-8 animate-spin rounded-full border-4 border-[#008BC1] border-t-transparent" />
+            <span className="h-8 w-8 animate-spin rounded-full border-4 border-[#087F79] border-t-transparent" />
           </div>
         ) : coursesList.length === 0 ? (
-          <p className="text-center text-slate-400 py-10 font-bold text-sm">No se encontraron cursos registrados.</p>
+          <div className="rounded-2xl border border-[#D6E5E3] bg-white p-12 text-center shadow-xs">
+            <BookOpen className="mx-auto h-10 w-10 text-[#5E7A77]/40 mb-3" />
+            <p className="text-base font-semibold text-[#183B3A]">No se encontraron cursos</p>
+            <p className="text-sm text-[#5E7A77] mt-1">Prueba cambiando los términos de búsqueda o el período seleccionado.</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {coursesList.map((c) => (
-              <Card key={c.id} className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/60 hover:shadow-2xl transition-all duration-300 overflow-hidden flex flex-col justify-between group">
+              <Card
+                key={c.id}
+                className="flex flex-col justify-between transition-all hover:border-[#41C4BD] hover:shadow-sm group"
+              >
                 <CardContent className="p-5 space-y-4">
-                  <div className="flex items-start justify-between border-b border-slate-100 pb-3">
-                    <div>
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <Sparkles className="h-3.5 w-3.5 text-[#F4B51B]" />
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">{c.code}</span>
-                      </div>
-                      <h3 className="font-black text-slate-800 text-lg group-hover:text-[#008BC1] transition-colors">
+                  <div className="flex items-start justify-between border-b border-[#D6E5E3] pb-3 gap-2">
+                    <div className="min-w-0">
+                      <span className="text-xs font-mono font-semibold text-[#5E7A77]">
+                        {c.code}
+                      </span>
+                      <h3 className="font-semibold text-[#183B3A] text-lg truncate group-hover:text-[#087F79] transition-colors mt-0.5">
                         {c.name}
                       </h3>
                     </div>
                     {getLevelBadge(c.name, c.code)}
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs">
-                      <User className="h-4 w-4 text-[#008BC1]" />
-                      <span className="font-bold text-slate-700">Docente Guía:</span>
-                      <span className="font-extrabold text-slate-900 ml-auto">{c.teacher?.user?.name ?? 'Sin Asignar'}</span>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between rounded-lg border border-[#D6E5E3] bg-[#F4FAF9]/50 p-2.5">
+                      <span className="flex items-center gap-1.5 text-xs text-[#5E7A77]">
+                        <User className="h-4 w-4 text-[#087F79]" />
+                        Docente:
+                      </span>
+                      <span className="font-semibold text-xs text-[#183B3A] truncate max-w-[55%]">
+                        {c.teacher?.user?.name ?? 'Sin asignar'}
+                      </span>
                     </div>
 
-                    <div className="flex items-center justify-between text-xs font-semibold text-slate-600 bg-teal-50/60 p-2.5 rounded-xl border border-teal-100">
-                      <span className="flex items-center gap-1.5 text-teal-800">
-                        <Users className="h-4 w-4 text-[#31B45A]" />
-                        Niños Matriculados
+                    <div className="flex items-center justify-between rounded-lg border border-[#BBE5E1] bg-[#E3F5F3]/50 p-2.5">
+                      <span className="flex items-center gap-1.5 text-xs font-medium text-[#087F79]">
+                        <Users className="h-4 w-4 text-[#087F79]" />
+                        Estudiantes matriculados:
                       </span>
-                      <Badge className="bg-[#31B45A] text-white font-bold">
-                        {(c as unknown as Record<string, unknown>).enrolledCount as number ?? c.enrollmentsCount ?? 0}
+                      <Badge variant="default" className="font-semibold">
+                        {((c as unknown as Record<string, unknown>).enrolledCount as number) ??
+                          c.enrollmentsCount ??
+                          0}
                       </Badge>
                     </div>
                   </div>
 
                   {c.description && (
-                    <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed bg-slate-50/40 p-2 rounded-lg border border-slate-100/60">
+                    <p className="text-xs text-[#5E7A77] line-clamp-2 leading-relaxed bg-[#F4FAF9] p-2.5 rounded-lg border border-[#D6E5E3]">
                       {c.description}
                     </p>
                   )}
 
-                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                    <Button variant="outline" size="sm" onClick={() => { setEditCourse(c); setFormOpen(true); }} className="rounded-xl border-slate-200 text-[#008BC1] font-bold hover:bg-sky-50">
+                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#D6E5E3]">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => { setEditCourse(c); setFormOpen(true); }}
+                      className="text-[#087F79] hover:bg-[#E3F5F3]"
+                    >
                       <Pencil className="mr-1.5 h-3.5 w-3.5" /> Editar
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => setDeleteId(c.id)} className="rounded-xl border-rose-200 text-rose-600 font-bold hover:bg-rose-50">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDeleteId(c.id)}
+                      className="text-[#B42335] hover:bg-[#FDF0F1]"
+                    >
                       <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Eliminar
                     </Button>
                   </div>

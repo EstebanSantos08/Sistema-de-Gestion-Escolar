@@ -4,35 +4,35 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    --background: 170 33% 97%; /* #F4FAF9 */
+    --foreground: 174 22% 27%; /* #365451 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 174 22% 27%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 174 22% 27%;
 
-    --primary: 187 91% 40%;
+    --primary: 177 88% 26%; /* #087F79 */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 188 91% 40%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 173 47% 93%; /* #E3F5F3 */
+    --secondary-foreground: 177 88% 26%;
 
-    --muted: 210 20% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 170 30% 96%;
+    --muted-foreground: 174 13% 42%; /* #5E7A77 */
 
-    --accent: 187 60% 95%;
-    --accent-foreground: 187 100% 28%;
+    --accent: 173 47% 93%; /* #E3F5F3 */
+    --accent-foreground: 177 88% 26%;
 
-    --destructive: 354 78% 60%;
+    --destructive: 353 67% 42%; /* #B42335 */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 187 91% 40%;
+    --border: 172 22% 87%; /* #D6E5E3 */
+    --input: 173 10% 49%; /* #718B88 */
+    --ring: 177 88% 26%; /* #087F79 */
 
-    --radius: 1rem;
+    --radius: 0.75rem;
   }
 
   * {
@@ -40,107 +40,64 @@
   }
 
   body {
-    @apply bg-[#09A9C2] text-foreground antialiased;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #F4FAF9;
+    color: #365451;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: #183B3A;
+    font-weight: 600;
+  }
+
+  ::selection {
+    background-color: #E3F5F3;
+    color: #183B3A;
+  }
+
+  :focus-visible {
+    outline: 2px solid #087F79;
+    outline-offset: 2px;
   }
 }
-
 
 @layer utilities {
   .font-nice {
-    font-family: 'Fredoka', 'Quicksand', cursive, sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
-  .bg-nice-turquoise {
-    background-color: #09A9C2;
-  }
-  
-  .bg-nice-gradient {
-    background: radial-gradient(circle at 15% 15%, #0BAEC9 0%, #0896AC 50%, #067E91 100%);
-  }
-
-  .text-nice-red { color: #E84B5B; }
-  .text-nice-blue { color: #008BC1; }
-  .text-nice-yellow { color: #F4B51B; }
-  .text-nice-green { color: #31B45A; }
-  .text-nice-pink { color: #E8798A; }
-  .text-nice-purple { color: #7D5AA6; }
-
-  /* Efecto de letras 3D infladas como el letrero real de NICE KIDS con borde blanco grueso y sombra oscura */
+  /* Logo letter animation/presentation */
   .bubbly-letter-3d {
-    font-family: 'Fredoka', 'Fredoka One', cursive, sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     font-weight: 900;
     display: inline-block;
-    letter-spacing: 0.06em;
-    -webkit-text-stroke: 2.5px #ffffff;
+    letter-spacing: 0.04em;
+    -webkit-text-stroke: 1.5px #ffffff;
     paint-order: stroke fill;
-    filter: drop-shadow(0px 4px 0px rgba(0, 0, 0, 0.25)) drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.12));
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  }
-
-  .bubbly-letter-3d:hover {
-    transform: scale(1.2) translateY(-3px) rotate(-4deg);
-  }
-
-  .bubbly-letter {
-    font-family: 'Fredoka', cursive, sans-serif;
-    font-weight: 900;
-    display: inline-block;
-    filter: drop-shadow(0px 3px 0px rgba(0, 0, 0, 0.12));
+    filter: drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.15));
     transition: transform 0.15s ease;
   }
 
-
-  .bubbly-letter:hover {
-    transform: scale(1.12) rotate(-3deg);
+  .bubbly-letter-3d:hover {
+    transform: scale(1.1) translateY(-2px);
   }
 
-  .rainbow-border-top {
-    border-top: 4px solid transparent;
-    border-image: linear-gradient(to right, #E84B5B, #008BC1, #F4B51B, #31B45A, #7D5AA6) 1;
+  /* Surface and panel utility */
+  .school-panel {
+    background-color: #FFFFFF;
+    border: 1px solid #D6E5E3;
+    border-radius: 1rem;
+    box-shadow: 0 1px 2px 0 rgba(24, 59, 58, 0.04);
   }
 }
 
-
-
-/* Course surfaces opt in; existing screens keep their component defaults. */
-.course-ui {
-  --background: 0 0% 100%;
-  --foreground: 174 22% 27%;
-  --primary: 177 88% 26%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 173 47% 93%;
-  --secondary-foreground: 177 88% 26%;
-  --muted: 170 38% 97%;
-  --muted-foreground: 174 22% 27%;
-  --accent: 173 47% 93%;
-  --accent-foreground: 177 88% 26%;
-  --border: 172 22% 87%;
-  --input: 173 10% 49%;
-  --ring: 177 88% 26%;
-  --destructive: 352 67% 42%;
-  color: #365451;
-}
-.course-ui :is(h1, h2, h3) { color: #183B3A; }
-.course-ui ::selection { background: #E3F5F3; color: #183B3A; }
-.course-ui :is(input, textarea) { caret-color: #087F79; }
-.course-ui :is(button, input, textarea, [role="combobox"]) { border-radius: 0.5rem; }
-.course-ui :is(button, a.inline-flex, input, [role="combobox"]) { min-height: 44px; }
-.course-ui :is(a, button, input, textarea):focus-visible {
-  outline: 2px solid #087F79;
-  outline-offset: 3px;
-}
-.course-panel, .course-ui .course-card {
-  border: 1px solid #D6E5E3;
-  border-radius: 14px;
-  background: #FFFFFF;
-  color: #365451;
-  box-shadow: none;
-  backdrop-filter: none;
-}
-/* Suppress the incumbent Card's decorative stripe only on opted-in cards. */
-.course-ui .course-card > div:first-child:not(:last-child) { background-image: none; }
-.course-ui .course-card > div.h-1\.5 { height: 3px; background: #41C4BD; }
 @media (prefers-reduced-motion: reduce) {
-  .course-ui *, .course-ui *::before, .course-ui *::after { animation: none !important; transition-property: color, background-color, opacity !important; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

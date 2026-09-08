@@ -3,42 +3,85 @@ import { BookOpen, Users, ArrowRight, AlertCircle } from 'lucide-react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useMyCourses } from '@/hooks/useCourses';
 
 export default function TeacherMyCoursesPage() {
   const { data: courses = [], isLoading, isError, refetch } = useMyCourses();
+
   return (
-    <div className="course-ui mx-auto max-w-6xl space-y-6">
-      <PageHeader variant="course" title="Mis Cursos" description="Consulta tus grupos y accede a las herramientas de cada curso." >
-      </PageHeader>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Docente"
+        title="Mis Cursos"
+        description="Consulta tus materias asignadas, gestiona actividades y accede al registro de calificaciones."
+      />
+
       {isLoading ? (
-        <div role="status" className="course-panel flex items-center gap-3 p-6"><BookOpen aria-hidden="true" className="h-5 w-5 text-primary" />Cargando cursos…</div>
+        <Card className="p-8 text-center">
+          <div className="flex items-center justify-center gap-3 text-school-muted">
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-school-primary border-t-transparent" />
+            <span className="text-sm">Cargando tus cursos...</span>
+          </div>
+        </Card>
       ) : isError ? (
-        <div role="alert" className="course-panel space-y-3 p-6">
-          <p className="flex items-center gap-2 font-semibold"><AlertCircle aria-hidden="true" className="h-5 w-5 text-destructive" />No se pudieron cargar tus cursos.</p>
-          <p>Comprueba tu conexión e inténtalo de nuevo.</p>
-          <Button variant="outline" onClick={() => void refetch()}>Reintentar</Button>
-        </div>
+        <Card className="p-8 text-center border-school-error/30 bg-school-error/5">
+          <div className="max-w-md mx-auto space-y-3">
+            <AlertCircle className="h-8 w-8 text-school-error mx-auto" />
+            <h3 className="text-base font-semibold text-school-heading">No se pudieron cargar tus cursos</h3>
+            <p className="text-sm text-school-muted">Comprueba tu conexión e inténtalo de nuevo.</p>
+            <Button variant="outline" onClick={() => void refetch()} className="mt-2">
+              Reintentar
+            </Button>
+          </div>
+        </Card>
       ) : courses.length === 0 ? (
-        <div className="course-panel space-y-2 p-6">
-          <BookOpen aria-hidden="true" className="h-6 w-6 text-primary" />
-          <h2 className="text-lg font-semibold">No tienes cursos asignados</h2>
-          <p>Si esperabas ver un curso, consulta con la institución.</p>
-        </div>
+        <Card className="p-12 text-center">
+          <div className="max-w-md mx-auto space-y-3">
+            <BookOpen className="h-10 w-10 text-school-muted mx-auto" />
+            <h3 className="text-lg font-semibold text-school-heading">No tienes cursos asignados</h3>
+            <p className="text-sm text-school-muted">
+              Si esperabas tener cursos asignados este ciclo lectivo, por favor comunícate con la coordinación académica.
+            </p>
+          </div>
+        </Card>
       ) : (
-        <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {courses.map((course) => (
-            <Card key={course.id} className="course-card flex min-w-0 flex-col">
-              <CardContent className="flex flex-1 flex-col gap-4 p-5">
-                <div className="space-y-2">
-                  <p className="break-words text-sm font-medium text-primary">{course.code}</p>
-                  <h2 className="break-words text-xl font-semibold">{course.name}</h2>
-                  <p className="text-sm">Período {course.period}</p>
+            <Card key={course.id} className="flex flex-col justify-between hover:border-school-accent transition-colors">
+              <CardContent className="p-6 flex flex-col flex-1 gap-4">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-xs font-semibold text-school-primary uppercase tracking-wider bg-school-subtle px-2.5 py-1 rounded-md">
+                    {course.code}
+                  </span>
+                  <Badge variant="outline" className="text-xs font-medium text-school-muted">
+                    Período {course.period}
+                  </Badge>
                 </div>
-                <div className="space-y-2 text-sm"><p className="flex items-center gap-2"><Users aria-hidden="true" className="h-4 w-4 shrink-0" />{course.enrolledCount ?? course.enrollmentsCount ?? '—'} estudiantes</p>
-              <p>{course.credits} créditos</p></div>
-                {course.description && <p className="line-clamp-3 text-sm leading-relaxed">{course.description}</p>}
-                <Button asChild className="mt-auto w-full"><Link to={`/docente/cursos/${course.id}`} aria-label={`Abrir curso ${course.name}`}>Abrir curso<ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" /></Link></Button>
+
+                <div className="space-y-1">
+                  <h3 className="text-xl font-bold text-school-heading leading-tight">{course.name}</h3>
+                  {course.description && (
+                    <p className="text-sm text-school-muted line-clamp-2 mt-1 leading-relaxed">
+                      {course.description}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-4 text-sm text-school-body pt-2 border-t border-school-border/60">
+                  <span className="flex items-center gap-1.5">
+                    <Users className="h-4 w-4 text-school-primary" />
+                    {course.enrolledCount ?? course.enrollmentsCount ?? 0} estudiantes
+                  </span>
+                  <span>·</span>
+                  <span>{course.credits} créditos</span>
+                </div>
+
+                <Button asChild className="mt-auto w-full">
+                  <Link to={`/docente/cursos/${course.id}`} aria-label={`Gestionar aula ${course.name}`}>
+                    Gestionar Aula <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
               </CardContent>
             </Card>
           ))}

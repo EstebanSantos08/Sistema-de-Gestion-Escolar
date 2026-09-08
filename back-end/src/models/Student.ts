@@ -1,5 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/database';
+import type User from './User';
 
 export interface StudentAttributes {
   id: number;
@@ -31,7 +32,7 @@ class Student extends Model<StudentAttributes, StudentCreationAttributes> implem
   declare updatedAt: Date;
 
   // Associations (populated by include)
-  declare user?: unknown;
+  declare user?: User;
   declare enrollments?: unknown[];
 }
 

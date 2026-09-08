@@ -56,7 +56,6 @@ export default function StudentCourseDetailPage() {
   const [fileError, setFileError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Estados para vista previa de evidencia del estudiante
   const [previewMediaUrl, setPreviewMediaUrl] = useState<string | null>(null);
   const [previewMediaTitle, setPreviewMediaTitle] = useState<string>('');
 
@@ -68,10 +67,9 @@ export default function StudentCourseDetailPage() {
       return;
     }
 
-    // Validación estricta de 1 MB (1,048,576 bytes)
     if (file.size > 1048576) {
       const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
-      const errMsg = `El archivo "${file.name}" (${sizeMb} MB) supera el tamaño máximo permitido de 1 MB. Por favor comprima o elija una foto/PDF más liviano.`;
+      const errMsg = `El archivo "${file.name}" (${sizeMb} MB) supera el tamaño máximo permitido de 1 MB.`;
       setFileError(errMsg);
       toast.error('El archivo excede el tamaño máximo permitido de 1 MB.');
       setSelectedFile(null);
@@ -83,7 +81,7 @@ export default function StudentCourseDetailPage() {
     const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
 
     if (!isImage && !isPdf) {
-      const errMsg = 'Formato no permitido. Se aceptan todos los tipos de imágenes/fotos (JPG, PNG, WEBP, HEIC, GIF) y documentos PDF.';
+      const errMsg = 'Formato no permitido. Se aceptan fotografías (JPG, PNG, WEBP) y documentos PDF.';
       setFileError(errMsg);
       toast.error(errMsg);
       setSelectedFile(null);
@@ -99,281 +97,288 @@ export default function StudentCourseDetailPage() {
     if (!selectedActivity || !id) return;
 
     if (!selectedFile) {
-      toast.error('Por favor adjunta una imagen o PDF como evidencia');
+      toast.error('Por favor selecciona un archivo de evidencia (imagen o PDF de hasta 1MB).');
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-      const parsedFile = await teacherModuleService.validateAndReadEvidenceFile(selectedFile);
+    setIsSubmitting(true);
 
-      const newSubmission = teacherModuleService.createSubmission({
-        activityId: selectedActivity.id,
-        studentId: user?.id ?? 1,
-        studentName: user?.name ?? 'Estudiante Representado',
-        courseId: id,
-        status: 'entregada',
-        notes: notes,
-        evidenceUrl: parsedFile.fileUrl,
-        evidenceName: parsedFile.fileName,
-        evidenceType: parsedFile.fileType,
+    try {
+      const fileDataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(selectedFile);
       });
 
-      setSubmissions(teacherModuleService.getSubmissions());
+      const isImage = selectedFile.type.startsWith('image/');
+      const studentId = user?.id ?? 1;
+      const studentName = user?.name ?? 'Estudiante Actual';
+
+      teacherModuleService.submitEvidence({
+        activityId: selectedActivity.id,
+        studentId,
+        studentName,
+        courseId: id,
+        notes: notes.trim(),
+        evidenceUrl: fileDataUrl,
+        evidenceName: selectedFile.name,
+        evidenceType: isImage ? 'imagen' : 'documento',
+      });
+
       toast.success('¡Deber entregado exitosamente!');
+      setSubmissions(teacherModuleService.getSubmissions());
       setSelectedActivity(null);
-      setNotes('');
       setSelectedFile(null);
-      setFileError(null);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al subir la entrega';
-      toast.error(msg);
-      setFileError(msg);
+      setNotes('');
+    } catch {
+      toast.error('Error al procesar el archivo. Por favor inténtalo de nuevo.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const studentId = user?.id ?? 1;
+
   return (
     <div className="space-y-6">
-      {/* Botón de Retorno */}
       <div className="flex items-center gap-3">
-        <Button asChild variant="ghost" size="sm" className="text-slate-600 font-bold hover:bg-slate-100 rounded-xl">
+        <Button asChild variant="ghost" size="sm" className="text-school-body font-medium hover:bg-school-subtle">
           <Link to="/estudiante/mis-cursos">
-            <ArrowLeft className="h-4 w-4 mr-1.5 text-[#008BC1]" /> Volver a Mis Cursos
+            <ArrowLeft className="h-4 w-4 mr-1.5 text-school-primary" /> Volver a Mis Cursos
           </Link>
         </Button>
       </div>
 
-      {/* Encabezado del Aula Virtual para Estudiante/Padre */}
-      <div className="bg-gradient-to-r from-[#008BC1] via-[#0073A0] to-[#09A9C2] rounded-3xl p-6 sm:p-8 text-white shadow-xl space-y-2">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-[#F4B51B]" />
-          <span className="text-xs font-black uppercase tracking-wider text-sky-100">{displayCourse.code}</span>
+      {/* Encabezado del Aula Virtual */}
+      <div className="bg-school-primary rounded-2xl p-6 sm:p-8 text-white shadow-sm relative overflow-hidden">
+        <div className="relative z-10 space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-school-subtle bg-white/10 px-2.5 py-0.5 rounded-md">
+              {displayCourse.code}
+            </span>
+            <span className="text-xs text-white/80">· Período {displayCourse.period}</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold">{displayCourse.name}</h1>
+          <p className="text-sm text-white/90">
+            Aula virtual de aprendizaje y entrega de actividades
+          </p>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-black">{displayCourse.name}</h1>
-        <p className="text-sm font-bold text-sky-100">
-          Período Lectivo {displayCourse.period} · Aula Virtual de Representado
-        </p>
       </div>
 
-      {/* Título de la Sección de Deberes */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-        <h2 className="text-lg font-black text-slate-800 flex items-center gap-2">
-          <FileText className="h-5 w-5 text-[#008BC1]" />
-          Deberes Asignados del Curso ({activities.length})
-        </h2>
+      <div className="flex items-center justify-between border-b border-school-border pb-3">
+        <div className="flex items-center gap-2">
+          <FileText className="h-5 w-5 text-school-primary" />
+          <h2 className="text-lg font-bold text-school-heading">
+            Actividades y Deberes Asignados ({activities.length})
+          </h2>
+        </div>
       </div>
 
-      {/* Lista de Deberes */}
       {activities.length === 0 ? (
-        <Card className="p-8 text-center bg-white/95 backdrop-blur-md rounded-2xl shadow-sm border border-slate-200">
-          <FileCheck className="h-10 w-10 mx-auto text-emerald-400 mb-2" />
-          <p className="font-extrabold text-slate-700 text-sm">No hay deberes pendientes para este curso</p>
-          <p className="text-xs text-slate-400 mt-1">Tu docente guía no ha publicado nuevas tareas por el momento.</p>
+        <Card className="p-12 text-center">
+          <FileText className="h-10 w-10 mx-auto text-school-muted mb-2" />
+          <p className="font-semibold text-school-heading text-base">No hay actividades asignadas aún</p>
+          <p className="text-sm text-school-muted mt-1">
+            Tu docente publicará aquí los deberes y tareas correspondientes a esta materia.
+          </p>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           {activities.map((act) => {
-            const mySubmission = submissions.find((s) => s.activityId === act.id);
+            const mySubmission = submissions.find(
+              (s) => s.activityId === act.id && (s.studentId === studentId || s.studentId === 1)
+            );
             const isSubmitted = !!mySubmission;
             const isGraded = mySubmission?.status === 'calificada' || mySubmission?.score !== undefined;
 
             return (
-              <Card key={act.id} className="bg-white/95 backdrop-blur-md rounded-2xl p-5 shadow-lg border border-slate-100 space-y-4 hover:shadow-xl transition-all flex flex-col justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <h4 className="font-black text-slate-800 text-base">{act.title}</h4>
-                    {isGraded ? (
-                      <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shrink-0 flex items-center gap-1 shadow-sm px-2.5 py-1">
-                        <Award className="h-3.5 w-3.5" />
-                        Calificado: {mySubmission?.score}/10
-                      </Badge>
-                    ) : isSubmitted ? (
-                      <Badge className="bg-[#31B45A] text-white font-bold shrink-0">
-                        <CheckCircle2 className="h-3 w-3 mr-1" /> Entregado
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-amber-500 text-white font-bold shrink-0">
-                        <Clock className="h-3 w-3 mr-1" /> Pendiente
-                      </Badge>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
-                    <Calendar className="h-3.5 w-3.5 text-[#008BC1]" />
-                    <span>Fecha Límite: {act.dueDate}</span>
-                  </div>
-
-                  {act.description && (
-                    <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 leading-relaxed">
-                      {act.description}
-                    </p>
-                  )}
-                </div>
-
-                {/* Sección de Estado de Entrega / Calificación o Botón para Subir */}
-                {isGraded ? (
-                  <div className="bg-gradient-to-br from-amber-50 via-white to-amber-50/60 p-4 rounded-2xl border border-amber-200/80 text-xs space-y-2.5 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="font-black text-amber-900 flex items-center gap-1.5 text-xs">
-                        <Award className="h-4 w-4 text-amber-600" />
-                        Nota Final: <span className="text-sm text-amber-700 font-black">{mySubmission.score} / 10</span>
-                      </span>
-                      {mySubmission.gradedAt && (
-                        <span className="text-[10px] font-bold text-amber-800 bg-amber-100/90 px-2 py-0.5 rounded-md border border-amber-200">
-                          {mySubmission.gradedAt}
-                        </span>
+              <Card key={act.id} className="flex flex-col justify-between hover:border-school-accent transition-colors">
+                <CardContent className="p-5 space-y-4 flex flex-col justify-between flex-1">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="font-bold text-school-heading text-base leading-snug">{act.title}</h4>
+                      {isGraded ? (
+                        <Badge variant="warning" className="shrink-0 flex items-center gap-1">
+                          <Award className="h-3.5 w-3.5" />
+                          Calificado: {mySubmission?.score}/10
+                        </Badge>
+                      ) : isSubmitted ? (
+                        <Badge variant="success" className="shrink-0">
+                          <CheckCircle2 className="h-3 w-3 mr-1" /> Entregado
+                        </Badge>
+                      ) : (
+                        <Badge variant="warning" className="shrink-0">
+                          <Clock className="h-3 w-3 mr-1" /> Pendiente
+                        </Badge>
                       )}
                     </div>
 
-                    {mySubmission.feedback && (
-                      <div className="space-y-1 bg-amber-50/50 p-2.5 rounded-xl border border-amber-100">
-                        <p className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">
-                          Retroalimentación del Docente:
-                        </p>
-                        <p className="text-xs text-slate-700 italic font-medium leading-relaxed">
-                          "{mySubmission.feedback}"
-                        </p>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-school-muted">
+                      <Calendar className="h-3.5 w-3.5 text-school-primary shrink-0" />
+                      <span>Fecha límite: {act.dueDate}</span>
+                    </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold pt-1 border-t border-amber-200/60">
-                      <span>Entregado: {mySubmission.submittedAt}</span>
-                      {mySubmission.evidenceName && (
-                        mySubmission.evidenceUrl ? (
+                    {act.description && (
+                      <p className="text-sm text-school-body bg-school-background p-3 rounded-xl border border-school-border/60 leading-relaxed">
+                        {act.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Estado de Entrega o Calificación */}
+                  {isGraded ? (
+                    <div className="bg-school-subtle/50 p-4 rounded-xl border border-school-border text-xs space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-school-heading flex items-center gap-1.5">
+                          <Award className="h-4 w-4 text-school-warning" />
+                          Nota Final: <strong className="text-sm text-school-primary">{mySubmission.score} / 10</strong>
+                        </span>
+                        {mySubmission.gradedAt && (
+                          <span className="text-xs text-school-muted">
+                            {mySubmission.gradedAt}
+                          </span>
+                        )}
+                      </div>
+
+                      {mySubmission.feedback && (
+                        <div className="space-y-1 bg-white p-3 rounded-lg border border-school-border">
+                          <p className="text-xs font-semibold text-school-muted uppercase tracking-wider">
+                            Comentarios del Docente:
+                          </p>
+                          <p className="text-sm text-school-body italic leading-relaxed">
+                            "{mySubmission.feedback}"
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between text-xs text-school-muted pt-1 border-t border-school-border/60">
+                        <span>Entregado: {mySubmission.submittedAt}</span>
+                        {mySubmission.evidenceName && mySubmission.evidenceUrl && (
                           <button
                             type="button"
                             onClick={() => {
                               setPreviewMediaUrl(mySubmission.evidenceUrl!);
                               setPreviewMediaTitle(`Mi Evidencia — ${mySubmission.evidenceName ?? 'Deber'}`);
                             }}
-                            className="text-[#008BC1] hover:underline font-extrabold flex items-center gap-1 cursor-pointer"
+                            className="text-school-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                           >
                             <Eye className="h-3.5 w-3.5" /> 📎 {mySubmission.evidenceName}
                           </button>
-                        ) : (
-                          <span className="truncate max-w-[150px]">📎 {mySubmission.evidenceName}</span>
-                        )
-                      )}
-                    </div>
-                  </div>
-                ) : isSubmitted ? (
-                  <div className="bg-teal-50/70 p-3.5 rounded-2xl border border-teal-100 text-xs space-y-2">
-                    <div className="flex items-center justify-between">
-                      <p className="font-black text-teal-800 flex items-center gap-1.5">
-                        <FileCheck className="h-4 w-4 text-[#31B45A]" />
-                        Deber entregado el {mySubmission.submittedAt}
-                      </p>
-                      <Badge className="bg-sky-100 text-sky-700 border-sky-200 text-[10px] font-bold">
-                        En revisión por docente
-                      </Badge>
-                    </div>
-                    {mySubmission.evidenceName && (
-                      <div className="flex items-center justify-between pt-1 border-t border-teal-100/80">
-                        <span className="text-slate-600 font-medium truncate text-xs">
-                          📎 {mySubmission.evidenceName}
-                        </span>
-                        {mySubmission.evidenceUrl && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setPreviewMediaUrl(mySubmission.evidenceUrl!);
-                              setPreviewMediaTitle(`Mi Evidencia — ${mySubmission.evidenceName ?? 'Deber'}`);
-                            }}
-                            className="h-7 text-xs font-bold text-[#008BC1] border-sky-200 hover:bg-sky-50 rounded-lg px-2 shrink-0"
-                          >
-                            <Eye className="h-3.5 w-3.5 mr-1" /> Ver Evidencia
-                          </Button>
                         )}
                       </div>
-                    )}
-                  </div>
-                ) : (
-                  <Button
-                    onClick={() => { setSelectedActivity(act); setFileError(null); setSelectedFile(null); setNotes(''); }}
-                    className="w-full bg-[#008BC1] hover:bg-[#0073A0] text-white font-extrabold shadow-md rounded-xl"
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    Subir Deber / Entregar Evidencia
-                  </Button>
-                )}
+                    </div>
+                  ) : isSubmitted ? (
+                    <div className="bg-school-subtle/40 p-3.5 rounded-xl border border-school-border text-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="font-semibold text-emerald-800 flex items-center gap-1.5">
+                          <FileCheck className="h-4 w-4 text-school-success" />
+                          Entregado el {mySubmission.submittedAt}
+                        </p>
+                        <Badge variant="secondary" className="text-xs">
+                          En revisión
+                        </Badge>
+                      </div>
+                      {mySubmission.evidenceName && (
+                        <div className="flex items-center justify-between pt-1 border-t border-school-border/60">
+                          <span className="text-school-muted truncate text-xs">
+                            📎 {mySubmission.evidenceName}
+                          </span>
+                          {mySubmission.evidenceUrl && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setPreviewMediaUrl(mySubmission.evidenceUrl!);
+                                setPreviewMediaTitle(`Mi Evidencia — ${mySubmission.evidenceName ?? 'Deber'}`);
+                              }}
+                              className="h-7 text-xs font-medium px-2"
+                            >
+                              <Eye className="h-3.5 w-3.5 mr-1" /> Ver
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={() => { setSelectedActivity(act); setFileError(null); setSelectedFile(null); setNotes(''); }}
+                      className="w-full"
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      Subir Deber / Entregar Evidencia
+                    </Button>
+                  )}
+                </CardContent>
               </Card>
             );
           })}
         </div>
       )}
 
-      {/* Modal para Subir Entrega de Deber (Con Restricción Estricta de 1MB) */}
+      {/* Modal para Subir Entrega de Deber */}
       <Dialog open={!!selectedActivity} onOpenChange={(v) => !v && setSelectedActivity(null)}>
-        <DialogContent className="sm:max-w-md bg-white rounded-2xl shadow-2xl">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-lg font-black text-slate-800 flex items-center gap-2">
-              <Upload className="h-5 w-5 text-[#008BC1]" />
+            <DialogTitle className="text-lg font-bold text-school-heading flex items-center gap-2">
+              <Upload className="h-5 w-5 text-school-primary" />
               Entregar Deber: {selectedActivity?.title}
             </DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleSubmitEvidence} className="space-y-4">
-            {/* Aviso de restricción de archivo */}
-            <div className="bg-sky-50 p-3 rounded-xl border border-sky-100 text-xs space-y-1 text-sky-800 font-medium">
-              <p className="font-bold flex items-center gap-1.5">
-                <Paperclip className="h-4 w-4 text-[#008BC1]" />
-                Formatos Aceptados: Fotografías / Imágenes (JPG, PNG, WEBP, HEIC, GIF) y PDF.
+          <form onSubmit={handleSubmitEvidence} className="space-y-4 pt-2">
+            <div className="bg-school-subtle/60 p-3 rounded-xl border border-school-border text-xs space-y-1 text-school-body">
+              <p className="font-semibold flex items-center gap-1.5 text-school-primary">
+                <Paperclip className="h-4 w-4 text-school-primary" />
+                Formatos Aceptados: Imágenes (JPG, PNG, WEBP) y documentos PDF.
               </p>
-              <p className="text-amber-800 font-extrabold">
-                ⚠️ Límite máximo permitido: 1 MB (1,024 KB).
+              <p className="text-school-warning font-medium">
+                ⚠️ Límite máximo de peso: 1 MB (1,024 KB).
               </p>
             </div>
 
-            {/* Selector de Archivo */}
-            <div className="space-y-1">
-              <Label className="text-xs font-bold text-slate-700">Seleccionar Fotografía o Documento PDF (Máx 1MB)</Label>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-school-heading">Seleccionar Archivo (Máx 1MB) *</Label>
               <Input
                 type="file"
                 accept="image/*,.pdf,.jpg,.jpeg,.png,.webp,.gif,.heic"
                 onChange={handleFileChange}
-                className="rounded-xl border-slate-200 text-xs file:bg-sky-50 file:text-[#008BC1] file:font-bold file:border-0 file:rounded-lg file:mr-2 cursor-pointer"
+                className="cursor-pointer file:mr-2 file:rounded-md file:border-0 file:bg-school-subtle file:text-school-primary file:font-semibold"
                 required
               />
             </div>
 
-            {/* Alerta de Error de Tamaño o Formato */}
             {fileError && (
-              <div className="bg-rose-50 p-3 rounded-xl border border-rose-200 text-xs text-rose-700 font-bold flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-rose-500 mt-0.5" />
+              <div className="bg-rose-50 p-3 rounded-xl border border-rose-200 text-xs text-rose-800 font-medium flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-school-error mt-0.5" />
                 <span>{fileError}</span>
               </div>
             )}
 
-            {/* Previsualización de Archivo Seleccionado Exitosamente */}
             {selectedFile && !fileError && (
-              <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200 text-xs text-emerald-800 font-bold flex items-center justify-between">
+              <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200 text-xs text-emerald-800 font-medium flex items-center justify-between">
                 <span className="truncate">✓ {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)</span>
-                <Badge className="bg-[#31B45A] text-white">Válido &lt; 1MB</Badge>
+                <Badge variant="success">Válido &lt; 1MB</Badge>
               </div>
             )}
 
-            <div className="space-y-1">
-              <Label className="text-xs font-bold text-slate-700">Comentarios del Representante (Opcional)</Label>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-school-heading">Comentarios o Mensaje (Opcional)</Label>
               <Textarea
-                placeholder="Escribe algún mensaje para la docente guía..."
+                placeholder="Escribe alguna aclaración para tu docente..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="rounded-xl border-slate-200 text-xs"
                 rows={2}
               />
             </div>
 
             <DialogFooter className="pt-2">
-              <Button type="button" variant="outline" onClick={() => setSelectedActivity(null)} className="rounded-xl font-bold">
+              <Button type="button" variant="outline" onClick={() => setSelectedActivity(null)}>
                 Cancelar
               </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting || !!fileError || !selectedFile}
-                className="bg-[#31B45A] hover:bg-[#28964B] text-white font-extrabold rounded-xl shadow-md"
               >
                 {isSubmitting ? 'Subiendo...' : 'Confirmar Entrega'}
               </Button>
@@ -382,12 +387,12 @@ export default function StudentCourseDetailPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal Lightbox de Vista Previa de Evidencia para el Estudiante */}
+      {/* Lightbox para el Estudiante */}
       {previewMediaUrl && (
         <Dialog open={!!previewMediaUrl} onOpenChange={() => setPreviewMediaUrl(null)}>
-          <DialogContent className="max-w-4xl w-11/12 bg-slate-950 border border-slate-800 p-4 rounded-3xl text-white">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="font-black text-sm text-sky-400 truncate pr-4">
+          <DialogContent className="max-w-4xl w-11/12 bg-white border border-school-border p-5 rounded-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-school-border">
+              <h3 className="font-bold text-base text-school-heading truncate pr-4">
                 {previewMediaTitle}
               </h3>
               <div className="flex items-center gap-2">
@@ -395,41 +400,33 @@ export default function StudentCourseDetailPage() {
                   href={previewMediaUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-300 rounded-xl font-bold text-xs inline-flex items-center gap-1 border border-slate-700 transition-all"
+                  className="px-3 py-1.5 bg-school-background hover:bg-school-subtle text-school-primary rounded-lg font-medium text-xs inline-flex items-center gap-1 border border-school-border transition-colors"
                 >
                   <ExternalLink className="h-3.5 w-3.5" /> Abrir en Pestaña
                 </a>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setPreviewMediaUrl(null)}
-                  className="text-slate-400 hover:text-white rounded-xl h-8 w-8 p-0"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
               </div>
             </div>
 
-            <div className="py-4 flex items-center justify-center max-h-[75vh] overflow-auto">
+            <div className="py-4 flex items-center justify-center max-h-[70vh] overflow-auto bg-school-background rounded-xl p-2">
               {previewMediaUrl.startsWith('data:application/pdf') || previewMediaTitle.toLowerCase().endsWith('.pdf') ? (
                 <object
                   data={previewMediaUrl}
                   type="application/pdf"
-                  className="w-full h-[70vh] rounded-2xl border border-slate-800 bg-slate-900"
+                  className="w-full h-[65vh] rounded-lg border border-school-border bg-white"
                 >
                   <iframe
                     src={previewMediaUrl}
                     title="PDF Preview"
-                    className="w-full h-[70vh] rounded-2xl border border-slate-800"
+                    className="w-full h-[65vh] rounded-lg border border-school-border"
                   >
-                    <div className="p-8 text-center text-slate-300 space-y-3">
-                      <FileText className="h-12 w-12 mx-auto text-rose-400" />
-                      <p className="font-bold text-sm">No se pudo visualizar el documento directamente.</p>
+                    <div className="p-8 text-center text-school-muted space-y-3">
+                      <FileText className="h-10 w-10 mx-auto text-school-primary" />
+                      <p className="font-semibold text-sm text-school-heading">No se pudo visualizar el documento directamente.</p>
                       <a
                         href={previewMediaUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-4 py-2 bg-sky-500 text-white rounded-xl font-bold text-xs inline-flex items-center gap-1.5"
+                        className="px-4 py-2 bg-school-primary text-white rounded-lg font-medium text-xs inline-flex items-center gap-1.5 shadow-sm"
                       >
                         <ExternalLink className="h-4 w-4" /> Abrir PDF en Nueva Pestaña
                       </a>
@@ -440,18 +437,21 @@ export default function StudentCourseDetailPage() {
                 <img
                   src={previewMediaUrl}
                   alt="Evidencia entregada"
-                  className="max-h-[70vh] object-contain rounded-2xl shadow-2xl border border-slate-800"
+                  className="max-h-[65vh] object-contain rounded-lg shadow-sm border border-school-border bg-white"
                 />
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-school-border">
+              <Button variant="outline" onClick={() => setPreviewMediaUrl(null)}>
+                Cerrar
+              </Button>
               <a
                 href={previewMediaUrl}
                 download="mi_evidencia"
-                className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-bold text-xs inline-flex items-center gap-1.5 shadow-md"
+                className="px-4 py-2 bg-school-primary hover:bg-school-primaryHover text-white rounded-lg font-medium text-sm inline-flex items-center gap-1.5 shadow-sm transition-colors"
               >
-                <Download className="h-4 w-4" /> Descargar Mi Archivo
+                <Download className="h-4 w-4" /> Descargar Archivo
               </a>
             </div>
           </DialogContent>

@@ -76,10 +76,10 @@ const roleLabel: Record<string, string> = {
   student: 'Estudiante',
 };
 
-const roleBadgeVariant: Record<string, 'default' | 'secondary' | 'outline'> = {
-  admin: 'default',
+const roleBadgeVariant: Record<string, 'purple' | 'secondary' | 'lime'> = {
+  admin: 'purple',
   teacher: 'secondary',
-  student: 'outline',
+  student: 'lime',
 };
 
 function buildDefaultValues(user: UserRow | null): FormValues {
@@ -526,28 +526,31 @@ export default function UsersPage() {
             variant="ghost"
             size="icon"
             title="Ver perfil"
+            aria-label={`Ver perfil de ${u.name}`}
             onClick={() => setDetailUser(u)}
           >
-            <Eye className="h-4 w-4 text-muted-foreground" />
+            <Eye className="h-4 w-4 text-[#5E7A77]" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             title="Editar"
+            aria-label={`Editar usuario ${u.name}`}
             onClick={() => openEdit(u)}
           >
-            <Pencil className="h-4 w-4" />
+            <Pencil className="h-4 w-4 text-[#087F79]" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             title={u.active ? 'Desactivar' : 'Activar'}
+            aria-label={u.active ? `Desactivar a ${u.name}` : `Activar a ${u.name}`}
             onClick={() => setToggleTarget(u)}
           >
             {u.active ? (
-              <UserX className="h-4 w-4 text-destructive" />
+              <UserX className="h-4 w-4 text-[#B42335]" />
             ) : (
-              <UserCheck className="h-4 w-4 text-green-600" />
+              <UserCheck className="h-4 w-4 text-[#287A32]" />
             )}
           </Button>
         </div>
@@ -556,22 +559,27 @@ export default function UsersPage() {
   ];
 
   return (
-    <div className="space-y-4">
-      <PageHeader title="Usuarios" description="Gestión de cuentas del sistema">
-        <Button onClick={openCreate}>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Administración"
+        title="Usuarios"
+        description="Gestión integral de cuentas de administradores, personal docente y estudiantes"
+      >
+        <Button onClick={openCreate} className="h-10">
           <Plus className="mr-2 h-4 w-4" />
           Nuevo usuario
         </Button>
       </PageHeader>
 
       {/* Filters */}
-      <Card className="bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-white/60">
-        <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="rounded-2xl border border-[#D6E5E3] bg-white p-4 sm:p-5 shadow-xs">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5E7A77]" />
             <Input
-              placeholder="Buscar por nombre o correo..."
-              className="pl-9 bg-white border-slate-200 text-slate-800 font-medium rounded-xl shadow-xs"
+              placeholder="Buscar por nombre o correo electrónico..."
+              className="pl-10"
+              aria-label="Buscar por nombre o correo"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
             />
@@ -580,10 +588,10 @@ export default function UsersPage() {
             value={roleFilter || 'all'}
             onValueChange={(v) => { setRoleFilter(v === 'all' ? '' : v); setPage(1); }}
           >
-            <SelectTrigger className="w-full sm:w-48 bg-white border-slate-200 text-slate-800 font-bold rounded-xl shadow-xs">
+            <SelectTrigger className="w-full sm:w-52">
               <SelectValue placeholder="Todos los roles" />
             </SelectTrigger>
-            <SelectContent className="bg-white border-slate-200 rounded-xl shadow-2xl">
+            <SelectContent>
               <SelectItem value="all">Todos los roles</SelectItem>
               <SelectItem value="admin">Administrador</SelectItem>
               <SelectItem value="teacher">Docente</SelectItem>
@@ -591,7 +599,7 @@ export default function UsersPage() {
             </SelectContent>
           </Select>
         </div>
-      </Card>
+      </div>
 
 
       {/* Summary */}

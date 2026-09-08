@@ -1,5 +1,7 @@
 import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/database';
+import type Student from './Student';
+import type Teacher from './Teacher';
 
 export class Observation extends Model {
   public id!: number;
@@ -12,6 +14,10 @@ export class Observation extends Model {
   public date!: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  // Associations (populated by include)
+  public student?: Student;
+  public teacher?: Teacher;
 }
 
 Observation.init(

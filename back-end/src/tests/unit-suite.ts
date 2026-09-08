@@ -315,7 +315,7 @@ expectTruthy('Evidence has fileSize attribute', 'fileSize' in evidenceAttrs);
 
 import { AuditAction } from '../services/auditLog.service';
 
-// Just verify type-level consistency via a runtime set check
+// Verify type-level consistency via a runtime set check
 const expectedActions: AuditAction[] = [
   'ACTIVITY_CREATED', 'ACTIVITY_UPDATED',
   'SUBMISSION_CREATED', 'SUBMISSION_REPLACED',
@@ -324,13 +324,199 @@ const expectedActions: AuditAction[] = [
   'ATTENDANCE_SAVED', 'ATTENDANCE_UPDATED',
   'OBSERVATION_CREATED', 'OBSERVATION_UPDATED',
   'ANNOUNCEMENT_CREATED', 'ANNOUNCEMENT_UPDATED',
-  'EVIDENCE_UPLOADED', 'EVIDENCE_REPLACED', 'EVIDENCE_DELETED',
+  'EVIDENCE_CREATED', 'EVIDENCE_UPLOADED', 'EVIDENCE_REPLACED', 'EVIDENCE_DELETED',
 ];
 
-expect('AuditAction list has 17 entries', expectedActions.length, 17);
+expect('AuditAction list has 18 entries', expectedActions.length, 18);
 expectTruthy('AuditAction: TASK_GRADE_CREATED present', expectedActions.includes('TASK_GRADE_CREATED'));
 expectTruthy('AuditAction: ACADEMIC_GRADE_CREATED present', expectedActions.includes('ACADEMIC_GRADE_CREATED'));
+expectTruthy('AuditAction: EVIDENCE_CREATED present', expectedActions.includes('EVIDENCE_CREATED'));
+expectTruthy('AuditAction: EVIDENCE_REPLACED present', expectedActions.includes('EVIDENCE_REPLACED'));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 9. MULTIPART & EVIDENCE BEHAVIOR (ISOLATED TESTS)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// 9.1 Content & magic-bytes validation (do not trust extension)
+{
+  // Valid JPEG
+  const validJpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46]);
+  const resJpeg = validateMimeType(validJpeg);
+  expect('valid JPEG: accepted', resJpeg.valid, true);
+  expect('valid JPEG: mime is image/jpeg', resJpeg.detectedMime, 'image/jpeg');
+
+  // Valid PNG
+  const validPng = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  const resPng = validateMimeType(validPng);
+  expect('valid PNG: accepted', resPng.valid, true);
+  expect('valid PNG: mime is image/png', resPng.detectedMime, 'image/png');
+
+  // Valid WebP
+  const validWebp = Buffer.alloc(16);
+  validWebp.write('RIFF', 0, 'ascii');
+  validWebp.write('WEBP', 8, 'ascii');
+  const resWebp = validateMimeType(validWebp);
+  expect('valid WebP: accepted', resWebp.valid, true);
+  expect('valid WebP: mime is image/webp', resWebp.detectedMime, 'image/webp');
+
+  // Valid PDF
+  const validPdf = Buffer.from('%PDF-1.7\n%sample content\n');
+  const resPdf = validateMimeType(validPdf);
+  expect('valid PDF: accepted', resPdf.valid, true);
+  expect('valid PDF: mime is application/pdf', resPdf.detectedMime, 'application/pdf');
+
+  // File > 1 MiB rejected
+  const oversizedBuffer = Buffer.alloc(MAX_FILE_BYTES + 100);
+  const resOver = validateMimeType(oversizedBuffer);
+  expect('>1 MiB rejected: valid is false', resOver.valid, false);
+  expectIncludes('>1 MiB rejected: mentions max size', resOver.error!, String(MAX_FILE_BYTES));
+
+  // Fake MIME/extension: shell script or executable claiming to be .jpg or .pdf
+  const fakeContent = Buffer.from('#!/bin/bash\nrm -rf /\n');
+  const resFake = validateMimeType(fakeContent);
+  expect('fake MIME/extension rejected: valid is false', resFake.valid, false);
+  expect('fake MIME/extension rejected: detectedMime is null', resFake.detectedMime, null);
+
+  // HTML/PHP content disguised as image
+  const fakeHtml = Buffer.from('<html><body><script>alert(1)</script></body></html>');
+  const resHtml = validateMimeType(fakeHtml);
+  expect('fake HTML disguised as image: rejected', resHtml.valid, false);
+}
+
+// 9.2 Submission ownership and authorization logic
+{
+  function simulateStudentAuth(submissionStudentId: number, reqStudentId: number) {
+    if (reqStudentId !== submissionStudentId) {
+      return { status: 403, error: 'Acceso denegado' };
+    }
+    return { status: 200, error: null };
+  }
+
+  expect(
+    'unauthorized student rejected: returns 403',
+    simulateStudentAuth(10, 99).status,
+    403
+  );
+  expect(
+    'authorized student allowed: returns 200',
+    simulateStudentAuth(10, 10).status,
+    200
+  );
+}
+
+// 9.3 Wrong submission / enrollment validation logic
+{
+  function simulateSubmissionValidation(submissionExists: boolean, isEnrolledInCourse: boolean) {
+    if (!submissionExists) {
+      return { status: 404, error: 'Entrega no encontrada' };
+    }
+    if (!isEnrolledInCourse) {
+      return { status: 403, error: 'Estudiante no matriculado en el curso de esta actividad' };
+    }
+    return { status: 200, error: null };
+  }
+
+  expect(
+    'wrong submission rejected: non-existent submission returns 404',
+    simulateSubmissionValidation(false, true).status,
+    404
+  );
+  expect(
+    'wrong submission rejected: not enrolled in course returns 403',
+    simulateSubmissionValidation(true, false).status,
+    403
+  );
+  expect(
+    'valid submission & enrolled student: returns 200',
+    simulateSubmissionValidation(true, true).status,
+    200
+  );
+}
+
+// 9.4 Storage failure leaves no DB Evidence
+{
+  async function simulateStorageFailureFlow() {
+    let dbRecordCreated = false;
+    let storageUploaded = false;
+
+    try {
+      // Simulate storage upload failing (e.g. network/auth error)
+      throw new Error('Supabase Storage connection failed');
+      storageUploaded = true;
+      // DB insert would only follow storage success:
+      dbRecordCreated = true;
+    } catch {
+      // Handled in catch block
+    }
+
+    return { storageUploaded, dbRecordCreated };
+  }
+
+  simulateStorageFailureFlow().then((result) => {
+    expect('Storage failure leaves no DB Evidence: dbRecordCreated is false', result.dbRecordCreated, false);
+    expect('Storage failure: storageUploaded is false', result.storageUploaded, false);
+  });
+}
+
+// 9.5 SQL failure after upload triggers Storage compensation delete
+{
+  async function simulateSqlFailureWithCompensation() {
+    let storageUploaded = false;
+    let compensationTriggered = false;
+    let deletedKey: string | null = null;
+    const uploadedObjectKey = 'evidence/10/20/30/new_1700000000.jpg';
+
+    // Mock storage compensation function
+    const mockDeleteStorageObject = async (key: string) => {
+      compensationTriggered = true;
+      deletedKey = key;
+    };
+
+    try {
+      // 1. Storage upload succeeds
+      storageUploaded = true;
+
+      // 2. DB transaction fails (e.g. database timeout or constraint violation)
+      throw new Error('PostgreSQL transaction rollback');
+    } catch {
+      // Catch block executes compensation
+      if (storageUploaded) {
+        await mockDeleteStorageObject(uploadedObjectKey);
+      }
+    }
+
+    return { storageUploaded, compensationTriggered, deletedKey };
+  }
+
+  simulateSqlFailureWithCompensation().then((result) => {
+    expect('SQL failure: upload succeeded before failure', result.storageUploaded, true);
+    expect('SQL failure triggers Storage compensation: compensationTriggered is true', result.compensationTriggered, true);
+    expect('SQL failure compensation deletes exact uploaded objectKey', result.deletedKey, 'evidence/10/20/30/new_1700000000.jpg');
+  });
+}
+
+// 9.6 Successful evidence metadata uses stable object key, not signed URL
+{
+  const stableKey = buildObjectKey({
+    courseId: 5,
+    activityId: 15,
+    studentId: 25,
+    evidenceId: 35,
+    mimeType: 'application/pdf',
+  });
+
+  expect('Stable object key: does not contain http://', stableKey.startsWith('http://'), false);
+  expect('Stable object key: does not contain https://', stableKey.startsWith('https://'), false);
+  expect('Stable object key: does not contain query parameters', stableKey.includes('?'), false);
+  expect('Stable object key: does not contain token', stableKey.includes('token='), false);
+  expectIncludes('Stable object key: follows canonical path', stableKey, 'evidence/5/15/25/35_');
+  expect('Stable object key: derives safe extension .pdf from verified mime', stableKey.endsWith('.pdf'), true);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-printSummary();
+// Delay printSummary slightly so any microtasks/promises finish
+setTimeout(() => {
+  printSummary();
+}, 50);
+

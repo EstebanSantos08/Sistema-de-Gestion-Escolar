@@ -1,4 +1,4 @@
-import { BookOpen, Users, ClipboardCheck, Megaphone, PlusCircle, CheckSquare, MessageSquare, AlertCircle, BookMarked } from 'lucide-react';
+import { BookOpen, Users, ClipboardCheck, Megaphone, PlusCircle, CheckSquare, MessageSquare, AlertCircle, BookMarked, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useMyCourses } from '@/hooks/useCourses';
@@ -20,8 +20,9 @@ export default function TeacherDashboard() {
   return (
     <div className="space-y-6">
       <PageHeader
+        eyebrow="Portal del Docente"
         title={`Bienvenido, ${user?.name ?? 'docente'}`}
-        description="Panel de control del docente — período activo 2026-I"
+        description="Panel de control docente — Período académico activo 2026-I"
       />
 
       {/* Metrics Row */}
@@ -29,126 +30,119 @@ export default function TeacherDashboard() {
         <StatCard
           title="Cursos Asignados"
           value={isLoading ? '—' : courses?.length ?? 0}
-          description="materias activas"
-          icon={<BookOpen className="h-5 w-5" />}
+          description="materias activas este ciclo"
+          icon={<BookOpen className="h-5 w-5 text-school-primary" />}
         />
         <StatCard
           title="Estudiantes a cargo"
           value={isLoading ? '—' : totalStudents}
-          description="matriculados en tus cursos"
-          icon={<Users className="h-5 w-5" />}
+          description="matriculados en tus materias"
+          icon={<Users className="h-5 w-5 text-school-blue" />}
         />
         <StatCard
           title="Actividades"
           value={activities.length}
           description="registradas en el sistema"
-          icon={<CheckSquare className="h-5 w-5" />}
+          icon={<CheckSquare className="h-5 w-5 text-school-violet" />}
         />
         <StatCard
           title="Comunicados"
           value={announcements.length}
-          description="publicados a familias"
-          icon={<Megaphone className="h-5 w-5" />}
+          description="publicados a las familias"
+          icon={<Megaphone className="h-5 w-5 text-school-pink" />}
         />
       </div>
 
-      {/* Quick Action Buttons para Maestra */}
-      <Card className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/60 overflow-hidden">
-        <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
-          <CardTitle className="text-xs font-black uppercase tracking-wider text-[#09A9C2]">
-            Funciones y Accesos Rápidos de Maestra
+      {/* Quick Action Navigation */}
+      <Card>
+        <CardHeader className="pb-3 border-b border-school-border/70">
+          <CardTitle className="text-base font-semibold text-school-heading">
+            Gestión y Accesos Rápidos
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <Button asChild variant="outline" className="w-full justify-start bg-white hover:bg-sky-50 hover:border-sky-300 shadow-sm rounded-xl font-bold transition-all text-xs">
+            <Button asChild variant="outline" className="h-12 w-full justify-start rounded-xl font-medium text-sm text-school-heading hover:bg-school-subtle hover:text-school-primary hover:border-school-accent transition-colors">
               <Link to="/docente/mis-cursos">
-                <BookOpen className="mr-1.5 h-4 w-4 text-[#008BC1]" />
+                <BookOpen className="mr-2 h-4 w-4 text-school-primary shrink-0" />
                 Mis Cursos
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="w-full justify-start bg-white hover:bg-[#09A9C2]/10 hover:border-[#09A9C2] shadow-sm rounded-xl font-bold transition-all text-xs">
+            <Button asChild variant="outline" className="h-12 w-full justify-start rounded-xl font-medium text-sm text-school-heading hover:bg-school-subtle hover:text-school-primary hover:border-school-accent transition-colors">
               <Link to="/docente/estudiantes">
-                <Users className="mr-1.5 h-4 w-4 text-[#09A9C2]" />
+                <Users className="mr-2 h-4 w-4 text-school-blue shrink-0" />
                 Estudiantes
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="w-full justify-start bg-[#008BC1]/10 hover:bg-[#008BC1]/20 hover:border-[#008BC1] border-[#008BC1]/30 shadow-sm rounded-xl font-bold transition-all text-xs text-[#008BC1]">
+            <Button asChild variant="outline" className="h-12 w-full justify-start rounded-xl font-medium text-sm text-school-heading hover:bg-school-subtle hover:text-school-primary hover:border-school-accent transition-colors">
               <Link to="/docente/bitacora">
-                <BookMarked className="mr-1.5 h-4 w-4 text-[#008BC1]" />
+                <BookMarked className="mr-2 h-4 w-4 text-school-primary shrink-0" />
                 Bitácora
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="w-full justify-start bg-white hover:bg-emerald-50 hover:border-emerald-300 shadow-sm rounded-xl font-bold transition-all text-xs">
+            <Button asChild variant="outline" className="h-12 w-full justify-start rounded-xl font-medium text-sm text-school-heading hover:bg-school-subtle hover:text-school-primary hover:border-school-accent transition-colors">
               <Link to="/docente/asistencia">
-                <ClipboardCheck className="mr-1.5 h-4 w-4 text-[#31B45A]" />
+                <ClipboardCheck className="mr-2 h-4 w-4 text-school-success shrink-0" />
                 Asistencia
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="w-full justify-start bg-white hover:bg-rose-50 hover:border-rose-300 shadow-sm rounded-xl font-bold transition-all text-xs">
+            <Button asChild variant="outline" className="h-12 w-full justify-start rounded-xl font-medium text-sm text-school-heading hover:bg-school-subtle hover:text-school-primary hover:border-school-accent transition-colors">
               <Link to="/docente/actividades">
-                <PlusCircle className="mr-1.5 h-4 w-4 text-[#E84B5B]" />
+                <PlusCircle className="mr-2 h-4 w-4 text-school-pink shrink-0" />
                 Actividades
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="w-full justify-start bg-white hover:bg-purple-50 hover:border-purple-300 shadow-sm rounded-xl font-bold transition-all text-xs">
+            <Button asChild variant="outline" className="h-12 w-full justify-start rounded-xl font-medium text-sm text-school-heading hover:bg-school-subtle hover:text-school-primary hover:border-school-accent transition-colors">
               <Link to="/docente/observaciones">
-                <MessageSquare className="mr-1.5 h-4 w-4 text-[#7D5AA6]" />
+                <MessageSquare className="mr-2 h-4 w-4 text-school-violet shrink-0" />
                 Observaciones
-              </Link>
-            </Button>
-
-            <Button asChild variant="outline" className="w-full justify-start bg-white hover:bg-amber-50 hover:border-amber-300 shadow-sm rounded-xl font-bold transition-all text-xs">
-              <Link to="/docente/comunicados">
-                <Megaphone className="mr-1.5 h-4 w-4 text-[#F4B51B]" />
-                Comunicados
               </Link>
             </Button>
           </div>
         </CardContent>
       </Card>
 
-
-
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Mis Cursos (2 cols) */}
-        <Card className="lg:col-span-2 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/60 overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 bg-slate-50/50 pb-3">
-            <CardTitle className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-[#008BC1]" />
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between border-b border-school-border/70 pb-3">
+            <CardTitle className="text-base font-semibold text-school-heading flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-school-primary" />
               Mis Cursos — 2026-I
             </CardTitle>
-            <Button asChild variant="ghost" size="sm" className="text-[#09A9C2] font-bold">
-              <Link to="/docente/mis-cursos">Ver todos</Link>
+            <Button asChild variant="ghost" size="sm" className="text-school-primary font-medium hover:bg-school-subtle">
+              <Link to="/docente/mis-cursos">Ver todos <ArrowRight className="ml-1 h-3.5 w-3.5" /></Link>
             </Button>
           </CardHeader>
           <CardContent className="pt-4">
             {isLoading ? (
-              <p className="text-slate-400 text-sm font-medium">Cargando cursos...</p>
+              <p className="text-school-muted text-sm py-4">Cargando cursos...</p>
             ) : (courses ?? []).length === 0 ? (
-              <p className="text-slate-400 text-sm font-medium">No tienes cursos asignados este período.</p>
+              <p className="text-school-muted text-sm py-4">No tienes cursos asignados este período.</p>
             ) : (
               <div className="space-y-3">
                 {courses!.map((course) => (
                   <div
                     key={course.id}
-                    className="flex items-center justify-between rounded-xl border border-teal-100/80 p-4 hover:border-[#09A9C2] hover:bg-teal-50/40 transition-all shadow-sm"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-school-border p-4 hover:border-school-accent hover:bg-school-subtle/50 transition-colors"
                   >
                     <div>
-                      <p className="font-bold text-slate-800">{course.name}</p>
-                      <p className="text-xs text-slate-500 font-medium">
-                        {course.code} · {course.enrolledCount ?? course.enrollmentsCount ?? 0} estudiantes
+                      <p className="font-semibold text-school-heading text-base">{course.name}</p>
+                      <p className="text-sm text-school-muted mt-0.5">
+                        {course.code} · {course.enrolledCount ?? course.enrollmentsCount ?? 0} estudiantes matriculados
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-teal-100 text-teal-800 hover:bg-teal-200 font-bold">{course.period}</Badge>
-                      <Button asChild size="sm" variant="outline" className="rounded-xl border-[#09A9C2] text-[#09A9C2] hover:bg-[#09A9C2] hover:text-white font-bold">
-                        <Link to={`/docente/cursos/${course.id}`}>Gestión</Link>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge variant="outline" className="font-medium text-school-body">
+                        {course.period}
+                      </Badge>
+                      <Button asChild size="sm" variant="outline" className="border-school-primary text-school-primary hover:bg-school-primary hover:text-white font-medium">
+                        <Link to={`/docente/cursos/${course.id}`}>Gestión de Aula</Link>
                       </Button>
                     </div>
                   </div>
@@ -161,25 +155,25 @@ export default function TeacherDashboard() {
         {/* Dynamic Widget column (1 col) */}
         <div className="space-y-6">
           {/* Recent Announcements */}
-          <Card className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/60 overflow-hidden">
-            <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5">
-                <Megaphone className="h-4 w-4 text-[#F4B51B]" />
+          <Card>
+            <CardHeader className="pb-3 border-b border-school-border/70 flex flex-row items-center justify-between">
+              <CardTitle className="text-sm font-semibold text-school-heading flex items-center gap-2">
+                <Megaphone className="h-4 w-4 text-school-warning" />
                 Comunicados Recientes
               </CardTitle>
-              <Button asChild variant="link" size="sm" className="px-0 h-auto text-xs text-[#09A9C2] font-bold">
-                <Link to="/docente/comunicados">Ver más</Link>
+              <Button asChild variant="link" size="sm" className="px-0 h-auto text-xs text-school-primary font-medium hover:underline">
+                <Link to="/docente/comunicados">Ver todos</Link>
               </Button>
             </CardHeader>
             <CardContent className="space-y-3 pt-4">
               {announcements.length === 0 ? (
-                <p className="text-xs text-slate-400 font-medium">Sin comunicados aún.</p>
+                <p className="text-sm text-school-muted py-2">Sin comunicados aún.</p>
               ) : (
                 announcements.slice(0, 3).map((a) => (
-                  <div key={a.id} className="border-b border-slate-100 last:border-b-0 pb-2.5 last:pb-0">
-                    <p className="text-xs font-bold text-slate-800">{a.title}</p>
-                    <p className="text-xs text-slate-500 line-clamp-2">{a.content}</p>
-                    <span className="text-[10px] text-teal-700 font-bold mt-1 block">{a.publishDate}</span>
+                  <div key={a.id} className="border-b border-school-border/70 last:border-b-0 pb-3 last:pb-0">
+                    <p className="text-sm font-medium text-school-heading">{a.title}</p>
+                    <p className="text-xs text-school-muted line-clamp-2 mt-0.5">{a.content}</p>
+                    <span className="text-xs text-school-muted font-normal mt-1 block">{a.publishDate}</span>
                   </div>
                 ))
               )}
@@ -187,27 +181,27 @@ export default function TeacherDashboard() {
           </Card>
 
           {/* Upcoming Activities */}
-          <Card className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/60 overflow-hidden">
-            <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5">
-                <AlertCircle className="h-4 w-4 text-[#E84B5B]" />
+          <Card>
+            <CardHeader className="pb-3 border-b border-school-border/70 flex flex-row items-center justify-between">
+              <CardTitle className="text-sm font-semibold text-school-heading flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-school-pink" />
                 Próximas Entregas
               </CardTitle>
-              <Button asChild variant="link" size="sm" className="px-0 h-auto text-xs text-[#09A9C2] font-bold">
+              <Button asChild variant="link" size="sm" className="px-0 h-auto text-xs text-school-primary font-medium hover:underline">
                 <Link to="/docente/actividades">Ir a actividades</Link>
               </Button>
             </CardHeader>
             <CardContent className="space-y-3 pt-4">
               {activities.length === 0 ? (
-                <p className="text-xs text-slate-400 font-medium">Sin entregas pendientes.</p>
+                <p className="text-sm text-school-muted py-2">Sin entregas pendientes.</p>
               ) : (
                 activities.slice(0, 3).map((act) => (
-                  <div key={act.id} className="flex items-center justify-between border-b border-slate-100 last:border-b-0 pb-2 last:pb-0 text-xs">
+                  <div key={act.id} className="flex items-center justify-between border-b border-school-border/70 last:border-b-0 pb-3 last:pb-0 text-sm">
                     <div>
-                      <p className="font-bold text-slate-800">{act.title}</p>
-                      <p className="text-slate-500 font-medium">{act.courseName}</p>
+                      <p className="font-medium text-school-heading">{act.title}</p>
+                      <p className="text-xs text-school-muted">{act.courseName}</p>
                     </div>
-                    <Badge variant="outline" className="text-[10px] border-amber-300 bg-amber-50 text-amber-800 font-bold">
+                    <Badge variant="outline" className="text-xs border-school-warning/50 text-school-warning font-medium">
                       {act.dueDate}
                     </Badge>
                   </div>
@@ -220,4 +214,3 @@ export default function TeacherDashboard() {
     </div>
   );
 }
-

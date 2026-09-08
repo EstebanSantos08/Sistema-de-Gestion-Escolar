@@ -16,6 +16,7 @@ export const getTeacherDailySummary = async (req: Request, res: Response): Promi
     // ── Filters ────────────────────────────────────────────────────────────────
     const dateParam = (req.query.date as string) || new Date().toISOString().split('T')[0];
     const courseIdParam = req.query.courseId ? Number(req.query.courseId) : undefined;
+    const studentIdParam = req.query.studentId ? Number(req.query.studentId) : undefined;
     const period = (req.query.period as string) || process.env.ACTIVE_PERIOD || '2026-I';
 
     // ── Validate date ──────────────────────────────────────────────────────────
@@ -45,20 +46,27 @@ export const getTeacherDailySummary = async (req: Request, res: Response): Promi
     });
 
     const courseIds = teacherCourses.map(c => c.id);
+    const allEnrollments = teacherCourses.flatMap(c => (c.enrollments as Enrollment[]) ?? []);
+    const enrolledStudentIds = Array.from(new Set(allEnrollments.map(e => e.studentId)));
 
-    if (courseIds.length === 0) {
+    if (courseIds.length === 0 || (studentIdParam && !enrolledStudentIds.includes(studentIdParam))) {
       res.json({
         success: true,
         data: {
           date: dateStr,
           period,
-          teacher: { id: teacher.id },
-          courses: [],
+          teacher: { id: teacher.id, userId: teacher.userId },
+          courses: teacherCourses.map(c => ({
+            id: c.id,
+            name: c.name,
+            code: c.code,
+            enrolledCount: ((c.enrollments as Enrollment[]) ?? []).length,
+          })),
           attendance: [],
           activities: [],
           observations: [],
           announcements: [],
-          summary: { totalStudents: 0, presentToday: 0, absentToday: 0, activitiesToday: 0, observationsToday: 0 },
+          summary: { totalStudents: 0, presentToday: 0, absentToday: 0, activitiesToday: 0, observationsToday: 0, announcementsToday: 0 },
         },
       });
       return;
@@ -68,7 +76,11 @@ export const getTeacherDailySummary = async (req: Request, res: Response): Promi
     const [attendances, activities, observations, announcements] = await Promise.all([
       // Attendance for the target date across teacher's courses
       Attendance.findAll({
-        where: { courseId: { [Op.in]: courseIds }, date: dateStr },
+        where: {
+          courseId: { [Op.in]: courseIds },
+          date: dateStr,
+          ...(studentIdParam ? { studentId: studentIdParam } : {}),
+        },
         include: [
           { model: Student, as: 'student', include: [{ model: User, as: 'user', attributes: ['id', 'name'] }] },
         ],
@@ -84,18 +96,19 @@ export const getTeacherDailySummary = async (req: Request, res: Response): Promi
         include: [
           {
             model: Submission, as: 'submissions', required: false,
+            where: studentIdParam ? { studentId: studentIdParam } : undefined,
             attributes: ['id', 'studentId', 'status', 'score', 'submittedAt'],
           },
         ],
         order: [['createdAt', 'DESC']],
       }),
 
-      // Observations written by this teacher today
+      // Observations written by this teacher today for enrolled students
       Observation.findAll({
         where: {
           teacherId: teacher.id,
           date: dateStr,
-          ...(courseIdParam ? {} : {}), // observations don't have courseId in model – filter by teacher
+          studentId: studentIdParam ? studentIdParam : { [Op.in]: enrolledStudentIds },
         },
         include: [
           { model: Student, as: 'student', include: [{ model: User, as: 'user', attributes: ['id', 'name'] }] },
@@ -125,7 +138,7 @@ export const getTeacherDailySummary = async (req: Request, res: Response): Promi
         date: dateStr,
         records: courseAttendances.map(a => ({
           studentId: a.studentId,
-          studentName: (a.student as { user?: { name: string } } | undefined)?.user?.name,
+          studentName: a.student?.user?.name,
           status: a.status,
           remarks: a.remarks,
         })),
@@ -162,7 +175,7 @@ export const getTeacherDailySummary = async (req: Request, res: Response): Promi
     const observationSummary = observations.map(obs => ({
       id: obs.id,
       studentId: obs.studentId,
-      studentName: (obs.student as { user?: { name: string } } | undefined)?.user?.name,
+      studentName: obs.student?.user?.name,
       title: obs.title,
       type: obs.type,
       visibility: obs.visibility,
@@ -179,7 +192,6 @@ export const getTeacherDailySummary = async (req: Request, res: Response): Promi
     }));
 
     // ── Global summary counts ──────────────────────────────────────────────────
-    const allEnrollments = teacherCourses.flatMap(c => (c.enrollments as Enrollment[]) ?? []);
     const totalStudents = new Set(allEnrollments.map(e => e.studentId)).size;
     const presentToday = attendances.filter(a => a.status === 'PRESENT').length;
     const absentToday = attendances.filter(a => a.status === 'ABSENT').length;

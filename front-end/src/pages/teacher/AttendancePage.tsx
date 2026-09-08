@@ -7,6 +7,7 @@ import { teacherModuleService, getTodayStr } from '@/services/teacherModule.serv
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +19,6 @@ export default function AttendancePage() {
   const todayStr = useMemo(() => getTodayStr(), []);
   const [date, setDate] = useState<string>(todayStr);
 
-  // Set default course when loaded
   useEffect(() => {
     if (courses && courses.length > 0 && !selectedCourseId) {
       setSelectedCourseId(String(courses[0].id));
@@ -31,10 +31,8 @@ export default function AttendancePage() {
   const activeCourse = courses?.find((c) => c.id === courseIdNum);
   const students = useMemo(() => courseData?.students ?? [], [courseData?.students]);
 
-  // Local state for current attendance sheet
   const [attendanceState, setAttendanceState] = useState<Record<number, { status: AttendanceStatus; notes: string }>>({});
 
-  // Load existing records from service whenever course or date changes
   useEffect(() => {
     if (!courseIdNum || !date || students.length === 0) return;
     const existing = teacherModuleService.getAttendance(courseIdNum, date);
@@ -43,7 +41,7 @@ export default function AttendancePage() {
     students.forEach((s) => {
       const match = existing.find((r) => r.studentId === s.studentId);
       stateMap[s.studentId] = {
-        status: match ? match.status : 'present', // Default to present
+        status: match ? match.status : 'present',
         notes: match?.notes ?? '',
       };
     });
@@ -52,7 +50,7 @@ export default function AttendancePage() {
 
   const setStatus = (studentId: number, status: AttendanceStatus) => {
     if (date !== todayStr) {
-      toast.error('Acción bloqueada: Solo se puede tomar asistencia en la fecha de hoy. Las demás fechas son de solo lectura.');
+      toast.error('Acción restringida: Solo se puede tomar asistencia en la fecha de hoy.');
       return;
     }
     setAttendanceState((prev) => ({
@@ -66,7 +64,7 @@ export default function AttendancePage() {
 
   const setNotes = (studentId: number, notes: string) => {
     if (date !== todayStr) {
-      toast.error('Acción bloqueada: Solo se pueden ingresar notas en la fecha de hoy.');
+      toast.error('Acción restringida: Solo se pueden ingresar notas en la fecha de hoy.');
       return;
     }
     setAttendanceState((prev) => ({
@@ -82,7 +80,7 @@ export default function AttendancePage() {
     if (!courseIdNum || students.length === 0) return;
 
     if (date !== todayStr) {
-      toast.error('ERROR DE VALIDACIÓN: Solo se puede guardar la asistencia en el día de hoy. No se permite guardar asistencias para fechas anteriores ni futuras.');
+      toast.error('Solo se puede guardar la asistencia en el día de hoy.');
       return;
     }
 
@@ -98,14 +96,13 @@ export default function AttendancePage() {
     }));
 
     teacherModuleService.saveAttendanceBatch(payload);
-    toast.success(`Asistencia del día de hoy guardada exitosamente (${students.length} estudiantes)`);
+    toast.success('Asistencia guardada exitosamente');
   };
 
-  // Metrics calculations
   const total = students.length;
   const counts = Object.values(attendanceState).reduce(
-    (acc, curr) => {
-      acc[curr.status] = (acc[curr.status] || 0) + 1;
+    (acc, cur) => {
+      acc[cur.status] = (acc[cur.status] || 0) + 1;
       return acc;
     },
     { present: 0, absent: 0, late: 0, excused: 0 } as Record<AttendanceStatus, number>
@@ -114,54 +111,49 @@ export default function AttendancePage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Registro de Asistencia"
-        description="Toma de asistencia diaria por materia y registro de observaciones (Restringido al día en curso)"
+        eyebrow="Docente"
+        title="Control de Asistencia"
+        description="Toma de asistencia diaria por aula y registro de justificaciones pedagógicas"
       >
         <Button
           onClick={handleSave}
           disabled={loadingStudents || total === 0 || date !== todayStr}
-          className={
-            date !== todayStr
-              ? 'bg-slate-400 text-white opacity-60 cursor-not-allowed shadow-none rounded-xl font-bold'
-              : 'bg-[#31B45A] hover:bg-emerald-700 text-white font-bold shadow-md rounded-xl'
-          }
         >
           <Save className="mr-2 h-4 w-4" />
-          {date !== todayStr ? 'Solo Lectura Histórica' : 'Guardar Asistencia'}
+          {date !== todayStr ? 'Solo Lectura (Histórico)' : 'Guardar Asistencia'}
         </Button>
       </PageHeader>
 
       {/* Banner Informativo si la fecha no es HOY */}
       {date !== todayStr && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs font-bold shadow-sm">
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm">
           <div className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+            <AlertCircle className="h-5 w-5 text-amber-700 shrink-0" />
             <span>
-              <strong>Modo de Consulta Histórica (Lectura):</strong> La fecha seleccionada ({date}) difiere de la fecha actual ({todayStr}). Únicamente se puede registrar y guardar asistencia el día de hoy.
+              <strong>Modo de Consulta Histórica:</strong> La fecha seleccionada ({date}) difiere de hoy ({todayStr}). Únicamente se puede registrar y guardar asistencia en el día actual.
             </span>
           </div>
           <Button
             size="sm"
+            variant="outline"
             onClick={() => setDate(todayStr)}
-            className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-xs self-start sm:self-auto"
+            className="border-amber-300 text-amber-900 hover:bg-amber-100 shrink-0"
           >
-            Volver a la Fecha de Hoy
+            Volver al Día de Hoy
           </Button>
         </div>
       )}
 
-      {/* Selectors Bar wrapped in high-contrast Card */}
-      <Card className="bg-white/95 backdrop-blur-md rounded-2xl p-5 shadow-xl border border-white/60">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div>
-            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
-              Materia / Curso
-            </label>
+      {/* Selectors Bar */}
+      <Card className="p-5">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 items-end">
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium text-school-heading">Materia / Aula</Label>
             <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
-              <SelectTrigger className="bg-white border-slate-200 text-slate-800 font-bold rounded-xl shadow-xs">
+              <SelectTrigger>
                 <SelectValue placeholder="Seleccionar Curso" />
               </SelectTrigger>
-              <SelectContent className="bg-white border-slate-200 rounded-xl shadow-2xl">
+              <SelectContent>
                 {courses?.map((c) => (
                   <SelectItem key={c.id} value={String(c.id)}>
                     {c.name} ({c.code})
@@ -171,10 +163,8 @@ export default function AttendancePage() {
             </Select>
           </div>
 
-          <div>
-            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
-              Fecha de Registro
-            </label>
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium text-school-heading">Fecha de Registro</Label>
             <div className="relative">
               <Input
                 type="date"
@@ -183,49 +173,47 @@ export default function AttendancePage() {
                 onChange={(e) => {
                   const val = e.target.value;
                   if (val > todayStr) {
-                    toast.error('No es posible seleccionar ni registrar asistencias para fechas futuras.');
+                    toast.error('No es posible seleccionar fechas futuras.');
                     setDate(todayStr);
                   } else {
                     setDate(val);
                   }
                 }}
-                className="pr-8 bg-white border-slate-200 text-slate-800 font-bold rounded-xl shadow-xs"
+                className="pr-9"
               />
-              <CalendarIcon className="absolute right-2.5 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
+              <CalendarIcon className="absolute right-3 top-3 h-4 w-4 text-school-muted pointer-events-none" />
             </div>
           </div>
 
           {/* Attendance Summary Pill */}
-          <div className="flex items-center justify-end pt-5 sm:pt-0">
-            <div className="flex items-center gap-3 rounded-xl border border-teal-100 bg-teal-50/60 p-3 shadow-inner">
-
-            <div className="flex items-center gap-1 text-xs text-green-700 font-semibold">
-              <CheckCircle2 className="h-4 w-4" /> {counts.present} Pres.
+          <div className="flex items-center sm:justify-end">
+            <div className="flex items-center gap-3 rounded-xl border border-school-border bg-school-subtle/50 px-4 py-2.5 text-xs font-medium w-full sm:w-auto justify-between sm:justify-start">
+              <span className="flex items-center gap-1.5 text-emerald-800">
+                <CheckCircle2 className="h-4 w-4 text-school-success" /> {counts.present} Pres.
+              </span>
+              <span className="flex items-center gap-1.5 text-rose-800">
+                <XCircle className="h-4 w-4 text-school-error" /> {counts.absent} Aus.
+              </span>
+              <span className="flex items-center gap-1.5 text-amber-800">
+                <Clock className="h-4 w-4 text-school-warning" /> {counts.late} Atras.
+              </span>
+              <span className="flex items-center gap-1.5 text-sky-800">
+                <AlertCircle className="h-4 w-4 text-school-blue" /> {counts.excused} Just.
+              </span>
             </div>
-            <div className="flex items-center gap-1 text-xs text-red-600 font-semibold">
-              <XCircle className="h-4 w-4" /> {counts.absent} Aus.
-            </div>
-            <div className="flex items-center gap-1 text-xs text-amber-600 font-semibold">
-              <Clock className="h-4 w-4" /> {counts.late} Atras.
-            </div>
-            <div className="flex items-center gap-1 text-xs text-blue-600 font-semibold">
-              <AlertCircle className="h-4 w-4" /> {counts.excused} Just.
-            </div>
-          </div>
           </div>
         </div>
       </Card>
 
       {/* Attendance Table */}
-
-      <Card>
+      <Card className="overflow-hidden">
         <CardContent className="p-0">
           {loadingCourses || loadingStudents ? (
-            <div className="p-8 text-center text-muted-foreground">Cargando lista de estudiantes...</div>
+            <div className="p-10 text-center text-school-muted text-sm">Cargando lista de estudiantes...</div>
           ) : total === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">No hay estudiantes en este curso.</div>
+            <div className="p-10 text-center text-school-muted text-sm">No hay estudiantes en este curso.</div>
           ) : (
-            <div className="divide-y">
+            <div className="divide-y divide-school-border">
               {students.map((s, idx) => {
                 const currentStatus = attendanceState[s.studentId]?.status ?? 'present';
                 const currentNotes = attendanceState[s.studentId]?.notes ?? '';
@@ -233,13 +221,13 @@ export default function AttendancePage() {
                 return (
                   <div
                     key={s.studentId}
-                    className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between hover:bg-accent/20 transition-colors"
+                    className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between hover:bg-school-background/40 transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-[200px]">
-                      <span className="text-xs text-muted-foreground font-medium w-5">{idx + 1}.</span>
+                      <span className="text-xs text-school-muted font-medium w-5">{idx + 1}.</span>
                       <div>
-                        <p className="font-semibold text-sm">{s.name}</p>
-                        <p className="text-xs text-muted-foreground">{s.studentCode}</p>
+                        <p className="font-semibold text-sm text-school-heading">{s.name}</p>
+                        <p className="text-xs text-school-muted">{s.studentCode}</p>
                       </div>
                     </div>
 
@@ -249,7 +237,7 @@ export default function AttendancePage() {
                         type="button"
                         size="sm"
                         variant={currentStatus === 'present' ? 'default' : 'outline'}
-                        className={currentStatus === 'present' ? 'bg-green-600 hover:bg-green-700 text-white' : ''}
+                        className={currentStatus === 'present' ? 'bg-school-success hover:bg-emerald-700 text-white font-medium' : 'text-school-heading hover:bg-school-subtle'}
                         onClick={() => setStatus(s.studentId, 'present')}
                       >
                         <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Presente
@@ -259,7 +247,7 @@ export default function AttendancePage() {
                         type="button"
                         size="sm"
                         variant={currentStatus === 'absent' ? 'default' : 'outline'}
-                        className={currentStatus === 'absent' ? 'bg-red-600 hover:bg-red-700 text-white' : ''}
+                        className={currentStatus === 'absent' ? 'bg-school-error hover:bg-rose-700 text-white font-medium' : 'text-school-heading hover:bg-school-subtle'}
                         onClick={() => setStatus(s.studentId, 'absent')}
                       >
                         <XCircle className="mr-1 h-3.5 w-3.5" /> Ausente
@@ -269,7 +257,7 @@ export default function AttendancePage() {
                         type="button"
                         size="sm"
                         variant={currentStatus === 'late' ? 'default' : 'outline'}
-                        className={currentStatus === 'late' ? 'bg-amber-500 hover:bg-amber-600 text-white' : ''}
+                        className={currentStatus === 'late' ? 'bg-school-warning hover:bg-amber-600 text-white font-medium' : 'text-school-heading hover:bg-school-subtle'}
                         onClick={() => setStatus(s.studentId, 'late')}
                       >
                         <Clock className="mr-1 h-3.5 w-3.5" /> Atraso
@@ -279,7 +267,7 @@ export default function AttendancePage() {
                         type="button"
                         size="sm"
                         variant={currentStatus === 'excused' ? 'default' : 'outline'}
-                        className={currentStatus === 'excused' ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''}
+                        className={currentStatus === 'excused' ? 'bg-school-blue hover:bg-sky-700 text-white font-medium' : 'text-school-heading hover:bg-school-subtle'}
                         onClick={() => setStatus(s.studentId, 'excused')}
                       >
                         <AlertCircle className="mr-1 h-3.5 w-3.5" /> Justificado

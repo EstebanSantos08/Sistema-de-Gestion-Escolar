@@ -1,5 +1,7 @@
 import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/database';
+import type Course from './Course';
+import type Submission from './Submission';
 
 export class Activity extends Model {
   public id!: number;
@@ -12,6 +14,10 @@ export class Activity extends Model {
   public maxScore!: number;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  // Associations (populated by include)
+  public course?: Course;
+  public submissions?: Submission[];
 }
 
 Activity.init(

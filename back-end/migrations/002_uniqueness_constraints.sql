@@ -72,25 +72,73 @@ WHERE NOT EXISTS (SELECT 1 FROM courses c WHERE c.id = a."courseId");
 -- ============================================================
 BEGIN;
 
--- 1. grades uniqueness
-ALTER TABLE "grades"
-  ADD CONSTRAINT IF NOT EXISTS "grades_enrollmentId_gradeType_key"
-  UNIQUE ("enrollmentId", "gradeType");
+-- 1. grades uniqueness (enrollmentId, gradeType)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint con
+    JOIN pg_class rel ON rel.oid = con.conrelid
+    JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+    WHERE con.conname = 'grades_enrollmentId_gradeType_key'
+      AND rel.relname = 'grades'
+  ) THEN
+    ALTER TABLE "grades"
+      ADD CONSTRAINT "grades_enrollmentId_gradeType_key"
+      UNIQUE ("enrollmentId", "gradeType");
+  END IF;
+END $$;
 
 -- 2. submissions uniqueness (one submission per student per activity)
-ALTER TABLE "submissions"
-  ADD CONSTRAINT IF NOT EXISTS "submissions_activityId_studentId_key"
-  UNIQUE ("activityId", "studentId");
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint con
+    JOIN pg_class rel ON rel.oid = con.conrelid
+    JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+    WHERE con.conname = 'submissions_activityId_studentId_key'
+      AND rel.relname = 'submissions'
+  ) THEN
+    ALTER TABLE "submissions"
+      ADD CONSTRAINT "submissions_activityId_studentId_key"
+      UNIQUE ("activityId", "studentId");
+  END IF;
+END $$;
 
--- 3. attendances uniqueness
-ALTER TABLE "attendances"
-  ADD CONSTRAINT IF NOT EXISTS "attendances_studentId_courseId_date_key"
-  UNIQUE ("studentId", "courseId", "date");
+-- 3. attendances uniqueness (studentId, courseId, date)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint con
+    JOIN pg_class rel ON rel.oid = con.conrelid
+    JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+    WHERE con.conname = 'attendances_studentId_courseId_date_key'
+      AND rel.relname = 'attendances'
+  ) THEN
+    ALTER TABLE "attendances"
+      ADD CONSTRAINT "attendances_studentId_courseId_date_key"
+      UNIQUE ("studentId", "courseId", "date");
+  END IF;
+END $$;
 
--- 4. enrollments uniqueness
-ALTER TABLE "enrollments"
-  ADD CONSTRAINT IF NOT EXISTS "enrollments_studentId_courseId_period_key"
-  UNIQUE ("studentId", "courseId", "period");
+-- 4. enrollments uniqueness (studentId, courseId, period)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint con
+    JOIN pg_class rel ON rel.oid = con.conrelid
+    JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+    WHERE con.conname = 'enrollments_studentId_courseId_period_key'
+      AND rel.relname = 'enrollments'
+  ) THEN
+    ALTER TABLE "enrollments"
+      ADD CONSTRAINT "enrollments_studentId_courseId_period_key"
+      UNIQUE ("studentId", "courseId", "period");
+  END IF;
+END $$;
 
 -- 5. Performance indexes for audit_logs
 CREATE INDEX IF NOT EXISTS "idx_audit_logs_action_created"
@@ -98,12 +146,6 @@ CREATE INDEX IF NOT EXISTS "idx_audit_logs_action_created"
 
 CREATE INDEX IF NOT EXISTS "idx_audit_logs_userId_created"
   ON "audit_logs" ("userId", "createdAt" DESC);
-
--- GIN index on details for JSONB filtering (if PostgreSQL >= 12 and details is JSONB)
--- CREATE INDEX IF NOT EXISTS "idx_audit_logs_details_gin"
---   ON "audit_logs" USING GIN (("details"::jsonb));
--- NOTE: Requires altering details column type from TEXT to JSONB first.
--- Evaluate whether this is warranted by query volume.
 
 COMMIT;
 

@@ -38,6 +38,7 @@ export type AuditAction =
   | 'ANNOUNCEMENT_CREATED'
   | 'ANNOUNCEMENT_UPDATED'
   // Evidence (Storage)
+  | 'EVIDENCE_CREATED'
   | 'EVIDENCE_UPLOADED'
   | 'EVIDENCE_REPLACED'
   | 'EVIDENCE_DELETED';

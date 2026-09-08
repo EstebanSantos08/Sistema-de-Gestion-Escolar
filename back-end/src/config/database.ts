@@ -14,17 +14,29 @@ export const postgresSslOptions = {
   rejectUnauthorized: false,
 };
 
-export const sequelize = new Sequelize(dbUrl || '', {
-  dialect: 'postgres',
-  dialectOptions: {
-    ssl: postgresSslOptions,
-  },
-  logging: false,
-  define: {
-    timestamps: true,
-    underscored: false
-  }
-});
+export const sequelize = dbUrl
+  ? new Sequelize(dbUrl, {
+      dialect: 'postgres',
+      dialectOptions: {
+        ssl: postgresSslOptions,
+      },
+      logging: false,
+      define: {
+        timestamps: true,
+        underscored: false,
+      },
+    })
+  : new Sequelize({
+      dialect: 'postgres',
+      dialectOptions: {
+        ssl: postgresSslOptions,
+      },
+      logging: false,
+      define: {
+        timestamps: true,
+        underscored: false,
+      },
+    });
 
 export async function connectDatabase(): Promise<void> {
   try {

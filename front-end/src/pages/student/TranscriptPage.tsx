@@ -33,68 +33,71 @@ function PeriodCard({ period }: { period: string }) {
   const { data: pd, isLoading } = usePeriodGrades(period);
   if (isLoading) return null;
   if (!pd || pd.courses.length === 0) return null;
+
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base">Período {pd.period}</CardTitle>
-          {pd.generalAverage > 0 && (
-            <span className="text-sm font-medium">
-              Promedio: <strong>{pd.generalAverage.toFixed(2)}</strong>
-            </span>
-          )}
-        </div>
+      <CardHeader className="border-b border-school-border/70 pb-3 flex flex-row items-center justify-between">
+        <CardTitle className="text-base font-bold text-school-heading">
+          Período {pd.period}
+        </CardTitle>
+        {pd.generalAverage > 0 && (
+          <span className="text-sm font-medium text-school-body">
+            Promedio: <strong className="text-school-primary font-bold">{pd.generalAverage.toFixed(2)}</strong>
+          </span>
+        )}
       </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Materia</TableHead>
-              <TableHead>Docente</TableHead>
-              <TableHead className="text-center">Promedio</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Matrícula</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pd.courses.map((c) => (
-              <TableRow key={c.courseId}>
-                <TableCell>
-                  <p className="font-medium">{c.courseName}</p>
-                  <p className="text-xs text-muted-foreground">{c.courseCode}</p>
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">{c.teacherName}</TableCell>
-                <TableCell className="text-center font-semibold">
-                  {c.grades.length > 0 ? c.weightedAverage.toFixed(2) : '—'}
-                </TableCell>
-                <TableCell>
-                  {c.grades.length > 0 ? (
-                    <GradeBadge passed={c.passed} />
-                  ) : (
-                    <span className="text-xs text-muted-foreground">Sin notas</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      c.enrollmentStatus === 'active'
-                        ? 'default'
-                        : c.enrollmentStatus === 'completed'
-                          ? 'secondary'
-                          : 'destructive'
-                    }
-                  >
-                    {c.enrollmentStatus === 'active'
-                      ? 'Activa'
-                      : c.enrollmentStatus === 'completed'
-                        ? 'Completada'
-                        : 'Retirada'}
-                  </Badge>
-                </TableCell>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-school-background">
+              <TableRow>
+                <TableHead className="font-semibold text-school-heading">Materia</TableHead>
+                <TableHead className="font-semibold text-school-heading">Docente</TableHead>
+                <TableHead className="text-center font-semibold text-school-heading">Promedio</TableHead>
+                <TableHead className="font-semibold text-school-heading">Estado</TableHead>
+                <TableHead className="font-semibold text-school-heading">Matrícula</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody className="divide-y divide-school-border">
+              {pd.courses.map((c) => (
+                <TableRow key={c.courseId} className="hover:bg-school-background/40">
+                  <TableCell>
+                    <p className="font-semibold text-school-heading text-sm">{c.courseName}</p>
+                    <p className="text-xs text-school-muted">{c.courseCode}</p>
+                  </TableCell>
+                  <TableCell className="text-sm text-school-body">{c.teacherName || '—'}</TableCell>
+                  <TableCell className="text-center font-bold text-school-heading">
+                    {c.grades.length > 0 ? c.weightedAverage.toFixed(2) : '—'}
+                  </TableCell>
+                  <TableCell>
+                    {c.grades.length > 0 ? (
+                      <GradeBadge passed={c.passed} />
+                    ) : (
+                      <span className="text-xs text-school-muted">Sin notas</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        c.enrollmentStatus === 'active'
+                          ? 'success'
+                          : c.enrollmentStatus === 'completed'
+                            ? 'secondary'
+                            : 'destructive'
+                      }
+                    >
+                      {c.enrollmentStatus === 'active'
+                        ? 'Activa'
+                        : c.enrollmentStatus === 'completed'
+                          ? 'Completada'
+                          : 'Retirada'}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );
@@ -114,10 +117,14 @@ export default function TranscriptPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Historial Académico" description="Registro completo de todos los períodos cursados">
-        <Button variant="outline" onClick={handleDownload}>
-          <FileText className="mr-2 h-4 w-4" />
-          Descargar PDF
+      <PageHeader
+        eyebrow="Estudiante"
+        title="Historial Académico"
+        description="Registro histórico completo de todos los períodos lectivos cursados"
+      >
+        <Button variant="outline" onClick={handleDownload} className="gap-2">
+          <FileText className="h-4 w-4 text-school-primary" />
+          Descargar Historial PDF
         </Button>
       </PageHeader>
 

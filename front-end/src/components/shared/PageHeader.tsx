@@ -1,22 +1,49 @@
+import React from 'react';
+import { cn } from '@/lib/utils';
+
 interface PageHeaderProps {
   title: string;
-  variant?: 'default' | 'course';
   description?: string;
+  eyebrow?: string;
   children?: React.ReactNode;
+  className?: string;
+  variant?: 'default' | 'course';
 }
 
-export function PageHeader({ title, description, children, variant = 'default' }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  description,
+  eyebrow,
+  children,
+  className,
+}: PageHeaderProps) {
   return (
-    <div className={variant === 'course' ? 'flex flex-col justify-between gap-4 sm:flex-row sm:items-start' : 'flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 bg-white/95 backdrop-blur-md rounded-2xl p-5 shadow-xl border border-white/60 relative overflow-hidden'}>
-      {/* Barra superior de acento arcoíris */}
-      {variant === 'default' && <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#E84B5B] via-[#008BC1] via-[#F4B51B] via-[#31B45A] to-[#7D5AA6]" />}
-
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-inherit">{title}</h1>
-        {description && <p className="text-sm font-semibold text-slate-500 mt-0.5">{description}</p>}
+    <div
+      className={cn(
+        'mb-6 sm:mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between',
+        className
+      )}
+    >
+      <div className="space-y-1">
+        {eyebrow && (
+          <p className="text-xs font-semibold uppercase tracking-wider text-[#087F79]">
+            {eyebrow}
+          </p>
+        )}
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#183B3A]">
+          {title}
+        </h1>
+        {description && (
+          <p className="text-sm sm:text-base text-[#5E7A77] max-w-3xl">
+            {description}
+          </p>
+        )}
       </div>
-      {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
+      {children && (
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
-

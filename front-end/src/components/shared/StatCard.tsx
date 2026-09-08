@@ -1,4 +1,4 @@
-import { Card, CardContent } from '@/components/ui/card';
+import React from 'react';
 import { cn } from '@/lib/utils';
 
 interface StatCardProps {
@@ -10,34 +10,36 @@ interface StatCardProps {
   className?: string;
 }
 
-export function StatCard({ title, value, description, icon, accentColor, className }: StatCardProps) {
-  const defaultColors = [
-    'border-t-[#E84B5B] text-[#E84B5B] bg-red-50',
-    'border-t-[#008BC1] text-[#008BC1] bg-sky-50',
-    'border-t-[#F4B51B] text-amber-600 bg-amber-50',
-    'border-t-[#31B45A] text-[#31B45A] bg-emerald-50',
-  ];
-
+export function StatCard({
+  title,
+  value,
+  description,
+  icon,
+  className,
+}: StatCardProps) {
   return (
-    <Card className={cn('bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/60 overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl relative', className)}>
-      <div className={cn("h-1.5 w-full bg-gradient-to-r from-[#E84B5B] via-[#008BC1] via-[#F4B51B] to-[#31B45A]", accentColor)} />
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{title}</p>
-            <p className="text-3xl font-black text-slate-800 mt-1">{value}</p>
-            {description && (
-              <p className="text-xs font-semibold text-slate-400 mt-1">{description}</p>
-            )}
-          </div>
-          {icon && (
-            <div className="rounded-2xl bg-teal-50 p-3 text-[#09A9C2] shadow-inner border border-teal-100/50">
-              {icon}
-            </div>
+    <div
+      className={cn(
+        'rounded-2xl border border-[#D6E5E3] bg-white p-5 sm:p-6 shadow-xs transition-all hover:border-[#41C4BD]/60 hover:shadow-sm',
+        className
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-[#5E7A77]">{title}</p>
+          <p className="text-2xl sm:text-3xl font-bold tracking-tight text-[#183B3A]">
+            {value}
+          </p>
+          {description && (
+            <p className="text-xs sm:text-sm text-[#5E7A77]">{description}</p>
           )}
         </div>
-      </CardContent>
-    </Card>
+        {icon && (
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#E3F5F3] text-[#087F79]">
+            {icon}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
-

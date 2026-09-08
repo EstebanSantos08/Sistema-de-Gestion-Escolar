@@ -7,7 +7,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Inbox } from 'lucide-react';
 
 export interface Column<T> {
   header: string;
@@ -27,20 +27,18 @@ interface DataTableProps<T> {
   getRowId?: (row: T) => number | string;
 }
 
-import { Card } from '@/components/ui/card';
-
 export function DataTable<T>({
   columns,
   data,
   isLoading,
-  emptyMessage = 'Sin resultados',
+  emptyMessage = 'Sin registros disponibles',
   page,
   totalPages,
   onPageChange,
   getRowId,
 }: DataTableProps<T>) {
   return (
-    <Card className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden border border-white/60">
+    <div className="rounded-2xl border border-[#D6E5E3] bg-white shadow-xs overflow-hidden">
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
@@ -55,17 +53,20 @@ export function DataTable<T>({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    Cargando...
+                <TableCell colSpan={columns.length} className="h-32 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2 text-[#5E7A77]">
+                    <span className="h-6 w-6 animate-spin rounded-full border-2 border-[#087F79] border-t-transparent" />
+                    <span className="text-sm font-medium">Cargando información...</span>
                   </div>
                 </TableCell>
               </TableRow>
             ) : data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                  {emptyMessage}
+                <TableCell colSpan={columns.length} className="h-32 text-center">
+                  <div className="flex flex-col items-center justify-center gap-1.5 py-4 text-[#5E7A77]">
+                    <Inbox className="h-8 w-8 text-[#5E7A77]/50" />
+                    <p className="text-sm font-medium">{emptyMessage}</p>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
@@ -96,31 +97,37 @@ export function DataTable<T>({
       </div>
 
       {page !== undefined && totalPages !== undefined && totalPages > 1 && (
-        <div className="flex items-center justify-between px-1">
-          <p className="text-sm text-muted-foreground">
-            Página {page} de {totalPages}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[#D6E5E3] px-4 py-3 bg-[#F4FAF9]/50">
+          <p className="text-sm text-[#5E7A77]">
+            Página <span className="font-semibold text-[#183B3A]">{page}</span> de{' '}
+            <span className="font-semibold text-[#183B3A]">{totalPages}</span>
           </p>
-          <div className="flex gap-1">
+          <div className="flex items-center gap-1.5">
             <Button
               variant="outline"
               size="sm"
               disabled={page <= 1}
               onClick={() => onPageChange?.(page - 1)}
+              aria-label="Página anterior"
+              className="h-9 px-3"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Anterior
             </Button>
             <Button
               variant="outline"
               size="sm"
               disabled={page >= totalPages}
               onClick={() => onPageChange?.(page + 1)}
+              aria-label="Página siguiente"
+              className="h-9 px-3"
             >
-              <ChevronRight className="h-4 w-4" />
+              Siguiente
+              <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
         </div>
       )}
-    </Card>
+    </div>
   );
 }
-

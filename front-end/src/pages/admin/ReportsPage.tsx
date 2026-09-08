@@ -11,7 +11,7 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -47,16 +47,16 @@ function ReportButton({
   return (
     <Button
       variant="outline"
-      className="flex items-center gap-2 bg-white border-slate-200 text-slate-800 font-bold rounded-xl shadow-xs hover:bg-teal-50 hover:border-teal-300 transition-all"
+      className="flex items-center gap-2 h-10 px-4"
       onClick={handleClick}
       disabled={disabled || loading}
     >
       {loading ? (
-        <span className="h-4 w-4 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#087F79] border-t-transparent" />
       ) : (
         icon
       )}
-      {label}
+      <span>{label}</span>
     </Button>
   );
 }
@@ -118,35 +118,43 @@ export default function ReportsPage() {
   const selectedStudent = availableStudents.find((s) => String(s.id) === selectedStudentId);
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Reportes Institucionales" description="Generación y descarga de libretas, actas y boletines escolares" />
+    <div className="space-y-6 sm:space-y-8">
+      <PageHeader
+        eyebrow="Administración"
+        title="Reportes Institucionales"
+        description="Generación y descarga de libretas de calificaciones, actas de curso y consolidados escolares oficiales"
+      />
 
       {/* Section 1: By course */}
-      <Card className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/60 overflow-hidden">
-        <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-3">
-          <CardTitle className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
-            <FileSpreadsheet className="h-4 w-4 text-[#008BC1]" />
+      <Card>
+        <CardHeader className="border-b border-[#D6E5E3] bg-[#F4FAF9]/50 pb-4">
+          <CardTitle className="text-base font-semibold text-[#183B3A] flex items-center gap-2">
+            <FileSpreadsheet className="h-5 w-5 text-[#087F79]" />
             Reportes por Curso
           </CardTitle>
+          <CardDescription>
+            Descarga de planillas Excel y actas de curso oficiales en formato PDF
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 pt-4">
-          <div className="flex flex-wrap gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs font-bold text-slate-700">Período</Label>
+        <CardContent className="space-y-4 pt-5">
+          <div className="flex flex-wrap gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-[#183B3A]">Período</Label>
               <Input
-                className="w-32 bg-white border-slate-200 text-slate-800 font-bold rounded-xl shadow-xs"
+                className="w-32"
                 value={coursePeriod}
                 onChange={(e) => setCoursePeriod(e.target.value)}
                 placeholder="2026-I"
+                aria-label="Período del curso"
               />
             </div>
-            <div className="space-y-1 min-w-[240px]">
-              <Label className="text-xs font-bold text-slate-700">Curso</Label>
+            <div className="space-y-1.5 min-w-[260px] flex-1 sm:flex-initial">
+              <Label className="text-xs font-semibold text-[#183B3A]">Curso escolar</Label>
               <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
-                <SelectTrigger className="bg-white border-slate-200 text-slate-800 font-bold rounded-xl shadow-xs">
+                <SelectTrigger>
                   <SelectValue placeholder="Seleccionar curso" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-slate-200 rounded-xl shadow-2xl">
+                <SelectContent>
                   {courses.map((c) => (
                     <SelectItem key={c.id} value={String(c.id)}>
                       {c.name} ({c.code})
@@ -156,10 +164,10 @@ export default function ReportsPage() {
               </Select>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2 pt-2">
+          <div className="flex flex-wrap gap-3 pt-2">
             <ReportButton
-              label="Descargar Excel de Curso"
-              icon={<FileSpreadsheet className="h-4 w-4 text-[#31B45A]" />}
+              label="Descargar Planilla Excel"
+              icon={<FileSpreadsheet className="h-4 w-4 text-[#287A32]" />}
               disabled={!selectedCourseId}
               onClick={() =>
                 reportService.downloadCourseExcel(
@@ -169,8 +177,8 @@ export default function ReportsPage() {
               }
             />
             <ReportButton
-              label="Descargar Acta PDF"
-              icon={<FileText className="h-4 w-4 text-[#E84B5B]" />}
+              label="Descargar Acta Oficial PDF"
+              icon={<FileText className="h-4 w-4 text-[#087F79]" />}
               disabled={!selectedCourseId}
               onClick={() =>
                 reportService.downloadCoursePdf(
@@ -183,33 +191,36 @@ export default function ReportsPage() {
         </CardContent>
       </Card>
 
-      {/* Section 2: By student with Comboboxes */}
-      <Card className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/60 overflow-hidden">
-        <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-3">
-          <CardTitle className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
-            <GraduationCap className="h-4 w-4 text-[#31B45A]" />
-            Reportes por Estudiante
+      {/* Section 2: By student */}
+      <Card>
+        <CardHeader className="border-b border-[#D6E5E3] bg-[#F4FAF9]/50 pb-4">
+          <CardTitle className="text-base font-semibold text-[#183B3A] flex items-center gap-2">
+            <GraduationCap className="h-5 w-5 text-[#087F79]" />
+            Reportes Individuales por Estudiante
           </CardTitle>
+          <CardDescription>
+            Boletines de calificaciones periódicas e historial académico por alumno
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 pt-4">
+        <CardContent className="space-y-4 pt-5">
           <div className="flex flex-wrap gap-4">
-            {/* Combobox 1: Curso */}
-            <div className="space-y-1 min-w-[240px]">
-              <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
-                <Users className="h-3.5 w-3.5 text-[#008BC1]" />
+            {/* Filter by course */}
+            <div className="space-y-1.5 min-w-[260px]">
+              <Label className="text-xs font-semibold text-[#183B3A] flex items-center gap-1.5">
+                <Users className="h-4 w-4 text-[#087F79]" />
                 Filtrar por Curso
               </Label>
               <Select
                 value={studentCourseFilter}
                 onValueChange={(val) => {
                   setStudentCourseFilter(val);
-                  setSelectedStudentId(''); // Reset selected student when course filter changes
+                  setSelectedStudentId('');
                 }}
               >
-                <SelectTrigger className="bg-white border-slate-200 text-slate-800 font-bold rounded-xl shadow-xs">
-                  <SelectValue placeholder="Todos los Cursos" />
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos los cursos" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-slate-200 rounded-xl shadow-2xl">
+                <SelectContent>
                   <SelectItem value="all">Todos los Cursos</SelectItem>
                   {allCoursesList.map((c) => (
                     <SelectItem key={c.id} value={String(c.id)}>
@@ -220,10 +231,10 @@ export default function ReportsPage() {
               </Select>
             </div>
 
-            {/* Combobox 2: Estudiante */}
-            <div className="space-y-1 min-w-[280px] flex-1">
-              <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
-                <GraduationCap className="h-3.5 w-3.5 text-[#31B45A]" />
+            {/* Select student */}
+            <div className="space-y-1.5 min-w-[300px] flex-1">
+              <Label className="text-xs font-semibold text-[#183B3A] flex items-center gap-1.5">
+                <GraduationCap className="h-4 w-4 text-[#087F79]" />
                 Seleccionar Estudiante
               </Label>
               <Select
@@ -231,18 +242,18 @@ export default function ReportsPage() {
                 onValueChange={setSelectedStudentId}
                 disabled={loadingAllStudents || availableStudents.length === 0}
               >
-                <SelectTrigger className="bg-white border-slate-200 text-slate-800 font-bold rounded-xl shadow-xs">
+                <SelectTrigger>
                   <SelectValue
                     placeholder={
                       loadingAllStudents
                         ? 'Cargando lista de estudiantes...'
                         : availableStudents.length === 0
                         ? 'Sin estudiantes en este curso'
-                        : 'Seleccionar Estudiante'
+                        : 'Seleccionar estudiante'
                     }
                   />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-slate-200 rounded-xl shadow-2xl max-h-60">
+                <SelectContent className="max-h-64">
                   {availableStudents.map((s) => (
                     <SelectItem key={s.id} value={String(s.id)}>
                       {s.name} ({s.studentCode})
@@ -254,10 +265,10 @@ export default function ReportsPage() {
           </div>
 
           {/* Download Buttons for Selected Student */}
-          <div className="flex flex-wrap gap-2 pt-2">
+          <div className="flex flex-wrap gap-3 pt-2">
             <ReportButton
               label="Excel de Calificaciones"
-              icon={<FileSpreadsheet className="h-4 w-4 text-[#31B45A]" />}
+              icon={<FileSpreadsheet className="h-4 w-4 text-[#287A32]" />}
               disabled={!selectedStudentId}
               onClick={() =>
                 reportService.downloadStudentExcel(
@@ -268,7 +279,7 @@ export default function ReportsPage() {
             />
             <ReportButton
               label="Boletín de Notas PDF"
-              icon={<FileText className="h-4 w-4 text-[#008BC1]" />}
+              icon={<FileText className="h-4 w-4 text-[#087F79]" />}
               disabled={!selectedStudentId}
               onClick={() =>
                 reportService.downloadStudentBulletinPdf(
@@ -279,7 +290,7 @@ export default function ReportsPage() {
             />
             <ReportButton
               label="Historial Académico PDF"
-              icon={<FileText className="h-4 w-4 text-[#7D5AA6]" />}
+              icon={<FileText className="h-4 w-4 text-[#9731AC]" />}
               disabled={!selectedStudentId}
               onClick={() =>
                 reportService.downloadTranscriptPdf(
@@ -293,27 +304,31 @@ export default function ReportsPage() {
       </Card>
 
       {/* Section 3: Global */}
-      <Card className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/60 overflow-hidden">
-        <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-3">
-          <CardTitle className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
-            <Download className="h-4 w-4 text-[#7D5AA6]" />
-            Reporte Global del Período
+      <Card>
+        <CardHeader className="border-b border-[#D6E5E3] bg-[#F4FAF9]/50 pb-4">
+          <CardTitle className="text-base font-semibold text-[#183B3A] flex items-center gap-2">
+            <Download className="h-5 w-5 text-[#087F79]" />
+            Reporte Consolidado del Período
           </CardTitle>
+          <CardDescription>
+            Exportación completa de todas las notas y registros del ciclo escolar
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 pt-4">
-          <div className="space-y-1">
-            <Label className="text-xs font-bold text-slate-700">Período Académico</Label>
+        <CardContent className="space-y-4 pt-5">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-[#183B3A]">Período Académico</Label>
             <Input
-              className="w-32 bg-white border-slate-200 text-slate-800 font-bold rounded-xl shadow-xs"
+              className="w-36"
               value={globalPeriod}
               onChange={(e) => setGlobalPeriod(e.target.value)}
               placeholder="2026-I"
+              aria-label="Período académico para consolidado"
             />
           </div>
           <div className="pt-2">
             <ReportButton
               label="Descargar Consolidado Global Excel"
-              icon={<FileSpreadsheet className="h-4 w-4 text-[#09A9C2]" />}
+              icon={<FileSpreadsheet className="h-4 w-4 text-[#287A32]" />}
               disabled={!globalPeriod}
               onClick={() => reportService.downloadAllGradesExcel(globalPeriod)}
             />
@@ -323,4 +338,3 @@ export default function ReportsPage() {
     </div>
   );
 }
-

@@ -1,5 +1,10 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/database';
+import type Activity from './Activity';
+import type Student from './Student';
+import type Representative from './Representative';
+import type Evidence from './Evidence';
+import type Comment from './Comment';
 
 export class Submission extends Model {
   public id!: number;
@@ -13,6 +18,13 @@ export class Submission extends Model {
   public score!: number | null;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  // Associations (populated by include)
+  public activity?: Activity;
+  public student?: Student;
+  public representative?: Representative;
+  public evidences?: Evidence[];
+  public comments?: Comment[];
 }
 
 Submission.init(

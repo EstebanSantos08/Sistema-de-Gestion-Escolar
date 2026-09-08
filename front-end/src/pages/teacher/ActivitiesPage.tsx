@@ -6,15 +6,15 @@ import { teacherModuleService } from '@/services/teacherModule.service';
 import { ClassroomSubmissionsDialog } from '@/components/teacher/ClassroomSubmissionsDialog';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import type { ClassActivity, ActivityType, ActivityStatus } from '@/types';
 
-// Helper para fecha y hora mínima (momento actual)
 const getMinDateTimeStr = () => {
   const d = new Date();
   const year = d.getFullYear();
@@ -40,7 +40,6 @@ export default function ActivitiesPage() {
   const [selectedCourseFilter, setSelectedCourseFilter] = useState<string>('all');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
 
-  // State para creación y edición
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<ClassActivity | null>(null);
   const [selectedActivityForSubmissions, setSelectedActivityForSubmissions] = useState<ClassActivity | null>(null);
@@ -99,7 +98,7 @@ export default function ActivitiesPage() {
         dueDate: formDueDate,
         type: formType,
       });
-      toast.success('Actividad actualizada correctamente');
+      toast.success('Actividad actualizada');
     } else {
       teacherModuleService.createActivity({
         courseId: Number(formCourseId),
@@ -108,7 +107,7 @@ export default function ActivitiesPage() {
         description: formDescription,
         dueDate: formDueDate,
         type: formType,
-        status: 'programada',
+        status: 'en_curso',
       });
       toast.success('Actividad creada exitosamente');
     }
@@ -117,23 +116,27 @@ export default function ActivitiesPage() {
     refreshActivities();
   };
 
-  const handleStatusChange = (id: string, newStatus: ActivityStatus) => {
-    teacherModuleService.updateActivityStatus(id, newStatus);
-    toast.success(`Estado actualizado a: ${newStatus}`);
-    refreshActivities();
-  };
-
   const handleDelete = (id: string) => {
-    if (confirm('¿Eliminar esta actividad?')) {
+    if (confirm('¿Estás seguro de eliminar esta actividad?')) {
       teacherModuleService.deleteActivity(id);
-      toast.success('Actividad eliminada');
       refreshActivities();
+      toast.success('Actividad eliminada');
     }
   };
 
+  const handleStatusChange = (id: string, newStatus: ActivityStatus) => {
+    teacherModuleService.updateActivity(id, { status: newStatus });
+    refreshActivities();
+    toast.success('Estado de actividad actualizado');
+  };
+
   const filteredActivities = activities.filter((act) => {
-    if (selectedCourseFilter !== 'all' && String(act.courseId) !== selectedCourseFilter) return false;
-    if (selectedStatusFilter !== 'all' && act.status !== selectedStatusFilter) return false;
+    if (selectedCourseFilter !== 'all' && act.courseId !== Number(selectedCourseFilter)) {
+      return false;
+    }
+    if (selectedStatusFilter !== 'all' && act.status !== selectedStatusFilter) {
+      return false;
+    }
     return true;
   });
 
@@ -142,25 +145,26 @@ export default function ActivitiesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Gestión de Deberes y Actividades"
-        description="Publica tareas, asigna plazos de fecha/hora y monitorea el estado de entregas"
+        eyebrow="Docente"
+        title="Gestión de Actividades"
+        description="Planificación, plazos de entrega y recepción de tareas por materia"
       >
-        <Button onClick={handleOpenCreateModal} className="bg-[#008BC1] hover:bg-[#0073A0] text-white font-extrabold shadow-md rounded-xl">
+        <Button onClick={handleOpenCreateModal}>
           <Plus className="mr-2 h-4 w-4" /> Nueva Actividad
         </Button>
       </PageHeader>
 
       {/* Filtros */}
-      <Card className="bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-white/60">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <Card className="p-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2 flex-1">
-            <Filter className="h-4 w-4 text-[#008BC1]" />
-            <span className="text-xs font-bold text-slate-700">Filtrar por Aula:</span>
+            <Filter className="h-4 w-4 text-school-muted shrink-0" />
+            <span className="text-sm font-medium text-school-heading shrink-0">Filtrar por Aula:</span>
             <Select value={selectedCourseFilter} onValueChange={setSelectedCourseFilter}>
-              <SelectTrigger className="w-full sm:w-60 rounded-xl bg-white border-slate-200 text-xs font-bold">
+              <SelectTrigger className="w-full sm:w-64">
                 <SelectValue placeholder="Todas las aulas" />
               </SelectTrigger>
-              <SelectContent className="bg-white rounded-xl">
+              <SelectContent>
                 <SelectItem value="all">Todas las aulas</SelectItem>
                 {courses?.map((c) => (
                   <SelectItem key={c.id} value={String(c.id)}>
@@ -172,12 +176,12 @@ export default function ActivitiesPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-700">Estado:</span>
+            <span className="text-sm font-medium text-school-heading shrink-0">Estado:</span>
             <Select value={selectedStatusFilter} onValueChange={setSelectedStatusFilter}>
-              <SelectTrigger className="w-40 rounded-xl bg-white border-slate-200 text-xs font-bold">
-                <SelectValue placeholder="Todos" />
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Todos los estados" />
               </SelectTrigger>
-              <SelectContent className="bg-white rounded-xl">
+              <SelectContent>
                 <SelectItem value="all">Todos los estados</SelectItem>
                 <SelectItem value="programada">Programadas</SelectItem>
                 <SelectItem value="en_curso">En curso</SelectItem>
@@ -190,63 +194,66 @@ export default function ActivitiesPage() {
 
       {/* Listado de Actividades */}
       {filteredActivities.length === 0 ? (
-        <Card className="p-8 text-center bg-white/95 backdrop-blur-md rounded-2xl shadow-sm border border-slate-200">
-          <FileText className="h-10 w-10 mx-auto text-slate-300 mb-2" />
-          <p className="font-extrabold text-slate-700 text-sm">No hay actividades registradas con estos filtros</p>
+        <Card className="p-12 text-center">
+          <FileText className="h-10 w-10 mx-auto text-school-muted mb-2" />
+          <p className="font-semibold text-school-heading text-base">No hay actividades registradas con estos filtros</p>
+          <p className="text-sm text-school-muted mt-1">Crea una nueva actividad o modifica los criterios de búsqueda.</p>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredActivities.map((act) => (
-            <Card key={act.id} className="bg-white/95 backdrop-blur-md rounded-2xl p-5 shadow-lg border border-slate-100 space-y-4 hover:shadow-xl transition-all flex flex-col justify-between">
-              <div className="space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <span className="text-[10px] font-black text-[#008BC1] uppercase tracking-wider bg-sky-50 px-2 py-0.5 rounded-md border border-sky-100">
-                      {act.courseName}
-                    </span>
-                    <h4 className="font-black text-slate-800 text-base mt-1">{act.title}</h4>
+            <Card key={act.id} className="flex flex-col justify-between hover:border-school-accent transition-colors">
+              <CardContent className="p-5 space-y-4 flex flex-col justify-between flex-1">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className="text-xs font-semibold text-school-primary uppercase tracking-wider bg-school-subtle px-2 py-0.5 rounded-md">
+                        {act.courseName}
+                      </span>
+                      <h4 className="font-bold text-school-heading text-base mt-2 leading-snug">{act.title}</h4>
+                    </div>
+                    <Badge variant={act.status === 'programada' ? 'warning' : act.status === 'finalizada' ? 'secondary' : 'success'} className="shrink-0">
+                      {act.status === 'programada' ? 'Programada' : act.status === 'finalizada' ? 'Finalizada' : 'En Curso'}
+                    </Badge>
                   </div>
-                  <Badge className={act.status === 'programada' ? 'bg-amber-500 text-white font-bold' : act.status === 'en_curso' ? 'bg-[#008BC1] text-white font-bold' : 'bg-emerald-500 text-white font-bold'}>
-                    {act.status.toUpperCase()}
-                  </Badge>
+
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-school-primary bg-school-subtle px-2.5 py-1.5 rounded-lg border border-school-border/50">
+                    <Clock className="h-3.5 w-3.5 text-school-primary shrink-0" />
+                    <span>Límite: {formatDateTimeDisplay(act.dueDate)}</span>
+                  </div>
+
+                  {act.description && (
+                    <p className="text-sm text-school-body line-clamp-3 bg-school-background p-3 rounded-xl border border-school-border/60 leading-relaxed">
+                      {act.description}
+                    </p>
+                  )}
                 </div>
 
-                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                  <Clock className="h-3.5 w-3.5 text-[#008BC1]" />
-                  <span>Entrega: {formatDateTimeDisplay(act.dueDate)}</span>
+                <div className="pt-3 border-t border-school-border/60 flex items-center justify-between gap-2">
+                  <Select value={act.status} onValueChange={(val) => handleStatusChange(act.id, val as ActivityStatus)}>
+                    <SelectTrigger className="h-9 text-xs font-medium w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="programada">Programada</SelectItem>
+                      <SelectItem value="en_curso">En curso</SelectItem>
+                      <SelectItem value="finalizada">Finalizada</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <div className="flex items-center gap-1">
+                    <Button size="sm" variant="outline" onClick={() => setSelectedActivityForSubmissions(act)} className="h-9 text-xs font-medium">
+                      <Eye className="h-3.5 w-3.5 mr-1 text-school-primary" /> Evidencias
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleOpenEditModal(act)} className="h-9 text-xs font-medium text-school-warning" aria-label="Editar actividad">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => handleDelete(act.id)} className="h-9 text-xs text-school-error hover:bg-school-error/10" aria-label="Eliminar actividad">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
-
-                {act.description && (
-                  <p className="text-xs text-slate-600 line-clamp-3 bg-slate-50/50 p-2.5 rounded-xl border border-slate-100 leading-relaxed">
-                    {act.description}
-                  </p>
-                )}
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                <Select value={act.status} onValueChange={(val) => handleStatusChange(act.id, val as ActivityStatus)}>
-                  <SelectTrigger className="h-8 text-xs font-bold w-32 rounded-lg border-slate-200">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white rounded-xl text-xs font-bold">
-                    <SelectItem value="programada">Programada</SelectItem>
-                    <SelectItem value="en_curso">En curso</SelectItem>
-                    <SelectItem value="finalizada">Finalizada</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <div className="flex items-center gap-1">
-                  <Button size="sm" variant="outline" onClick={() => setSelectedActivityForSubmissions(act)} className="h-8 text-xs font-extrabold text-[#008BC1] border-sky-200 hover:bg-sky-50 rounded-lg">
-                    <Eye className="h-3.5 w-3.5 mr-1" /> Evidencias
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleOpenEditModal(act)} className="h-8 text-xs text-amber-700 border-amber-200 hover:bg-amber-50 rounded-lg">
-                    <Pencil className="h-3.5 w-3.5 mr-1" /> Editar
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => handleDelete(act.id)} className="h-8 text-xs text-rose-600 hover:bg-rose-50 rounded-lg">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
+              </CardContent>
             </Card>
           ))}
         </div>
@@ -254,25 +261,25 @@ export default function ActivitiesPage() {
 
       {/* Modal de Creación / Edición */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-md bg-white rounded-2xl shadow-2xl">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-lg font-black text-slate-800 flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-[#008BC1]" />
-              {editingActivity ? 'Editar Actividad / Deber' : 'Nueva Actividad / Deber'}
+            <DialogTitle className="text-lg font-bold text-school-heading flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-school-primary" />
+              {editingActivity ? 'Editar Actividad' : 'Nueva Actividad'}
             </DialogTitle>
-            <DialogDescription className="text-xs">
-              Define la materia, título y la fecha/hora límite máxima de entrega
+            <DialogDescription className="text-sm text-school-muted">
+              Define la materia, título y fecha/hora límite de entrega
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSave} className="space-y-4">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">Aula / Curso *</label>
+          <form onSubmit={handleSave} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-school-heading">Aula / Curso *</Label>
               <Select value={formCourseId} onValueChange={setFormCourseId}>
-                <SelectTrigger className="rounded-xl border-slate-200 font-bold">
+                <SelectTrigger>
                   <SelectValue placeholder="Selecciona un aula" />
                 </SelectTrigger>
-                <SelectContent className="bg-white rounded-xl">
+                <SelectContent>
                   {courses?.map((c) => (
                     <SelectItem key={c.id} value={String(c.id)}>
                       {c.name} ({c.code})
@@ -282,47 +289,45 @@ export default function ActivitiesPage() {
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">Título de la Actividad *</label>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-school-heading">Título de la Actividad *</Label>
               <Input
-                placeholder="Ej: Proyecto de Expresión Artística"
+                placeholder="Ej: Taller de Expresión Artística"
                 value={formTitle}
                 onChange={(e) => setFormTitle(e.target.value)}
-                className="rounded-xl border-slate-200"
                 required
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">Instrucciones o Descripción</label>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-school-heading">Instrucciones o Descripción</Label>
               <Textarea
-                placeholder="Detalla las instrucciones para los estudiantes o representantes..."
+                placeholder="Detalla las instrucciones para los estudiantes..."
                 value={formDescription}
                 onChange={(e) => setFormDescription(e.target.value)}
-                className="rounded-xl border-slate-200 text-xs"
                 rows={3}
               />
             </div>
 
-            <div className="space-y-1 bg-sky-50 p-3 rounded-xl border border-sky-100">
-              <label className="text-xs font-extrabold text-[#008BC1] flex items-center gap-1.5">
+            <div className="space-y-1.5 bg-school-subtle/60 p-3.5 rounded-xl border border-school-border">
+              <Label className="text-xs font-semibold text-school-primary flex items-center gap-1.5">
                 <Clock className="h-4 w-4" /> Fecha y Hora Límite *
-              </label>
+              </Label>
               <Input
                 type="datetime-local"
                 min={minDateTimeAllowed}
                 value={formDueDate}
                 onChange={(e) => setFormDueDate(e.target.value)}
-                className="rounded-xl border-slate-300 font-bold bg-white text-slate-900"
+                className="bg-white font-medium"
                 required
               />
             </div>
 
             <DialogFooter className="pt-2">
-              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="rounded-xl font-bold">
+              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" className="bg-[#008BC1] hover:bg-[#0073A0] text-white font-bold rounded-xl shadow-md">
+              <Button type="submit">
                 {editingActivity ? 'Guardar Cambios' : 'Crear Actividad'}
               </Button>
             </DialogFooter>
@@ -330,7 +335,7 @@ export default function ActivitiesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal Estilo Google Classroom de Entregas y Evidencias */}
+      {/* Modal de Entregas y Evidencias */}
       <ClassroomSubmissionsDialog
         open={!!selectedActivityForSubmissions}
         onOpenChange={(v) => !v && setSelectedActivityForSubmissions(null)}

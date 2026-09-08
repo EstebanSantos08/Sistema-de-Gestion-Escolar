@@ -41,9 +41,9 @@ import { formatDate } from '@/lib/utils';
 
 const STATUS_META: Record<
   string,
-  { label: string; variant: 'default' | 'secondary' | 'destructive' }
+  { label: string; variant: 'success' | 'secondary' | 'destructive' }
 > = {
-  active:    { label: 'Activa',      variant: 'default' },
+  active:    { label: 'Activa',      variant: 'success' },
   withdrawn: { label: 'Retirada',    variant: 'destructive' },
   completed: { label: 'Completada',  variant: 'secondary' },
 };
@@ -212,8 +212,8 @@ function EnrollFormModal({ open, onOpenChange, onSaved }: EnrollFormProps) {
                 ) : (
                   courses.map((c) => (
                     <SelectItem key={c.id} value={String(c.id)}>
-                      <span className="font-bold text-slate-800">{c.name}</span>
-                      <span className="ml-2 text-[#008BC1] font-semibold text-xs">
+                      <span className="font-semibold text-school-heading">{c.name}</span>
+                      <span className="ml-2 text-school-primary font-medium text-xs">
                         ({c.code})
                       </span>
                     </SelectItem>
@@ -400,70 +400,77 @@ export default function EnrollmentsPage() {
           variant="ghost"
           size="icon"
           title="Eliminar matrícula"
+          aria-label={`Eliminar matrícula de ${e.student?.user?.name ?? 'estudiante'}`}
           onClick={() => setDeleteTarget(e)}
+          className="text-[#B42335] hover:bg-[#FDF0F1]"
         >
-          <Trash2 className="h-4 w-4 text-destructive" />
+          <Trash2 className="h-4 w-4" />
         </Button>
       ),
     },
   ];
 
   return (
-    <div className="space-y-5">
-      <PageHeader title="Matrículas" description="Control de inscripciones por período académico">
-        <Button onClick={() => setFormOpen(true)}>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Administración"
+        title="Matrículas Escolares"
+        description="Control de inscripciones, cupos y estado de matrícula por período académico"
+      >
+        <Button onClick={() => setFormOpen(true)} className="h-10">
           <Plus className="mr-2 h-4 w-4" />
           Nueva matrícula
         </Button>
       </PageHeader>
 
       {/* Stats strip */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard
           title="Total en página"
           value={total}
-          icon={<Users className="h-4 w-4" />}
+          icon={<Users className="h-5 w-5" />}
         />
         <StatCard
-          title="Activas"
+          title="Matrículas Activas"
           value={activeCount}
-          icon={<BookOpen className="h-4 w-4" />}
+          icon={<BookOpen className="h-5 w-5" />}
         />
         <StatCard
           title="Retiradas"
           value={withdrawnCount}
-          icon={<ClipboardList className="h-4 w-4" />}
+          icon={<ClipboardList className="h-5 w-5" />}
         />
         <StatCard
           title="Completadas"
           value={completedCount}
-          icon={<CheckCircle className="h-4 w-4" />}
+          icon={<CheckCircle className="h-5 w-5" />}
         />
       </div>
 
       {/* Filters */}
-      <Card className="bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-white/60">
+      <div className="rounded-2xl border border-[#D6E5E3] bg-white p-4 sm:p-5 shadow-xs">
         <div className="flex flex-wrap items-center gap-4">
-          <div className="space-y-1">
-            <Label className="text-xs font-bold text-slate-700">Período</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-[#183B3A]">Período</Label>
             <Input
-              className="w-32 bg-white border-slate-200 text-slate-800 font-medium rounded-xl shadow-xs"
+              className="w-32"
               placeholder="2026-I"
+              aria-label="Filtrar por período"
               value={periodFilter}
               onChange={(e) => setPeriodFilter(e.target.value)}
             />
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-xs font-bold text-slate-700">Curso</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-[#183B3A]">Curso</Label>
             <Select
               value={courseFilter || 'all'}
               onValueChange={(v) => setCourseFilter(v === 'all' ? '' : v)}
             >
-              <SelectTrigger className="w-56 bg-white border-slate-200 text-slate-800 font-bold rounded-xl shadow-xs">
+              <SelectTrigger className="w-60">
                 <SelectValue placeholder="Todos los cursos" />
               </SelectTrigger>
-              <SelectContent className="bg-white border-slate-200 rounded-xl shadow-2xl">
+              <SelectContent>
                 <SelectItem value="all">Todos los cursos</SelectItem>
                 {(coursesForFilter?.data ?? []).map((c) => (
                   <SelectItem key={c.id} value={String(c.id)}>
@@ -474,14 +481,17 @@ export default function EnrollmentsPage() {
             </Select>
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-xs font-bold text-slate-700">Estado</Label>
-            <Select value={statusFilter || 'all'} onValueChange={(v) => setStatusFilter(v === 'all' ? '' : v)}>
-              <SelectTrigger className="w-44 bg-white border-slate-200 text-slate-800 font-bold rounded-xl shadow-xs">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-[#183B3A]">Estado</Label>
+            <Select
+              value={statusFilter || 'all'}
+              onValueChange={(v) => setStatusFilter(v === 'all' ? '' : v)}
+            >
+              <SelectTrigger className="w-48">
                 <SelectValue placeholder="Todos los estados" />
               </SelectTrigger>
-              <SelectContent className="bg-white border-slate-200 rounded-xl shadow-2xl">
-                <SelectItem value="all">Todos</SelectItem>
+              <SelectContent>
+                <SelectItem value="all">Todos los estados</SelectItem>
                 <SelectItem value="active">Activa</SelectItem>
                 <SelectItem value="withdrawn">Retirada</SelectItem>
                 <SelectItem value="completed">Completada</SelectItem>
@@ -489,7 +499,7 @@ export default function EnrollmentsPage() {
             </Select>
           </div>
         </div>
-      </Card>
+      </div>
 
 
       <DataTable

@@ -1,5 +1,6 @@
 import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/database';
+import type User from './User';
 
 export class AuditLog extends Model {
   public id!: number;
@@ -11,6 +12,9 @@ export class AuditLog extends Model {
   public ipAddress!: string | null;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  // Associations (populated by include)
+  public user?: User;
 }
 
 AuditLog.init(

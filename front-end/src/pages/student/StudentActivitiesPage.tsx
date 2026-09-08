@@ -9,18 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { ActivityStatus, ActivityType } from '@/types';
 
-const TYPE_CONFIG: Record<ActivityType, { label: string; color: string }> = {
-  tarea: { label: 'Tarea', color: 'bg-sky-100 text-sky-700 border-sky-200' },
-  examen: { label: 'Examen', color: 'bg-rose-100 text-rose-700 border-rose-200' },
-  taller: { label: 'Taller', color: 'bg-amber-100 text-amber-700 border-amber-200' },
-  proyecto: { label: 'Proyecto', color: 'bg-purple-100 text-purple-700 border-purple-200' },
-  deber: { label: 'Deber', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-};
-
-const STATUS_CONFIG: Record<ActivityStatus, { label: string; icon: React.ReactNode; color: string }> = {
-  programada: { label: 'Programada', icon: <Clock className="h-3 w-3" />, color: 'bg-slate-100 text-slate-600 border-slate-200' },
-  en_curso: { label: 'En Curso', icon: <Sparkles className="h-3 w-3" />, color: 'bg-amber-100 text-amber-700 border-amber-200' },
-  completada: { label: 'Completada', icon: <CheckCircle2 className="h-3 w-3" />, color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+const TYPE_CONFIG: Record<ActivityType, { label: string; variant: 'secondary' | 'outline' | 'purple' | 'pink' | 'warning' }> = {
+  tarea: { label: 'Tarea', variant: 'outline' },
+  examen: { label: 'Examen', variant: 'pink' },
+  taller: { label: 'Taller', variant: 'warning' },
+  proyecto: { label: 'Proyecto', variant: 'purple' },
+  deber: { label: 'Deber', variant: 'secondary' },
 };
 
 export default function StudentActivitiesPage() {
@@ -30,7 +24,6 @@ export default function StudentActivitiesPage() {
   const allActivities = teacherModuleService.getActivities();
   const submissions = teacherModuleService.getSubmissions();
 
-  // Get unique courses
   const courses = useMemo(() => {
     const map = new Map<number, string>();
     allActivities.forEach((a) => map.set(a.courseId, a.courseName));
@@ -46,181 +39,179 @@ export default function StudentActivitiesPage() {
       list = list.filter((a) => a.status === statusFilter);
     }
     return list.sort((a, b) => {
-      // Sort: en_curso first, then programada, then completada
       const order: Record<string, number> = { en_curso: 0, programada: 1, completada: 2 };
       return (order[a.status] ?? 3) - (order[b.status] ?? 3);
     });
   }, [allActivities, courseFilter, statusFilter]);
 
-  // Stats
   const stats = {
     total: allActivities.length,
     enCurso: allActivities.filter((a) => a.status === 'en_curso').length,
     programadas: allActivities.filter((a) => a.status === 'programada').length,
-    completadas: allActivities.filter((a) => a.status === 'completada').length,
+    completadas: allActivities.filter((a) => a.status === 'finalizada' || a.status === 'completada').length,
   };
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <Button asChild variant="ghost" size="sm" className="text-school-body font-medium hover:bg-school-subtle">
+          <Link to="/estudiante">
+            <ArrowLeft className="h-4 w-4 mr-1.5 text-school-primary" /> Volver al Dashboard
+          </Link>
+        </Button>
+      </div>
+
       <PageHeader
-        title="Actividades Programadas"
-        description="Deberes, exámenes, talleres y proyectos asignados por tus docentes"
+        eyebrow="Estudiante"
+        title="Actividades y Tareas"
+        description="Deberes, talleres, proyectos y evaluaciones asignados por tus docentes"
       />
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Card className="bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-white/60">
-          <CardContent className="p-4 text-center">
-            <CalendarCheck className="h-5 w-5 mx-auto text-[#008BC1] mb-1" />
-            <p className="text-2xl font-black text-slate-800">{stats.total}</p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase">Total</p>
-          </CardContent>
+        <Card className="p-4 text-center">
+          <CalendarCheck className="h-5 w-5 mx-auto text-school-primary mb-1" />
+          <p className="text-2xl font-bold text-school-heading">{stats.total}</p>
+          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Total</p>
         </Card>
-        <Card className="bg-amber-50/80 backdrop-blur-md rounded-2xl shadow-lg border border-amber-100">
-          <CardContent className="p-4 text-center">
-            <Sparkles className="h-5 w-5 mx-auto text-amber-600 mb-1" />
-            <p className="text-2xl font-black text-amber-700">{stats.enCurso}</p>
-            <p className="text-[10px] font-bold text-amber-500 uppercase">En Curso</p>
-          </CardContent>
+        <Card className="p-4 text-center">
+          <Sparkles className="h-5 w-5 mx-auto text-school-warning mb-1" />
+          <p className="text-2xl font-bold text-school-warning">{stats.enCurso}</p>
+          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">En Curso</p>
         </Card>
-        <Card className="bg-slate-50/80 backdrop-blur-md rounded-2xl shadow-lg border border-slate-200">
-          <CardContent className="p-4 text-center">
-            <Clock className="h-5 w-5 mx-auto text-slate-500 mb-1" />
-            <p className="text-2xl font-black text-slate-700">{stats.programadas}</p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase">Programadas</p>
-          </CardContent>
+        <Card className="p-4 text-center">
+          <Clock className="h-5 w-5 mx-auto text-school-blue mb-1" />
+          <p className="text-2xl font-bold text-school-blue">{stats.programadas}</p>
+          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Programadas</p>
         </Card>
-        <Card className="bg-emerald-50/80 backdrop-blur-md rounded-2xl shadow-lg border border-emerald-100">
-          <CardContent className="p-4 text-center">
-            <CheckCircle2 className="h-5 w-5 mx-auto text-emerald-600 mb-1" />
-            <p className="text-2xl font-black text-emerald-700">{stats.completadas}</p>
-            <p className="text-[10px] font-bold text-emerald-500 uppercase">Completadas</p>
-          </CardContent>
+        <Card className="p-4 text-center">
+          <CheckCircle2 className="h-5 w-5 mx-auto text-school-success mb-1" />
+          <p className="text-2xl font-bold text-school-success">{stats.completadas}</p>
+          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Completadas</p>
         </Card>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <Filter className="h-4 w-4 text-slate-400" />
-        <Select value={courseFilter} onValueChange={setCourseFilter}>
-          <SelectTrigger className="w-56 rounded-xl border-slate-200 bg-white font-bold text-xs">
-            <SelectValue placeholder="Filtrar por curso" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos los cursos</SelectItem>
-            {courses.map((c) => (
-              <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48 rounded-xl border-slate-200 bg-white font-bold text-xs">
-            <SelectValue placeholder="Filtrar por estado" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos los estados</SelectItem>
-            <SelectItem value="en_curso">En Curso</SelectItem>
-            <SelectItem value="programada">Programada</SelectItem>
-            <SelectItem value="completada">Completada</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <Card className="p-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2 flex-1">
+            <Filter className="h-4 w-4 text-school-muted shrink-0" />
+            <span className="text-sm font-medium text-school-heading shrink-0">Filtrar por materia:</span>
+            <Select value={courseFilter} onValueChange={setCourseFilter}>
+              <SelectTrigger className="w-full sm:w-64">
+                <SelectValue placeholder="Todas las materias" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas las materias</SelectItem>
+                {courses.map((c) => (
+                  <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-school-heading shrink-0">Estado:</span>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Todos los estados" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los estados</SelectItem>
+                <SelectItem value="en_curso">En Curso</SelectItem>
+                <SelectItem value="programada">Programadas</SelectItem>
+                <SelectItem value="finalizada">Finalizadas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </Card>
 
       {/* Activities List */}
       {filtered.length === 0 ? (
-        <Card className="p-8 text-center bg-white/95 backdrop-blur-md rounded-2xl shadow-sm border border-slate-200">
-          <FileCheck className="h-10 w-10 mx-auto text-slate-300 mb-2" />
-          <p className="font-extrabold text-slate-600 text-sm">No hay actividades disponibles</p>
-          <p className="text-xs text-slate-400 mt-1">No se encontraron actividades con los filtros seleccionados.</p>
+        <Card className="p-12 text-center">
+          <FileCheck className="h-10 w-10 mx-auto text-school-muted mb-2" />
+          <p className="font-semibold text-school-heading text-base">No hay actividades disponibles</p>
+          <p className="text-sm text-school-muted mt-1">No se encontraron actividades con los filtros seleccionados.</p>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           {filtered.map((act) => {
-            const typeCfg = TYPE_CONFIG[act.type];
-            const statusCfg = STATUS_CONFIG[act.status];
+            const typeCfg = TYPE_CONFIG[act.type] ?? { label: 'Actividad', variant: 'secondary' };
             const mySub = submissions.find((s) => s.activityId === act.id);
             const isGraded = mySub?.status === 'calificada' || mySub?.score !== undefined;
             const isSubmitted = !!mySub;
 
             return (
-              <Card key={act.id} className="bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-white/60 overflow-hidden hover:shadow-xl transition-all">
-                <CardContent className="p-5 space-y-3">
-                  {/* Header */}
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-black text-slate-800 text-base leading-snug">{act.title}</h3>
-                    <Badge className={`${statusCfg.color} border font-bold text-[10px] gap-1 shrink-0`}>
-                      {statusCfg.icon}
-                      {statusCfg.label}
-                    </Badge>
-                  </div>
+              <Card key={act.id} className="flex flex-col justify-between hover:border-school-accent transition-colors">
+                <CardContent className="p-6 space-y-4 flex flex-col justify-between flex-1">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-bold text-school-heading text-base leading-snug">{act.title}</h3>
+                      <Badge variant={act.status === 'programada' ? 'warning' : act.status === 'finalizada' ? 'secondary' : 'success'} className="shrink-0">
+                        {act.status === 'programada' ? 'Programada' : act.status === 'finalizada' ? 'Finalizada' : 'En Curso'}
+                      </Badge>
+                    </div>
 
-                  {/* Meta info */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge className={`${typeCfg.color} border font-bold text-[10px]`}>
-                      {typeCfg.label}
-                    </Badge>
-                    <span className="flex items-center gap-1 text-[11px] font-bold text-slate-400">
-                      <BookOpen className="h-3 w-3 text-[#008BC1]" />
-                      {act.courseName}
-                    </span>
-                  </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant={typeCfg.variant}>
+                        {typeCfg.label}
+                      </Badge>
+                      <span className="flex items-center gap-1 text-xs font-medium text-school-muted">
+                        <BookOpen className="h-3.5 w-3.5 text-school-primary" />
+                        {act.courseName}
+                      </span>
+                    </div>
 
-                  {/* Due date */}
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
-                    <Calendar className="h-3.5 w-3.5 text-[#E84B5B]" />
-                    <span>Fecha límite: {act.dueDate}</span>
-                  </div>
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-school-muted">
+                      <Calendar className="h-3.5 w-3.5 text-school-primary" />
+                      <span>Fecha límite: {act.dueDate}</span>
+                    </div>
 
-                  {/* Description */}
-                  {act.description && (
-                    <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 leading-relaxed">
-                      {act.description}
-                    </p>
-                  )}
+                    {act.description && (
+                      <p className="text-sm text-school-body bg-school-background p-3 rounded-xl border border-school-border/60 leading-relaxed">
+                        {act.description}
+                      </p>
+                    )}
+                  </div>
 
                   {/* Status & Grade Footer */}
-                  {isGraded ? (
-                    <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-200 text-xs flex items-center justify-between">
-                      <span className="font-extrabold text-amber-900 flex items-center gap-1">
-                        <Award className="h-4 w-4 text-amber-600" />
-                        Nota: {mySub.score}/10
-                      </span>
-                      <Link to={`/estudiante/curso/${act.courseId}`} className="text-[#008BC1] font-bold hover:underline text-[11px]">
-                        Ver Retroalimentación →
-                      </Link>
-                    </div>
-                  ) : isSubmitted ? (
-                    <div className="bg-teal-50 p-2.5 rounded-xl border border-teal-100 text-xs flex items-center justify-between">
-                      <span className="font-bold text-teal-800 flex items-center gap-1">
-                        <FileCheck className="h-4 w-4 text-[#31B45A]" />
-                        Entregado (En revisión)
-                      </span>
-                      <Link to={`/estudiante/curso/${act.courseId}`} className="text-[#008BC1] font-bold hover:underline text-[11px]">
-                        Ver Detalle →
-                      </Link>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-                      <span className="text-[11px] font-semibold text-slate-400">Sin entregar</span>
-                      <Button asChild size="sm" className="bg-[#008BC1] hover:bg-[#0073A0] text-white text-xs font-bold rounded-xl h-8">
-                        <Link to={`/estudiante/curso/${act.courseId}`}>Ir a Entregar</Link>
-                      </Button>
-                    </div>
-                  )}
+                  <div className="pt-3 border-t border-school-border/60">
+                    {isGraded ? (
+                      <div className="bg-school-subtle/60 p-3 rounded-xl border border-school-border text-xs flex items-center justify-between">
+                        <span className="font-semibold text-school-heading flex items-center gap-1.5">
+                          <Award className="h-4 w-4 text-school-warning" />
+                          Nota: <strong className="text-school-primary">{mySub.score}/10</strong>
+                        </span>
+                        <Link to={`/estudiante/cursos/${act.courseId}`} className="text-school-primary font-semibold hover:underline text-xs">
+                          Ver Retroalimentación →
+                        </Link>
+                      </div>
+                    ) : isSubmitted ? (
+                      <div className="bg-school-subtle/40 p-3 rounded-xl border border-school-border text-xs flex items-center justify-between">
+                        <span className="font-medium text-emerald-800 flex items-center gap-1.5">
+                          <FileCheck className="h-4 w-4 text-school-success" />
+                          Entregado (En revisión)
+                        </span>
+                        <Link to={`/estudiante/cursos/${act.courseId}`} className="text-school-primary font-semibold hover:underline text-xs">
+                          Ver Detalle →
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-school-muted font-medium">Pendiente de entrega</span>
+                        <Button asChild size="sm">
+                          <Link to={`/estudiante/cursos/${act.courseId}`}>Ir a Entregar</Link>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             );
           })}
         </div>
       )}
-
-      <div className="flex justify-start">
-        <Button asChild variant="ghost" size="sm" className="text-slate-600 font-bold hover:bg-slate-100 rounded-xl">
-          <Link to="/estudiante">
-            <ArrowLeft className="h-4 w-4 mr-1.5 text-[#008BC1]" /> Volver al Dashboard
-          </Link>
-        </Button>
-      </div>
     </div>
   );
 }
