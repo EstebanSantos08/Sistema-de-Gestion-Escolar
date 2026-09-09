@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react';
+import { useId, useRef, useState, useEffect } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Input, type InputProps } from './input';
 import { Button } from './button';
@@ -27,6 +27,15 @@ export function DatePicker({ value, onValueChange, type = 'date', min, max, disa
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const today = localDate(new Date());
+
+  useEffect(() => {
+    if (value) {
+      const parsed = parseDate(value);
+      setMonth(parsed);
+      setFocused(value.slice(0, 10) || localDate(parsed));
+    }
+  }, [value]);
+
   const first = new Date(month.getFullYear(), month.getMonth(), 1);
   const offset = (first.getDay() + 6) % 7;
   const days = Array.from({ length: 42 }, (_, index) => new Date(month.getFullYear(), month.getMonth(), index - offset + 1));
@@ -47,7 +56,11 @@ export function DatePicker({ value, onValueChange, type = 'date', min, max, disa
     if (min && next < String(min)) next = String(min);
     if (max && next > String(max)) next = String(max);
     onValueChange(next);
-    popover.current?.hidePopover();
+    try {
+      popover.current?.hidePopover();
+    } catch {
+      // ignore
+    }
     trigger.current?.focus();
   }
   return (

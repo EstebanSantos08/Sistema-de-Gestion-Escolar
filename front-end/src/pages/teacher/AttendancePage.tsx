@@ -160,14 +160,16 @@ export default function AttendancePage() {
         title="Control de Asistencia"
         description="Pase de lista oficial por curso y jornada académica — Datos canónicos del servidor"
       >
-        <Button
-          onClick={handleSave}
-          disabled={isSaving || isLoading || students.length === 0 || isReadOnly}
-          className="gap-2"
-        >
-          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          {isSaving ? 'Guardando...' : isReadOnly ? 'Modo Consulta' : 'Guardar Asistencia'}
-        </Button>
+        {!isPast && (
+          <Button
+            onClick={handleSave}
+            disabled={isSaving || isLoading || students.length === 0 || isReadOnly}
+            className="gap-2"
+          >
+            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {isSaving ? 'Guardando...' : 'Guardar Asistencia'}
+          </Button>
+        )}
       </PageHeader>
 
       {/* Banner de Modo Consulta Histórica si regresa al pasado */}
@@ -258,15 +260,27 @@ export default function AttendancePage() {
 
       {/* Student List */}
       <Card className="shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-school-border/70 flex items-center justify-between">
+        <div className="p-4 border-b border-school-border/70 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
-            <h3 className="font-bold text-base text-school-heading">
-              {activeCourse ? activeCourse.name : 'Listado de Alumnos'}
-            </h3>
-            <p className="text-xs text-school-muted-readable">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-bold text-base text-school-heading">
+                {activeCourse ? activeCourse.name : 'Listado de Alumnos'}
+              </h3>
+              {isPast && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-md">
+                  <AlertCircle className="h-3 w-3 text-amber-600" /> Modo consulta ({date})
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-school-muted-readable mt-0.5">
               {students.length} estudiantes matriculados en este curso
             </p>
           </div>
+          {isPast && (
+            <span className="text-xs text-amber-800 font-medium bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/80 self-start sm:self-auto">
+              Solo lectura — Sin opción de guardado
+            </span>
+          )}
         </div>
 
         {isLoading ? (

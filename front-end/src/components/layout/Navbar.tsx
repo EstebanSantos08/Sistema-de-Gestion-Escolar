@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { navigationForRole, isNavigationActive, navigationLinkClass } from './navigation';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, User as UserIcon, Menu } from 'lucide-react';
+import { LogOut, User as UserIcon, Menu, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { NiceKidsLogo } from '@/components/shared/NiceKidsLogo';
@@ -53,9 +53,30 @@ export function Navbar() {
 
   const currentRole = roleMeta[user.role] || roleMeta.student;
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      const defaultPath = user.role === 'admin' ? '/admin' : user.role === 'teacher' ? '/docente' : '/estudiante';
+      navigate(defaultPath);
+    }
+  };
+
   return (
     <header className="flex min-h-[64px] items-center justify-between gap-3 border-b border-line-turquoise bg-school-bg/95 px-4 py-2.5 sm:px-6">
-      <div className="flex items-center gap-3.5">
+      <div className="flex items-center gap-2 sm:gap-3.5">
+        {/* Back navigation button */}
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={handleBack}
+          className="h-10 w-10 sm:h-10 sm:w-10 border-school-border text-ink-turquoise hover:bg-school-subtle rounded-xl shadow-2xs cursor-pointer"
+          title="Regresar a la página anterior"
+          aria-label="Regresar a la página anterior"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+
         {/* Mobile menu trigger */}
         <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
           <DialogTrigger asChild>
