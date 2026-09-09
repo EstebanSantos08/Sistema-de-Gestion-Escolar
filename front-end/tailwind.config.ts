@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
+  safelist: ['accent-turquoise', 'accent-blue', 'accent-lime', 'accent-yellow', 'accent-pink', 'accent-violet', 'accent-lilac'],
   darkMode: ['class'],
   content: [
     './index.html',
@@ -52,13 +53,22 @@ const config: Config = {
         school: {
           bg: '#F4FAF9',
           surface: '#FFFFFF',
-          primary: '#41C4BD',
-          'primary-hover': '#3AA8A2',
+          primary: '#087F79',
+          'primary-hover': '#066863',
+          'primary-active': '#05524E',
+          'error-hover': '#971D2C',
+          'error-border': '#F7C3C9',
+          'success-border': '#C6E7C8',
+          'warning-border': '#F6E4AC',
+          subtle: '#E3F5F3',
+          background: '#F4FAF9',
+          blue: '#23688F',
           'primary-subtle': '#E3F5F3',
           accent: '#41C4BD',
           heading: '#183B3A',
           body: '#365451',
           muted: '#5E7A77',
+          'muted-readable': '#4F6965',
           border: '#D6E5E3',
           input: '#718B88',
           success: '#287A32',
@@ -80,6 +90,18 @@ const config: Config = {
           'violet-bg': '#F6EDF8',
           lilac: '#EE7DCC',
         },
+        surface: {
+          turquoise: '#E6F8F6', blue: '#EEF8FD', lime: '#F3F9E7',
+          yellow: '#FFF9DF', pink: '#FFF0F6', violet: '#F7EFFA', lilac: '#FAEFF8',
+        },
+        ink: {
+          turquoise: '#066863', blue: '#23688F', lime: '#4F6C0C',
+          yellow: '#765D00', pink: '#A92760', violet: '#813092', lilac: '#8F3977',
+        },
+        line: {
+          turquoise: '#ABDCD6', blue: '#B7DCEF', lime: '#CCE39A',
+          yellow: '#E9D889', pink: '#F0B7D0', violet: '#D8B7E1', lilac: '#E8BEDF',
+        },
         brand: {
           turquoise: '#41C4BD',
           primary: '#087F79',
@@ -94,6 +116,9 @@ const config: Config = {
         },
       },
       borderRadius: {
+        card: '1.25rem',
+        panel: '1.5rem',
+        banner: '1.75rem',
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',

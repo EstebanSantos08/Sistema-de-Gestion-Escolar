@@ -89,13 +89,13 @@ export default function ObservationsPage() {
     switch (type) {
       case 'ACADEMIC':
         return (
-          <Badge variant="success" className="gap-1">
+          <Badge variant="secondary" className="gap-1">
             <ThumbsUp className="h-3 w-3" /> Académica
           </Badge>
         );
       case 'BEHAVIORAL':
         return (
-          <Badge variant="destructive" className="gap-1">
+          <Badge variant="purple" className="gap-1">
             <AlertTriangle className="h-3 w-3" /> Conductual
           </Badge>
         );
@@ -112,13 +112,13 @@ export default function ObservationsPage() {
     switch (vis) {
       case 'ESTUDIANTE_Y_PADRES':
         return (
-          <Badge variant="outline" className="gap-1 text-xs text-school-muted">
+          <Badge variant="outline" className="gap-1 text-xs text-school-muted-readable">
             <Eye className="h-3 w-3" /> Visible para Estudiante y Familia
           </Badge>
         );
       case 'SOLO_ESTUDIANTE':
         return (
-          <Badge variant="outline" className="gap-1 text-xs text-school-muted">
+          <Badge variant="outline" className="gap-1 text-xs text-school-muted-readable">
             <Eye className="h-3 w-3" /> Solo Estudiante
           </Badge>
         );
@@ -147,7 +147,7 @@ export default function ObservationsPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="flex items-center gap-4 bg-white p-4 rounded-xl border border-school-border/70 shadow-xs">
+      <div className="nk-card nk-filter flex flex-wrap items-center gap-4 p-5">
         <span className="text-sm font-medium text-school-heading">Filtrar por tipo:</span>
         <Select value={selectedTypeFilter} onValueChange={setSelectedTypeFilter}>
           <SelectTrigger className="w-48">
@@ -165,8 +165,8 @@ export default function ObservationsPage() {
       {/* Loading state */}
       {isLoading ? (
         <div className="py-16 text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-school-primary mb-3" />
-          <p className="text-school-muted">Cargando observaciones institucionales...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-ink-turquoise mb-3" />
+          <p className="text-school-muted-readable">Cargando observaciones institucionales...</p>
         </div>
       ) : isError ? (
         <div className="py-16 text-center text-red-600">
@@ -175,9 +175,9 @@ export default function ObservationsPage() {
       ) : filteredObservations.length === 0 ? (
         <Card className="text-center py-16">
           <CardContent className="space-y-3">
-            <Info className="h-10 w-10 text-school-muted mx-auto" />
+            <Info className="h-10 w-10 text-school-muted-readable mx-auto" />
             <p className="text-base font-semibold text-school-heading">No hay observaciones registradas</p>
-            <p className="text-sm text-school-muted max-w-md mx-auto">
+            <p className="text-sm text-school-muted-readable max-w-md mx-auto">
               Utiliza el botón superior para crear la primera observación de seguimiento para tus estudiantes.
             </p>
           </CardContent>
@@ -185,7 +185,7 @@ export default function ObservationsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredObservations.map((obs: BackendObservation) => (
-            <Card key={obs.id} className="flex flex-col justify-between hover:shadow-md transition-shadow">
+            <Card accent={obs.type === 'ACADEMIC' ? 'blue' : obs.type === 'BEHAVIORAL' ? 'violet' : 'turquoise'} key={obs.id} className="nk-event flex flex-col justify-between">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="space-y-1">
@@ -210,9 +210,9 @@ export default function ObservationsPage() {
                   {obs.description}
                 </p>
 
-                <div className="pt-2 border-t border-school-border/60 text-xs text-school-muted flex items-center justify-between flex-wrap gap-2">
+                <div className="pt-2 border-t border-school-border/60 text-xs text-school-muted-readable flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-1.5 font-medium text-school-heading">
-                    <User className="h-3.5 w-3.5 text-school-primary" />
+                    <User className="h-3.5 w-3.5 text-ink-turquoise" />
                     <span>{obs.student?.user?.name || `Estudiante #${obs.studentId}`}</span>
                   </div>
                   <span>{new Date(obs.date || obs.createdAt).toLocaleDateString('es-ES')}</span>

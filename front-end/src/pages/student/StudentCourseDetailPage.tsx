@@ -181,22 +181,22 @@ export default function StudentCourseDetailPage() {
       <div className="flex items-center gap-3">
         <Button asChild variant="ghost" size="sm" className="text-school-body font-medium hover:bg-school-subtle">
           <Link to="/estudiante/mis-cursos">
-            <ArrowLeft className="h-4 w-4 mr-1.5 text-school-primary" /> Volver a Mis Cursos
+            <ArrowLeft className="h-4 w-4 mr-1.5 text-ink-turquoise" /> Volver a Mis Cursos
           </Link>
         </Button>
       </div>
 
       {/* Encabezado del Aula Virtual */}
-      <div className="bg-school-primary rounded-2xl p-6 sm:p-8 text-white shadow-sm relative overflow-hidden">
+      <div className="nk-card nk-section accent-blue p-6 sm:p-8 relative overflow-hidden">
         <div className="relative z-10 space-y-2">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-school-subtle bg-white/10 px-2.5 py-0.5 rounded-md">
+            <span className="text-xs font-semibold uppercase tracking-wider text-ink-blue bg-white/80 px-2.5 py-0.5 rounded-md">
               {course?.code ?? 'AULA'}
             </span>
-            <span className="text-xs text-white/80">· Período {course?.period ?? '2026-I'}</span>
+            <span className="text-sm text-school-body">· Período {course?.period ?? '2026-I'}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold">{course?.name ?? 'Aula Virtual'}</h1>
-          <p className="text-sm text-white/90">
+          <p className="text-sm text-school-body">
             Aula virtual de aprendizaje y entrega de actividades
           </p>
         </div>
@@ -204,7 +204,7 @@ export default function StudentCourseDetailPage() {
 
       <div className="flex items-center justify-between border-b border-school-border pb-3">
         <div className="flex items-center gap-2">
-          <FileText className="h-5 w-5 text-school-primary" />
+          <FileText className="h-5 w-5 text-ink-turquoise" />
           <h2 className="text-lg font-bold text-school-heading">
             Actividades y Deberes Asignados ({activities.length})
           </h2>
@@ -217,9 +217,9 @@ export default function StudentCourseDetailPage() {
         </div>
       ) : activities.length === 0 ? (
         <Card className="p-12 text-center">
-          <FileText className="h-10 w-10 mx-auto text-school-muted mb-2" />
+          <FileText className="h-10 w-10 mx-auto text-school-muted-readable mb-2" />
           <p className="font-semibold text-school-heading text-base">No hay actividades asignadas aún</p>
-          <p className="text-sm text-school-muted mt-1">
+          <p className="text-sm text-school-muted-readable mt-1">
             Tu docente publicará aquí los deberes y tareas correspondientes a esta materia.
           </p>
         </Card>
@@ -255,8 +255,8 @@ export default function StudentCourseDetailPage() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-school-muted">
-                      <Calendar className="h-3.5 w-3.5 text-school-primary shrink-0" />
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-school-muted-readable">
+                      <Calendar className="h-3.5 w-3.5 text-ink-turquoise shrink-0" />
                       <span>Fecha límite: {act.dueDate || 'Sin fecha límite'}</span>
                     </div>
 
@@ -273,13 +273,13 @@ export default function StudentCourseDetailPage() {
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-school-heading flex items-center gap-1.5">
                           <Award className="h-4 w-4 text-school-warning" />
-                          Nota de Tarea: <strong className="text-sm text-school-primary">{mySubmission.score} / 10</strong>
+                          Nota de Tarea: <strong className="text-sm text-ink-turquoise">{mySubmission.score} / 10</strong>
                         </span>
                       </div>
 
                       {mySubmission.teacherFeedback && (
                         <div className="space-y-1 bg-white p-3 rounded-lg border border-school-border">
-                          <p className="text-xs font-semibold text-school-muted uppercase tracking-wider">
+                          <p className="text-xs font-semibold text-school-muted-readable uppercase tracking-wider">
                             Comentarios del Docente:
                           </p>
                           <p className="text-sm text-school-body italic leading-relaxed">
@@ -288,7 +288,7 @@ export default function StudentCourseDetailPage() {
                         </div>
                       )}
 
-                      <div className="flex items-center justify-between text-xs text-school-muted pt-1 border-t border-school-border/60">
+                      <div className="flex items-center justify-between text-xs text-school-muted-readable pt-1 border-t border-school-border/60">
                         <span>Estado: Completada</span>
                         {primaryEvidence && (
                           <div className="flex items-center gap-2">
@@ -299,14 +299,14 @@ export default function StudentCourseDetailPage() {
                                 setPreviewMediaUrl(evUrl);
                                 setPreviewMediaTitle(`Mi Evidencia — ${primaryEvidence.fileName}`);
                               }}
-                              className="text-school-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                              className="text-ink-turquoise hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                             >
                               <Eye className="h-3.5 w-3.5" /> Ver Evidencia
                             </button>
                             <button
                               type="button"
                               onClick={() => submissionService.downloadEvidence(mySubmission.id, primaryEvidence.id, primaryEvidence.fileName)}
-                              className="text-school-heading hover:text-school-primary font-medium flex items-center gap-1 cursor-pointer"
+                              className="text-school-heading hover:text-ink-turquoise font-medium flex items-center gap-1 cursor-pointer"
                             >
                               <Download className="h-3.5 w-3.5" /> Descargar
                             </button>
@@ -328,7 +328,7 @@ export default function StudentCourseDetailPage() {
 
                       {primaryEvidence && (
                         <div className="flex items-center justify-between pt-1 border-t border-school-border/60">
-                          <span className="text-school-muted truncate text-xs">
+                          <span className="text-school-muted-readable truncate text-xs">
                             📎 {primaryEvidence.fileName}
                           </span>
                           <div className="flex items-center gap-1.5">
@@ -398,15 +398,15 @@ export default function StudentCourseDetailPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-school-heading flex items-center gap-2">
-              <Upload className="h-5 w-5 text-school-primary" />
+              <Upload className="h-5 w-5 text-ink-turquoise" />
               Entregar Deber: {selectedActivity?.title}
             </DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSubmitEvidence} className="space-y-4 pt-2">
             <div className="bg-school-subtle/60 p-3 rounded-xl border border-school-border text-xs space-y-1 text-school-body">
-              <p className="font-semibold flex items-center gap-1.5 text-school-primary">
-                <Paperclip className="h-4 w-4 text-school-primary" />
+              <p className="font-semibold flex items-center gap-1.5 text-ink-turquoise">
+                <Paperclip className="h-4 w-4 text-ink-turquoise" />
                 Formatos Aceptados: Imágenes (JPG, PNG, WEBP) y documentos PDF.
               </p>
               <p className="text-school-warning font-medium">
@@ -420,7 +420,7 @@ export default function StudentCourseDetailPage() {
                 type="file"
                 accept="image/*,.pdf,.jpg,.jpeg,.png,.webp,.gif,.heic"
                 onChange={handleFileChange}
-                className="cursor-pointer file:mr-2 file:rounded-md file:border-0 file:bg-school-subtle file:text-school-primary file:font-semibold"
+                className="cursor-pointer file:mr-2 file:rounded-md file:border-0 file:bg-school-subtle file:text-ink-turquoise file:font-semibold"
                 required
               />
             </div>
@@ -477,7 +477,7 @@ export default function StudentCourseDetailPage() {
                   href={previewMediaUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1.5 bg-school-background hover:bg-school-subtle text-school-primary rounded-lg font-medium text-xs inline-flex items-center gap-1 border border-school-border transition-colors"
+                  className="px-3 py-1.5 bg-school-background hover:bg-school-subtle text-ink-turquoise rounded-lg font-medium text-xs inline-flex items-center gap-1 border border-school-border transition-colors"
                 >
                   <ExternalLink className="h-3.5 w-3.5" /> Abrir en Pestaña
                 </a>
@@ -496,8 +496,8 @@ export default function StudentCourseDetailPage() {
                     title="PDF Preview"
                     className="w-full h-[65vh] rounded-lg border border-school-border"
                   >
-                    <div className="p-8 text-center text-school-muted space-y-3">
-                      <FileText className="h-10 w-10 mx-auto text-school-primary" />
+                    <div className="p-8 text-center text-school-muted-readable space-y-3">
+                      <FileText className="h-10 w-10 mx-auto text-ink-turquoise" />
                       <p className="font-semibold text-sm text-school-heading">No se pudo visualizar el documento directamente.</p>
                       <a
                         href={previewMediaUrl}

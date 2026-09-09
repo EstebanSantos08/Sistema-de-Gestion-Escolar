@@ -13,7 +13,7 @@ export const CloudDivider: React.FC<CloudDividerProps> = ({
 }) => {
   return (
     <div className={`w-full overflow-hidden leading-none ${flip ? 'rotate-180' : ''} ${className}`}>
-      <svg
+      <svg aria-hidden="true" focusable="false"
         className="relative block w-full h-8 sm:h-12 md:h-16"
         viewBox="0 0 1200 120"
         preserveAspectRatio="none"
@@ -34,7 +34,7 @@ export const SoftWaveDivider: React.FC<CloudDividerProps> = ({
 }) => {
   return (
     <div className={`w-full overflow-hidden leading-none ${flip ? 'rotate-180' : ''} ${className}`}>
-      <svg
+      <svg aria-hidden="true" focusable="false"
         className="relative block w-full h-10 sm:h-16"
         viewBox="0 0 1440 120"
         preserveAspectRatio="none"
@@ -59,7 +59,6 @@ export const FloatingCloud: React.FC<FloatingCloudProps> = ({
   className = '',
   size = 'md',
   color = '#FFFFFF',
-  delayed = false,
 }) => {
   const sizeMap = {
     sm: 'w-16 h-10',
@@ -69,9 +68,9 @@ export const FloatingCloud: React.FC<FloatingCloudProps> = ({
 
   return (
     <div
-      className={`inline-block opacity-80 ${delayed ? 'animate-float-delayed' : 'animate-float'} ${className}`}
+      className={`inline-block opacity-80  ${className}`}
     >
-      <svg
+      <svg aria-hidden="true" focusable="false"
         className={sizeMap[size]}
         viewBox="0 0 100 60"
         fill={color}
@@ -95,12 +94,12 @@ export const SparkleStar: React.FC<SparkleStarProps> = ({
   size = 24,
 }) => {
   return (
-    <svg
+    <svg aria-hidden="true" focusable="false"
       width={size}
       height={size}
       viewBox="0 0 24 24"
       fill="none"
-      className={`animate-pulse-soft ${className}`}
+      className={` ${className}`}
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
@@ -111,15 +110,11 @@ export const SparkleStar: React.FC<SparkleStarProps> = ({
   );
 };
 
-export const PlayfulDotsPattern: React.FC<{ className?: string }> = ({ className = '' }) => {
-  return (
-    <div className={`absolute inset-0 pointer-events-none overflow-hidden opacity-30 ${className}`}>
-      <div className="absolute top-10 left-10 w-4 h-4 rounded-full bg-[#FF5DA0] animate-float" />
-      <div className="absolute top-20 right-16 w-6 h-6 rounded-full bg-[#41C4BD] animate-float-delayed" />
-      <div className="absolute bottom-16 left-1/4 w-5 h-5 rounded-full bg-[#9DD31B] animate-bounce-soft" />
-      <div className="absolute bottom-24 right-1/3 w-3 h-3 rounded-full bg-[#F2C700] animate-float" />
-      <div className="absolute top-1/3 left-1/2 w-4 h-4 rounded-full bg-[#64B6E5] animate-float-delayed" />
-      <div className="absolute top-2/3 right-10 w-5 h-5 rounded-full bg-[#EE7DCC] animate-float" />
-    </div>
-  );
-};
+export const PlayfulDotsPattern: React.FC<{ className?: string }> = ({ className = '' }) => (
+  <div aria-hidden="true" className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}>
+    <div className="absolute -right-24 top-80 h-72 w-72 rounded-full border-[40px] border-brand-lightblue/10" />
+    <div className="absolute -left-16 top-1/2 h-60 w-60 rounded-full bg-brand-lime/5" />
+    <div className="absolute bottom-12 right-12 h-32 w-32 rounded-t-full border-[18px] border-brand-pink/10" />
+    <div className="absolute left-1/2 top-12 h-3 w-3 rounded-full bg-brand-yellow/15" />
+  </div>
+);

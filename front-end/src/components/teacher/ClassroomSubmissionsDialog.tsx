@@ -239,26 +239,26 @@ export function ClassroomSubmissionsDialog({
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wider bg-school-subtle text-school-primary px-2.5 py-0.5 rounded-md">
+                <span className="text-xs font-semibold uppercase tracking-wider bg-school-subtle text-ink-turquoise px-2.5 py-0.5 rounded-md">
                   {courseNameLabel}
                 </span>
-                <span className="text-xs font-medium text-school-muted">
+                <span className="text-xs font-medium text-school-muted-readable">
                   · {activityTypeLabel}
                 </span>
               </div>
               <DialogTitle className="text-xl sm:text-2xl font-bold text-school-heading flex items-center gap-2 pt-1">
-                <BookOpen className="h-5 w-5 text-school-primary shrink-0" />
+                <BookOpen className="h-5 w-5 text-ink-turquoise shrink-0" />
                 {activity.title}
               </DialogTitle>
               {activity.description && (
-                <p className="text-sm text-school-muted max-w-3xl leading-relaxed">
+                <p className="text-sm text-school-muted-readable max-w-3xl leading-relaxed">
                   {activity.description}
                 </p>
               )}
             </div>
 
-            <div className="flex items-center gap-1.5 text-xs font-medium text-school-primary bg-white px-3 py-1.5 rounded-xl border border-school-border shrink-0 shadow-xs">
-              <Clock className="h-4 w-4 text-school-primary" />
+            <div className="flex items-center gap-1.5 text-xs font-medium text-ink-turquoise bg-white px-3 py-1.5 rounded-xl border border-school-border shrink-0 shadow-xs">
+              <Clock className="h-4 w-4 text-ink-turquoise" />
               <span>Límite: {activity.dueDate}</span>
             </div>
           </div>
@@ -270,7 +270,7 @@ export function ClassroomSubmissionsDialog({
                 <CheckCircle2 className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-xs text-school-muted font-medium">Entregadas</p>
+                <p className="text-xs text-school-muted-readable font-medium">Entregadas</p>
                 <p className="text-lg font-bold text-school-heading">{submittedCount}</p>
               </div>
             </div>
@@ -280,7 +280,7 @@ export function ClassroomSubmissionsDialog({
                 <Award className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-xs text-school-muted font-medium">Calificadas</p>
+                <p className="text-xs text-school-muted-readable font-medium">Calificadas</p>
                 <p className="text-lg font-bold text-school-heading">{gradedCount}</p>
               </div>
             </div>
@@ -290,17 +290,17 @@ export function ClassroomSubmissionsDialog({
                 <AlertTriangle className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-xs text-school-muted font-medium">Sin Entregar</p>
+                <p className="text-xs text-school-muted-readable font-medium">Sin Entregar</p>
                 <p className="text-lg font-bold text-school-heading">{pendingCount}</p>
               </div>
             </div>
 
             <div className="bg-white p-3 rounded-xl border border-school-border flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-school-subtle text-school-primary border border-school-border">
+              <div className="p-2 rounded-lg bg-school-subtle text-ink-turquoise border border-school-border">
                 <Users className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-xs text-school-muted font-medium">Total Alumnos</p>
+                <p className="text-xs text-school-muted-readable font-medium">Total Alumnos</p>
                 <p className="text-lg font-bold text-school-heading">{studentSubmissions.length}</p>
               </div>
             </div>
@@ -308,11 +308,11 @@ export function ClassroomSubmissionsDialog({
             <div className="bg-white p-3 rounded-xl border border-school-border flex flex-col justify-center">
               <div className="flex items-center justify-between text-xs font-semibold text-school-heading mb-1.5">
                 <span>Cumplimiento</span>
-                <span className="text-school-primary">{completionPercentage}%</span>
+                <span className="text-ink-turquoise">{completionPercentage}%</span>
               </div>
               <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                 <div
-                  className="bg-school-primary h-full transition-all duration-300"
+                  className="bg-school-primary h-full transition-[color,background-color,border-color,box-shadow,transform] duration-300"
                   style={{ width: `${completionPercentage}%` }}
                 />
               </div>
@@ -326,7 +326,7 @@ export function ClassroomSubmissionsDialog({
           <div className="md:col-span-5 lg:col-span-4 border-r border-school-border p-4 space-y-3 flex flex-col overflow-hidden bg-school-background/50">
             {/* Buscador de Estudiantes */}
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-school-muted" />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-school-muted-readable" />
               <Input
                 placeholder="Buscar por nombre..."
                 value={search}
@@ -343,7 +343,7 @@ export function ClassroomSubmissionsDialog({
                 className={`flex-1 py-1.5 rounded-lg transition-colors ${
                   filterStatus === 'all'
                     ? 'bg-school-primary text-white font-semibold shadow-xs'
-                    : 'text-school-muted hover:text-school-heading'
+                    : 'text-school-muted-readable hover:text-school-heading'
                 }`}
               >
                 Todos ({studentSubmissions.length})
@@ -354,7 +354,7 @@ export function ClassroomSubmissionsDialog({
                 className={`flex-1 py-1.5 rounded-lg transition-colors ${
                   filterStatus === 'submitted'
                     ? 'bg-school-primary text-white font-semibold shadow-xs'
-                    : 'text-school-muted hover:text-school-heading'
+                    : 'text-school-muted-readable hover:text-school-heading'
                 }`}
               >
                 Entregados ({submittedCount})
@@ -365,7 +365,7 @@ export function ClassroomSubmissionsDialog({
                 className={`flex-1 py-1.5 rounded-lg transition-colors ${
                   filterStatus === 'pending'
                     ? 'bg-school-primary text-white font-semibold shadow-xs'
-                    : 'text-school-muted hover:text-school-heading'
+                    : 'text-school-muted-readable hover:text-school-heading'
                 }`}
               >
                 Pendientes ({pendingCount})
@@ -375,7 +375,7 @@ export function ClassroomSubmissionsDialog({
             {/* Listado de Estudiantes */}
             <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
               {filteredStudents.length === 0 ? (
-                <div className="p-6 text-center text-school-muted text-sm">
+                <div className="p-6 text-center text-school-muted-readable text-sm">
                   No se encontraron estudiantes con este criterio.
                 </div>
               ) : (
@@ -411,7 +411,7 @@ export function ClassroomSubmissionsDialog({
                           <p className="font-semibold text-sm text-school-heading truncate">
                             {item.name}
                           </p>
-                          <p className="text-xs text-school-muted truncate">
+                          <p className="text-xs text-school-muted-readable truncate">
                             {item.studentCode}
                           </p>
                         </div>
@@ -463,7 +463,7 @@ export function ClassroomSubmissionsDialog({
                       <h3 className="font-bold text-base text-school-heading">
                         {selectedItem.name}
                       </h3>
-                      <p className="text-xs text-school-muted">
+                      <p className="text-xs text-school-muted-readable">
                         Código: {selectedItem.studentCode}
                       </p>
                     </div>
@@ -488,8 +488,8 @@ export function ClassroomSubmissionsDialog({
                     {/* Detalles del Envío */}
                     <div className="p-4 rounded-xl border border-school-border space-y-2.5">
                       <div className="flex items-center justify-between text-xs border-b border-school-border/70 pb-2">
-                        <span className="text-school-muted flex items-center gap-1.5 font-medium">
-                          <Clock className="h-3.5 w-3.5 text-school-primary" />
+                        <span className="text-school-muted-readable flex items-center gap-1.5 font-medium">
+                          <Clock className="h-3.5 w-3.5 text-ink-turquoise" />
                           Fecha y hora de entrega:
                         </span>
                         <span className="font-semibold text-school-heading">
@@ -499,7 +499,7 @@ export function ClassroomSubmissionsDialog({
 
                       {selectedItem.submission.notes && (
                         <div className="space-y-1">
-                          <p className="text-xs font-semibold text-school-muted uppercase tracking-wider">
+                          <p className="text-xs font-semibold text-school-muted-readable uppercase tracking-wider">
                             Comentario del Estudiante:
                           </p>
                           <p className="text-sm text-school-body bg-school-background p-3 rounded-lg border border-school-border/60 leading-relaxed italic">
@@ -512,8 +512,8 @@ export function ClassroomSubmissionsDialog({
                     {/* Visor de Evidencia Adjunta */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-semibold uppercase tracking-wider text-school-primary flex items-center gap-1.5">
-                          <Paperclip className="h-4 w-4 text-school-primary" />
+                        <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-turquoise flex items-center gap-1.5">
+                          <Paperclip className="h-4 w-4 text-ink-turquoise" />
                           Evidencia Adjunta {activeEvidences.length > 0 && `(${activeEvidences.length})`}
                         </h4>
                         {primaryEvidence && activeSubmission && (
@@ -539,7 +539,7 @@ export function ClassroomSubmissionsDialog({
                               onClick={() => handleDownloadEvidenceFile(primaryEvidence)}
                               className="h-8 text-xs font-medium"
                             >
-                              <Download className="h-3.5 w-3.5 mr-1 text-school-primary" />
+                              <Download className="h-3.5 w-3.5 mr-1 text-ink-turquoise" />
                               Descargar
                             </Button>
                           </div>
@@ -573,12 +573,12 @@ export function ClassroomSubmissionsDialog({
                             </div>
                           ) : (
                             <div className="w-full bg-white p-6 rounded-xl border border-school-border flex flex-col items-center justify-center space-y-3 text-center">
-                              <FileText className="h-10 w-10 text-school-primary" />
+                              <FileText className="h-10 w-10 text-ink-turquoise" />
                               <div>
                                 <p className="font-semibold text-sm text-school-heading">
                                   {primaryEvidence.fileName}
                                 </p>
-                                <p className="text-xs text-school-muted mt-0.5">
+                                <p className="text-xs text-school-muted-readable mt-0.5">
                                   {imageLoadError
                                     ? 'No se pudo cargar la vista previa directa. Puedes abrirlo en una nueva pestaña o descargarlo.'
                                     : `Archivo ${primaryEvidence.mimeType || 'adjunto'} (${primaryEvidence.fileSize ? (primaryEvidence.fileSize / 1024).toFixed(1) + ' KB' : 'verificado'})`}
@@ -603,19 +603,19 @@ export function ClassroomSubmissionsDialog({
                                   onClick={() => handleDownloadEvidenceFile(primaryEvidence)}
                                   className="h-8 text-xs font-medium"
                                 >
-                                  <Download className="h-3.5 w-3.5 mr-1.5 text-school-primary" /> Descargar
+                                  <Download className="h-3.5 w-3.5 mr-1.5 text-ink-turquoise" /> Descargar
                                 </Button>
                               </div>
                             </div>
                           )}
 
-                          <div className="flex items-center justify-between w-full text-xs text-school-muted font-normal pt-1 border-t border-school-border/60">
+                          <div className="flex items-center justify-between w-full text-xs text-school-muted-readable font-normal pt-1 border-t border-school-border/60">
                             <span>Archivo: {primaryEvidence.fileName}</span>
                             <span className="text-school-success font-medium">✓ Evidencia Registrada en Servidor</span>
                           </div>
                         </div>
                       ) : (
-                        <div className="border border-school-border rounded-xl p-6 text-center text-school-muted text-sm bg-school-background/40">
+                        <div className="border border-school-border rounded-xl p-6 text-center text-school-muted-readable text-sm bg-school-background/40">
                           Sin archivo adjunto enviado en esta entrega.
                         </div>
                       )}
@@ -631,7 +631,7 @@ export function ClassroomSubmissionsDialog({
                       <h4 className="font-bold text-base text-school-heading">
                         Sin Entrega de Evidencia
                       </h4>
-                      <p className="text-sm text-school-muted leading-relaxed">
+                      <p className="text-sm text-school-muted-readable leading-relaxed">
                         {selectedItem.name} aún no ha registrado ninguna evidencia para esta actividad.
                       </p>
                     </div>
@@ -647,7 +647,7 @@ export function ClassroomSubmissionsDialog({
                       </div>
                       <div>
                         <h4 className="text-sm font-bold text-school-heading">Calificación y Retroalimentación</h4>
-                        <p className="text-xs text-school-muted">
+                        <p className="text-xs text-school-muted-readable">
                           Asigna la nota y comentarios pedagógicos
                         </p>
                       </div>
@@ -698,7 +698,7 @@ export function ClassroomSubmissionsDialog({
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-school-border/70">
-                    <span className="text-xs text-school-muted">
+                    <span className="text-xs text-school-muted-readable">
                       {selectedItem.submission?.gradedAt ? `Calificado el: ${selectedItem.submission.gradedAt}` : 'Sin calificar'}
                     </span>
                     <Button type="submit">
@@ -711,7 +711,7 @@ export function ClassroomSubmissionsDialog({
                 </form>
               </div>
             ) : (
-              <div className="p-12 text-center text-school-muted text-sm">
+              <div className="p-12 text-center text-school-muted-readable text-sm">
                 Selecciona un estudiante de la lista de la izquierda para ver el detalle de su entrega.
               </div>
             )}
@@ -732,7 +732,7 @@ export function ClassroomSubmissionsDialog({
                   href={previewMediaUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1.5 bg-school-background hover:bg-school-subtle text-school-primary rounded-lg font-medium text-xs inline-flex items-center gap-1 border border-school-border transition-colors"
+                  className="px-3 py-1.5 bg-school-background hover:bg-school-subtle text-ink-turquoise rounded-lg font-medium text-xs inline-flex items-center gap-1 border border-school-border transition-colors"
                 >
                   <ExternalLink className="h-3.5 w-3.5" /> Abrir en Pestaña
                 </a>
@@ -751,8 +751,8 @@ export function ClassroomSubmissionsDialog({
                     title="PDF Preview"
                     className="w-full h-[65vh] rounded-lg border border-school-border"
                   >
-                    <div className="p-8 text-center text-school-muted space-y-3">
-                      <FileText className="h-10 w-10 mx-auto text-school-primary" />
+                    <div className="p-8 text-center text-school-muted-readable space-y-3">
+                      <FileText className="h-10 w-10 mx-auto text-ink-turquoise" />
                       <p className="font-semibold text-sm text-school-heading">No se pudo visualizar el documento directamente.</p>
                       <a
                         href={previewMediaUrl}

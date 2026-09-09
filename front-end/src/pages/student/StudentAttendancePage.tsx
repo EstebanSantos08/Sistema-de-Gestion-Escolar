@@ -80,7 +80,7 @@ export default function StudentAttendancePage() {
       <div className="flex items-center gap-3">
         <Button asChild variant="ghost" size="sm" className="text-school-body font-medium hover:bg-school-subtle">
           <Link to="/estudiante">
-            <ArrowLeft className="h-4 w-4 mr-1.5 text-school-primary" /> Volver al Dashboard
+            <ArrowLeft className="h-4 w-4 mr-1.5 text-ink-turquoise" /> Volver al Dashboard
           </Link>
         </Button>
       </div>
@@ -93,35 +93,35 @@ export default function StudentAttendancePage() {
 
       {/* Stats Summary */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <Card className="p-4 text-center">
-          <BarChart3 className="h-5 w-5 mx-auto text-school-primary mb-1" />
+        <Card accent="turquoise" className="nk-metric p-5 text-center">
+          <BarChart3 className="h-5 w-5 mx-auto text-ink-turquoise mb-1" />
           <p className="text-2xl font-bold text-school-heading">{stats.pct.toFixed(0)}%</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Asistencia</p>
+          <p className="text-sm text-school-body font-medium">Asistencia</p>
         </Card>
-        <Card className="p-4 text-center">
+        <Card accent="lime" className="nk-metric p-5 text-center">
           <CheckCircle2 className="h-5 w-5 mx-auto text-school-success mb-1" />
           <p className="text-2xl font-bold text-school-success">{stats.present}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Presentes</p>
+          <p className="text-sm text-school-body font-medium">Presentes</p>
         </Card>
-        <Card className="p-4 text-center">
+        <Card accent="pink" className="nk-metric p-5 text-center">
           <XCircle className="h-5 w-5 mx-auto text-school-error mb-1" />
           <p className="text-2xl font-bold text-school-error">{stats.absent}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Ausentes</p>
+          <p className="text-sm text-school-body font-medium">Ausentes</p>
         </Card>
-        <Card className="p-4 text-center">
+        <Card accent="yellow" className="nk-metric p-5 text-center">
           <Clock className="h-5 w-5 mx-auto text-school-warning mb-1" />
           <p className="text-2xl font-bold text-school-warning">{stats.late}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Atrasos</p>
+          <p className="text-sm text-school-body font-medium">Atrasos</p>
         </Card>
-        <Card className="p-4 text-center">
+        <Card accent="blue" className="nk-metric p-5 text-center">
           <FileText className="h-5 w-5 mx-auto text-school-blue mb-1" />
           <p className="text-2xl font-bold text-school-blue">{stats.excused}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Justificados</p>
+          <p className="text-sm text-school-body font-medium">Justificados</p>
         </Card>
       </div>
 
       {/* Filter Bar */}
-      <Card className="p-4">
+      <Card className="nk-filter p-5">
         <div className="flex items-center gap-3">
           <span className="text-sm font-medium text-school-heading shrink-0">Filtrar por materia:</span>
           <Select value={courseFilter} onValueChange={setCourseFilter}>
@@ -141,14 +141,14 @@ export default function StudentAttendancePage() {
       {/* Records Table */}
       {isLoading ? (
         <Card className="p-12 text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-school-primary mb-3" />
-          <p className="text-school-muted font-medium">Cargando registros oficiales de asistencia...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-ink-turquoise mb-3" />
+          <p className="text-school-muted-readable font-medium">Cargando registros oficiales de asistencia...</p>
         </Card>
       ) : filteredRecords.length === 0 ? (
         <Card className="p-12 text-center">
           <ClipboardCheck className="h-10 w-10 mx-auto text-school-success mb-2" />
           <p className="font-semibold text-school-heading text-base">Asistencia al día</p>
-          <p className="text-sm text-school-muted mt-1">
+          <p className="text-sm text-school-muted-readable mt-1">
             No se registran inasistencias en el sistema para las materias seleccionadas.
           </p>
         </Card>
@@ -169,7 +169,7 @@ export default function StudentAttendancePage() {
                   <TableCell className="font-medium text-school-heading">{rec.date}</TableCell>
                   <TableCell>{rec.course?.name || `Curso #${rec.courseId}`}</TableCell>
                   <TableCell>{getStatusBadge(rec.status)}</TableCell>
-                  <TableCell className="text-school-muted">{rec.remarks || '—'}</TableCell>
+                  <TableCell className="text-school-muted-readable">{rec.remarks || '—'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

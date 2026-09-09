@@ -105,21 +105,21 @@ export default function AnnouncementsPage() {
       {/* Announcements List */}
       {isLoading ? (
         <Card className="p-12 text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-school-primary mb-3" />
-          <p className="text-school-muted font-medium">Cargando circulares y avisos del servidor...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-ink-turquoise mb-3" />
+          <p className="text-school-muted-readable font-medium">Cargando circulares y avisos del servidor...</p>
         </Card>
       ) : announcements.length === 0 ? (
         <Card className="p-12 text-center">
-          <Megaphone className="h-10 w-10 mx-auto text-school-muted mb-2" />
+          <Megaphone className="h-10 w-10 mx-auto text-school-muted-readable mb-2" />
           <p className="font-semibold text-school-heading text-base">No hay comunicados publicados</p>
-          <p className="text-sm text-school-muted mt-1">
+          <p className="text-sm text-school-muted-readable mt-1">
             Los comunicados emitidos institucionalmente aparecerán listados aquí.
           </p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {announcements.map((ann: BackendAnnouncement) => (
-            <Card key={ann.id} className="hover:border-school-accent transition-colors flex flex-col justify-between">
+            <Card key={ann.id} className="nk-event accent-pink flex flex-col justify-between">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">
@@ -142,9 +142,9 @@ export default function AnnouncementsPage() {
                   {ann.content}
                 </p>
 
-                <div className="flex items-center justify-between text-xs text-school-muted font-medium pt-2 border-t border-school-border/60">
+                <div className="flex items-center justify-between text-xs text-school-muted-readable font-medium pt-2 border-t border-school-border/60">
                   <span className="flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5 text-school-primary" />
+                    <Calendar className="h-3.5 w-3.5 text-ink-turquoise" />
                     {new Date(ann.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </span>
                   <span className="text-school-heading font-medium">

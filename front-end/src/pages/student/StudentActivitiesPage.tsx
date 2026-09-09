@@ -117,7 +117,7 @@ export default function StudentActivitiesPage() {
       <div className="flex items-center gap-3">
         <Button asChild variant="ghost" size="sm" className="text-school-body font-medium hover:bg-school-subtle">
           <Link to="/estudiante">
-            <ArrowLeft className="h-4 w-4 mr-1.5 text-school-primary" /> Volver al Dashboard
+            <ArrowLeft className="h-4 w-4 mr-1.5 text-ink-turquoise" /> Volver al Dashboard
           </Link>
         </Button>
       </div>
@@ -130,33 +130,33 @@ export default function StudentActivitiesPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Card className="p-4 text-center">
-          <CalendarCheck className="h-5 w-5 mx-auto text-school-primary mb-1" />
+        <Card accent="blue" className="nk-metric p-5 text-center">
+          <CalendarCheck className="h-5 w-5 mx-auto text-ink-turquoise mb-1" />
           <p className="text-2xl font-bold text-school-heading">{stats.total}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Total</p>
+          <p className="text-sm text-school-body font-medium">Total</p>
         </Card>
-        <Card className="p-4 text-center">
+        <Card accent="yellow" className="nk-metric p-5 text-center">
           <Clock className="h-5 w-5 mx-auto text-school-warning mb-1" />
           <p className="text-2xl font-bold text-school-warning">{stats.pending}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Pendientes</p>
+          <p className="text-sm text-school-body font-medium">Pendientes</p>
         </Card>
-        <Card className="p-4 text-center">
+        <Card accent="turquoise" className="nk-metric p-5 text-center">
           <Sparkles className="h-5 w-5 mx-auto text-school-blue mb-1" />
           <p className="text-2xl font-bold text-school-blue">{stats.submitted}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Entregadas</p>
+          <p className="text-sm text-school-body font-medium">Entregadas</p>
         </Card>
-        <Card className="p-4 text-center">
+        <Card accent="lime" className="nk-metric p-5 text-center">
           <CheckCircle2 className="h-5 w-5 mx-auto text-school-success mb-1" />
           <p className="text-2xl font-bold text-school-success">{stats.graded}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Calificadas</p>
+          <p className="text-sm text-school-body font-medium">Calificadas</p>
         </Card>
       </div>
 
       {/* Filters */}
-      <Card className="p-4">
+      <Card className="nk-filter p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2 flex-1">
-            <Filter className="h-4 w-4 text-school-muted shrink-0" />
+            <Filter className="h-4 w-4 text-school-muted-readable shrink-0" />
             <span className="text-sm font-medium text-school-heading shrink-0">Filtrar por materia:</span>
             <Select value={courseFilter} onValueChange={setCourseFilter}>
               <SelectTrigger className="w-full sm:w-64">
@@ -193,14 +193,14 @@ export default function StudentActivitiesPage() {
       {/* Loading State */}
       {isLoading ? (
         <Card className="p-12 text-center">
-          <Loader2 className="h-8 w-8 mx-auto text-school-primary animate-spin mb-3" />
-          <p className="text-school-muted font-medium">Cargando actividades institucionales...</p>
+          <Loader2 className="h-8 w-8 mx-auto text-ink-turquoise animate-spin mb-3" />
+          <p className="text-school-muted-readable font-medium">Cargando actividades institucionales...</p>
         </Card>
       ) : filtered.length === 0 ? (
         <Card className="p-12 text-center">
-          <FileCheck className="h-10 w-10 mx-auto text-school-muted mb-2" />
+          <FileCheck className="h-10 w-10 mx-auto text-school-muted-readable mb-2" />
           <p className="font-semibold text-school-heading text-base">No hay actividades disponibles</p>
-          <p className="text-sm text-school-muted mt-1">No se encontraron actividades con los filtros seleccionados.</p>
+          <p className="text-sm text-school-muted-readable mt-1">No se encontraron actividades con los filtros seleccionados.</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -227,14 +227,14 @@ export default function StudentActivitiesPage() {
                       <Badge variant="outline">
                         {act.type}
                       </Badge>
-                      <span className="flex items-center gap-1 text-xs font-medium text-school-muted">
-                        <BookOpen className="h-3.5 w-3.5 text-school-primary" />
+                      <span className="flex items-center gap-1 text-xs font-medium text-school-muted-readable">
+                        <BookOpen className="h-3.5 w-3.5 text-ink-turquoise" />
                         {act.courseName}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-school-muted">
-                      <Calendar className="h-3.5 w-3.5 text-school-primary" />
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-school-muted-readable">
+                      <Calendar className="h-3.5 w-3.5 text-ink-turquoise" />
                       <span>
                         Fecha límite: {act.dueDate ? new Date(act.dueDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Sin fecha'}
                       </span>
@@ -253,9 +253,9 @@ export default function StudentActivitiesPage() {
                       <div className="bg-school-subtle/60 p-3 rounded-xl border border-school-border text-xs flex items-center justify-between">
                         <span className="font-semibold text-school-heading flex items-center gap-1.5">
                           <Award className="h-4 w-4 text-school-warning" />
-                          Nota: <strong className="text-school-primary">{mySub?.score}/10</strong>
+                          Nota: <strong className="text-ink-turquoise">{mySub?.score}/10</strong>
                         </span>
-                        <Link to={`/estudiante/cursos/${act.courseId}`} className="text-school-primary font-semibold hover:underline text-xs">
+                        <Link to={`/estudiante/cursos/${act.courseId}`} className="text-ink-turquoise font-semibold hover:underline text-xs">
                           Ver Retroalimentación →
                         </Link>
                       </div>
@@ -265,13 +265,13 @@ export default function StudentActivitiesPage() {
                           <FileCheck className="h-4 w-4 text-school-success" />
                           Entregado (En revisión)
                         </span>
-                        <Link to={`/estudiante/cursos/${act.courseId}`} className="text-school-primary font-semibold hover:underline text-xs">
+                        <Link to={`/estudiante/cursos/${act.courseId}`} className="text-ink-turquoise font-semibold hover:underline text-xs">
                           Ver Detalle →
                         </Link>
                       </div>
                     ) : (
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-school-muted font-medium">Pendiente de entrega</span>
+                        <span className="text-xs text-school-muted-readable font-medium">Pendiente de entrega</span>
                         <Button asChild size="sm">
                           <Link to={`/estudiante/cursos/${act.courseId}`}>Ir a Entregar</Link>
                         </Button>

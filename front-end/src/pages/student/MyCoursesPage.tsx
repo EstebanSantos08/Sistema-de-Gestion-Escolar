@@ -19,7 +19,7 @@ export default function StudentMyCoursesPage() {
       >
         <Button asChild variant="outline">
           <Link to="/estudiante/mis-notas">
-            <GraduationCap className="h-4 w-4 mr-2 text-school-primary" />
+            <GraduationCap className="h-4 w-4 mr-2 text-ink-turquoise" />
             Mis Calificaciones
           </Link>
         </Button>
@@ -27,7 +27,7 @@ export default function StudentMyCoursesPage() {
 
       {isLoading ? (
         <Card className="p-10 text-center">
-          <div className="flex items-center justify-center gap-3 text-school-muted">
+          <div className="flex items-center justify-center gap-3 text-school-muted-readable">
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-school-primary border-t-transparent" />
             <span className="text-sm">Cargando tus materias...</span>
           </div>
@@ -37,7 +37,7 @@ export default function StudentMyCoursesPage() {
           <div className="max-w-md mx-auto space-y-3">
             <AlertCircle className="h-8 w-8 text-school-error mx-auto" />
             <h3 className="text-base font-semibold text-school-heading">No se pudieron cargar tus cursos</h3>
-            <p className="text-sm text-school-muted">Comprueba tu conexión e inténtalo de nuevo.</p>
+            <p className="text-sm text-school-muted-readable">Comprueba tu conexión e inténtalo de nuevo.</p>
             <Button variant="outline" onClick={() => void refetch()} className="mt-2">
               Reintentar
             </Button>
@@ -46,9 +46,9 @@ export default function StudentMyCoursesPage() {
       ) : courses.length === 0 ? (
         <Card className="p-12 text-center">
           <div className="max-w-md mx-auto space-y-3">
-            <BookOpen className="h-10 w-10 text-school-muted mx-auto" />
+            <BookOpen className="h-10 w-10 text-school-muted-readable mx-auto" />
             <h3 className="text-lg font-semibold text-school-heading">No tienes cursos asignados</h3>
-            <p className="text-sm text-school-muted">
+            <p className="text-sm text-school-muted-readable">
               Si esperabas ver materias matriculadas, consulta con la secretaría académica o administración.
             </p>
           </div>
@@ -56,13 +56,13 @@ export default function StudentMyCoursesPage() {
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {courses.map((course) => (
-            <Card key={course.courseId} className="flex flex-col justify-between hover:border-school-accent transition-colors">
+            <Card key={course.courseId} className="nk-section nk-lift flex flex-col justify-between">
               <CardContent className="p-6 flex flex-col flex-1 gap-4">
                 <div className="flex items-start justify-between gap-2">
-                  <span className="text-xs font-semibold text-school-primary uppercase tracking-wider bg-school-subtle px-2.5 py-1 rounded-md">
+                  <span className="text-xs font-semibold text-ink-turquoise uppercase tracking-wider bg-school-subtle px-2.5 py-1 rounded-md">
                     {course.courseCode}
                   </span>
-                  <Badge variant="outline" className="text-xs font-medium text-school-muted">
+                  <Badge variant="outline" className="text-xs font-medium text-school-muted-readable">
                     {data?.period ?? '2026-I'}
                   </Badge>
                 </div>
@@ -71,8 +71,8 @@ export default function StudentMyCoursesPage() {
                   <h3 className="text-xl font-bold text-school-heading leading-tight">{course.courseName}</h3>
                 </div>
 
-                <div className="flex items-center gap-2 text-sm text-school-muted pt-2 border-t border-school-border/60">
-                  <User className="h-4 w-4 text-school-primary shrink-0" />
+                <div className="flex items-center gap-2 text-sm text-school-muted-readable pt-2 border-t border-school-border/60">
+                  <User className="h-4 w-4 text-ink-turquoise shrink-0" />
                   <span className="truncate">{course.teacherName || 'Docente de área'}</span>
                 </div>
 

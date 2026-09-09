@@ -11,8 +11,8 @@ export function GradeBadge({ passed, className }: GradeBadgeProps) {
       className={cn(
         'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-wide',
         passed
-          ? 'border-[#C6E7C8] bg-[#EAF5EB] text-[#287A32]'
-          : 'border-[#F7C3C9] bg-[#FDF0F1] text-[#B42335]',
+          ? 'border-school-success-border bg-school-success-bg text-school-success'
+          : 'border-school-error-border bg-school-error-bg text-school-error',
         className
       )}
     >

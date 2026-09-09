@@ -161,7 +161,7 @@ export default function GradeEntryPage() {
       <div className="flex items-center gap-3">
         <Button asChild variant="ghost" size="sm" className="text-school-body font-medium hover:bg-school-subtle">
           <Link to={`/docente/cursos/${courseId}`}>
-            <ArrowLeft className="h-4 w-4 mr-1 text-school-primary" /> Volver al curso
+            <ArrowLeft className="h-4 w-4 mr-1 text-ink-turquoise" /> Volver al curso
           </Link>
         </Button>
       </div>
@@ -227,19 +227,19 @@ export default function GradeEntryPage() {
       {/* Grade table */}
       {loadingStudents ? (
         <Card className="p-10 text-center">
-          <div className="flex items-center justify-center gap-3 text-school-muted">
+          <div className="flex items-center justify-center gap-3 text-school-muted-readable">
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-school-primary border-t-transparent" />
             <span className="text-sm">Cargando lista de estudiantes...</span>
           </div>
         </Card>
       ) : rows.length === 0 ? (
         <Card className="p-8 text-center">
-          <p className="text-school-muted text-sm">No hay estudiantes matriculados en este curso.</p>
+          <p className="text-school-muted-readable text-sm">No hay estudiantes matriculados en este curso.</p>
         </Card>
       ) : (
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="nk-table w-full text-sm">
               <thead className="border-b border-school-border bg-school-background">
                 <tr>
                   <th className="px-5 py-3.5 text-left font-semibold text-school-heading">Código</th>
@@ -253,7 +253,7 @@ export default function GradeEntryPage() {
               <tbody className="divide-y divide-school-border">
                 {rows.map((row, i) => (
                   <tr key={row.enrollmentId} className="hover:bg-school-background/50 transition-colors">
-                    <td className="px-5 py-3 text-school-muted text-xs font-mono">{row.studentCode}</td>
+                    <td className="px-5 py-3 text-school-muted-readable text-xs font-mono">{row.studentCode}</td>
                     <td className="px-5 py-3 font-medium text-school-heading">{row.name}</td>
                     <td className="px-5 py-3">
                       <Input

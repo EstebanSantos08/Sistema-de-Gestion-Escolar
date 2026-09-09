@@ -213,7 +213,7 @@ function EnrollFormModal({ open, onOpenChange, onSaved }: EnrollFormProps) {
                   courses.map((c) => (
                     <SelectItem key={c.id} value={String(c.id)}>
                       <span className="font-semibold text-school-heading">{c.name}</span>
-                      <span className="ml-2 text-school-primary font-medium text-xs">
+                      <span className="ml-2 text-ink-turquoise font-medium text-xs">
                         ({c.code})
                       </span>
                     </SelectItem>
@@ -402,7 +402,7 @@ export default function EnrollmentsPage() {
           title="Eliminar matrícula"
           aria-label={`Eliminar matrícula de ${e.student?.user?.name ?? 'estudiante'}`}
           onClick={() => setDeleteTarget(e)}
-          className="text-[#B42335] hover:bg-[#FDF0F1]"
+          className="text-school-error hover:bg-school-error-bg"
         >
           <Trash2 className="h-4 w-4" />
         </Button>
@@ -448,10 +448,10 @@ export default function EnrollmentsPage() {
       </div>
 
       {/* Filters */}
-      <div className="rounded-2xl border border-[#D6E5E3] bg-white p-4 sm:p-5 shadow-xs">
+      <div className="nk-card nk-filter p-5">
         <div className="flex flex-wrap items-center gap-4">
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-[#183B3A]">Período</Label>
+            <Label className="text-xs font-semibold text-school-heading">Período</Label>
             <Input
               className="w-32"
               placeholder="2026-I"
@@ -462,7 +462,7 @@ export default function EnrollmentsPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-[#183B3A]">Curso</Label>
+            <Label className="text-xs font-semibold text-school-heading">Curso</Label>
             <Select
               value={courseFilter || 'all'}
               onValueChange={(v) => setCourseFilter(v === 'all' ? '' : v)}
@@ -482,7 +482,7 @@ export default function EnrollmentsPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-[#183B3A]">Estado</Label>
+            <Label className="text-xs font-semibold text-school-heading">Estado</Label>
             <Select
               value={statusFilter || 'all'}
               onValueChange={(v) => setStatusFilter(v === 'all' ? '' : v)}

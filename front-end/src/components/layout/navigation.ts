@@ -24,7 +24,7 @@ export interface NavItem {
 }
 
 const adminNav: NavItem[] = [
-  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/admin', label: 'Inicio', icon: LayoutDashboard },
   { to: '/admin/usuarios', label: 'Usuarios', icon: Users },
   { to: '/admin/cursos', label: 'Cursos', icon: BookOpen },
   { to: '/admin/matriculas', label: 'Matrículas', icon: ClipboardList },
@@ -33,7 +33,7 @@ const adminNav: NavItem[] = [
 ];
 
 const teacherNav: NavItem[] = [
-  { to: '/docente', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/docente', label: 'Inicio', icon: LayoutDashboard },
   { to: '/docente/mis-cursos', label: 'Mis Cursos', icon: BookOpen },
   { to: '/docente/estudiantes', label: 'Estudiantes', icon: UserCheck },
   { to: '/docente/bitacora', label: 'Bitácora', icon: BookMarked },
@@ -44,7 +44,7 @@ const teacherNav: NavItem[] = [
 ];
 
 const studentNav: NavItem[] = [
-  { to: '/estudiante', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/estudiante', label: 'Inicio', icon: LayoutDashboard },
   { to: '/estudiante/mis-cursos', label: 'Mis Cursos', icon: GraduationCap },
   { to: '/estudiante/mis-notas', label: 'Mis Notas', icon: Star },
   { to: '/estudiante/asistencia', label: 'Asistencia', icon: ClipboardCheck },
@@ -59,7 +59,7 @@ const parentNav: NavItem[] = [
   { to: '/estudiante/mis-cursos', label: 'Cursos del Estudiante', icon: GraduationCap },
   { to: '/estudiante/mis-notas', label: 'Calificaciones', icon: Star },
   { to: '/estudiante/asistencia', label: 'Registro de Asistencia', icon: ClipboardCheck },
-  { to: '/estudiante/actividades', label: 'Tareas y Tareas', icon: CalendarCheck },
+  { to: '/estudiante/actividades', label: 'Actividades y tareas', icon: CalendarCheck },
   { to: '/estudiante/observaciones', label: 'Observaciones', icon: MessageSquare },
   { to: '/estudiante/comunicados', label: 'Comunicados Oficiales', icon: Megaphone },
 ];
@@ -79,23 +79,13 @@ export function isNavigationActive(pathname: string, destination: string) {
   return destination.split('/').length > 2 && pathname.startsWith(`${destination}/`);
 }
 
-export const navColors = [
-  { text: 'text-[#41C4BD]', bg: 'bg-[#E3F5F3]', border: 'border-[#41C4BD]/40' },
-  { text: 'text-[#D12B75]', bg: 'bg-[#FDF0F6]', border: 'border-[#FF5DA0]/40' },
-  { text: 'text-[#B38F00]', bg: 'bg-[#FEF8E7]', border: 'border-[#F2C700]/40' },
-  { text: 'text-[#557D07]', bg: 'bg-[#F4FBE8]', border: 'border-[#9DD31B]/40' },
-  { text: 'text-[#9731AC]', bg: 'bg-[#F6EDF8]', border: 'border-[#9731AC]/40' },
-  { text: 'text-[#D4592B]', bg: 'bg-[#FFF2ED]', border: 'border-[#FF8A5B]/40' },
-  { text: 'text-[#1E7BB5]', bg: 'bg-[#EFF7FC]', border: 'border-[#64B6E5]/40' },
-];
+export function categoryAccent(path: string): 'turquoise' | 'blue' | 'lime' | 'yellow' | 'pink' | 'violet' {
+  if (/auditoria|reportes|observaciones/.test(path)) return 'violet';
+  if (/asistencia/.test(path)) return 'lime';
+  if (/notas|actividades/.test(path)) return 'yellow';
+  if (/comunicados/.test(path)) return 'pink';
+  if (/cursos|usuarios|estudiantes|matriculas/.test(path)) return 'blue';
+  return 'turquoise';
+}
 
-export const getNavColor = (index: number) => navColors[index % navColors.length];
-
-export const navigationLinkClass = (active: boolean, index: number = 0) => {
-  const color = getNavColor(index);
-  return `group flex min-h-[44px] items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#41C4BD] ${
-    active
-      ? `${color.bg} ${color.text} font-bold shadow-xs scale-[1.02] border-2 ${color.border}`
-      : `text-[#365451] hover:${color.bg} hover:${color.text} hover:translate-x-1 border-2 border-transparent`
-  }`;
-};
+export const navigationLinkClass = (_active: boolean, destination = '') => `nk-nav accent-${categoryAccent(destination)}`;

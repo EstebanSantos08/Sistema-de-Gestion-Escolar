@@ -1,3 +1,4 @@
+import { DatePicker } from '@/components/ui/date-picker';
 import { useState } from 'react';
 import {
   ShieldCheck,
@@ -20,7 +21,6 @@ import toast from 'react-hot-toast';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -127,7 +127,7 @@ export default function AuditPage() {
     }
     if (action.includes('ACADEMIC_GRADE')) {
       return (
-        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-800 border-blue-300">
+        <Badge variant="outline" className="text-xs bg-surface-blue text-ink-blue border-line-blue">
           Nota Académica
         </Badge>
       );
@@ -152,19 +152,19 @@ export default function AuditPage() {
           <Button variant="outline" onClick={() => refetch()} size="sm" className="gap-1.5">
             <RotateCcw className="h-4 w-4" /> Actualizar
           </Button>
-          <Button onClick={exportAuditReport} className="h-9 gap-1.5" size="sm">
+          <Button variant="context" onClick={exportAuditReport} className="h-9 gap-1.5" size="sm">
             <FileSpreadsheet className="h-4 w-4" /> Exportar Auditoría (CSV)
           </Button>
         </div>
       </PageHeader>
 
       {/* Filter panel */}
-      <Card className="p-4 sm:p-5 shadow-xs">
+      <Card className="nk-filter p-5">
         <div className="flex items-center justify-between pb-3 border-b border-school-border/60 mb-4">
           <span className="text-sm font-bold text-school-heading flex items-center gap-2">
-            <Filter className="h-4 w-4 text-school-primary" /> Filtros de Auditoría
+            <span className="nk-icon"><Filter className="h-4 w-4" /></span> Filtros de Auditoría
           </span>
-          <Button variant="ghost" size="sm" onClick={resetFilters} className="text-xs text-school-muted hover:text-school-primary">
+          <Button variant="ghost" size="sm" onClick={resetFilters} className="text-xs text-school-muted-readable hover:text-ink-turquoise">
             Limpiar Filtros
           </Button>
         </div>
@@ -172,35 +172,37 @@ export default function AuditPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
           {/* Rango Desde */}
           <div className="space-y-1">
-            <Label className="text-[11px] font-semibold text-school-heading">Desde:</Label>
-            <Input
+            <Label htmlFor="audit-from" className="text-sm font-semibold text-school-heading">Desde:</Label>
+            <DatePicker
               type="date"
+              id="audit-from"
               value={fromDate}
-              onChange={(e) => {
-                setFromDate(e.target.value);
+              onValueChange={(value) => {
+                setFromDate(value);
                 setPage(1);
               }}
-              className="h-8 text-xs bg-white"
+              className="h-11 text-sm bg-white"
             />
           </div>
 
           {/* Rango Hasta */}
           <div className="space-y-1">
-            <Label className="text-[11px] font-semibold text-school-heading">Hasta:</Label>
-            <Input
+            <Label htmlFor="audit-to" className="text-sm font-semibold text-school-heading">Hasta:</Label>
+            <DatePicker
               type="date"
+              id="audit-to"
               value={toDate}
-              onChange={(e) => {
-                setToDate(e.target.value);
+              onValueChange={(value) => {
+                setToDate(value);
                 setPage(1);
               }}
-              className="h-8 text-xs bg-white"
+              className="h-11 text-sm bg-white"
             />
           </div>
 
           {/* Categoría de Calificación */}
           <div className="space-y-1">
-            <Label className="text-[11px] font-semibold text-school-heading">Tipo de Calificación:</Label>
+            <Label className="text-sm font-semibold text-school-heading">Tipo de Calificación:</Label>
             <Select
               value={selectedGradeCat}
               onValueChange={(val) => {
@@ -208,7 +210,7 @@ export default function AuditPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="h-11 text-sm">
                 <SelectValue placeholder="Todas las notas" />
               </SelectTrigger>
               <SelectContent>
@@ -221,7 +223,7 @@ export default function AuditPage() {
 
           {/* Tipo de Acción */}
           <div className="space-y-1">
-            <Label className="text-[11px] font-semibold text-school-heading">Acción:</Label>
+            <Label className="text-sm font-semibold text-school-heading">Acción:</Label>
             <Select
               value={selectedAction}
               onValueChange={(val) => {
@@ -229,7 +231,7 @@ export default function AuditPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="h-11 text-sm">
                 <SelectValue placeholder="Todas las acciones" />
               </SelectTrigger>
               <SelectContent>
@@ -242,7 +244,7 @@ export default function AuditPage() {
 
           {/* Docente */}
           <div className="space-y-1">
-            <Label className="text-[11px] font-semibold text-school-heading">Docente (Actor):</Label>
+            <Label className="text-sm font-semibold text-school-heading">Docente (Actor):</Label>
             <Select
               value={selectedTeacher}
               onValueChange={(val) => {
@@ -250,7 +252,7 @@ export default function AuditPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="h-11 text-sm">
                 <SelectValue placeholder="Todos los docentes" />
               </SelectTrigger>
               <SelectContent>
@@ -266,7 +268,7 @@ export default function AuditPage() {
 
           {/* Estudiante Afectado */}
           <div className="space-y-1">
-            <Label className="text-[11px] font-semibold text-school-heading">Estudiante:</Label>
+            <Label className="text-sm font-semibold text-school-heading">Estudiante:</Label>
             <Select
               value={selectedStudent}
               onValueChange={(val) => {
@@ -274,7 +276,7 @@ export default function AuditPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="h-11 text-sm">
                 <SelectValue placeholder="Todos los estudiantes" />
               </SelectTrigger>
               <SelectContent>
@@ -290,7 +292,7 @@ export default function AuditPage() {
 
           {/* Curso */}
           <div className="space-y-1">
-            <Label className="text-[11px] font-semibold text-school-heading">Curso / Materia:</Label>
+            <Label className="text-sm font-semibold text-school-heading">Curso / Materia:</Label>
             <Select
               value={selectedCourse}
               onValueChange={(val) => {
@@ -298,7 +300,7 @@ export default function AuditPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="h-11 text-sm">
                 <SelectValue placeholder="Todos los cursos" />
               </SelectTrigger>
               <SelectContent>
@@ -314,7 +316,7 @@ export default function AuditPage() {
 
           {/* Actividad */}
           <div className="space-y-1">
-            <Label className="text-[11px] font-semibold text-school-heading">Actividad:</Label>
+            <Label className="text-sm font-semibold text-school-heading">Actividad:</Label>
             <Select
               value={selectedActivity}
               onValueChange={(val) => {
@@ -322,7 +324,7 @@ export default function AuditPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="h-11 text-sm">
                 <SelectValue placeholder="Todas las actividades" />
               </SelectTrigger>
               <SelectContent>
@@ -342,33 +344,33 @@ export default function AuditPage() {
       <Card className="overflow-hidden shadow-xs">
         <div className="p-4 border-b border-school-border/60 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-school-primary" />
+            <ShieldCheck className="h-4 w-4 text-ink-turquoise" />
             <span className="font-bold text-sm text-school-heading">Eventos Auditados</span>
             <Badge variant="secondary" className="text-xs">{totalLogs} en total</Badge>
           </div>
-          <span className="text-xs text-school-muted">Página {page} de {totalPages}</span>
+          <span className="text-xs text-school-muted-readable">Página {page} de {totalPages}</span>
         </div>
 
         {isLoading ? (
           <div className="py-16 text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-school-primary mb-3" />
-            <p className="text-school-muted text-sm font-medium">Cargando registros de auditoría institucional...</p>
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-ink-turquoise mb-3" />
+            <p className="text-school-muted-readable text-sm font-medium">Cargando registros de auditoría institucional...</p>
           </div>
         ) : isError ? (
           <div className="py-16 text-center text-red-600">
             <p className="font-semibold text-sm">Error al cargar registros de auditoría.</p>
           </div>
         ) : logs.length === 0 ? (
-          <div className="py-16 text-center text-school-muted">
-            <Search className="h-10 w-10 mx-auto text-school-muted mb-2" />
+          <div className="py-16 text-center text-school-muted-readable">
+            <Search className="h-10 w-10 mx-auto text-school-muted-readable mb-2" />
             <p className="font-semibold text-school-heading text-sm">No se encontraron eventos</p>
-            <p className="text-xs text-school-muted mt-1">Intenta ajustando los filtros de búsqueda.</p>
+            <p className="text-xs text-school-muted-readable mt-1">Intenta ajustando los filtros de búsqueda.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="nk-table w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-school-border bg-school-background text-school-muted uppercase tracking-wider font-semibold">
+                <tr className="border-b border-school-border bg-school-background text-school-muted-readable uppercase tracking-wider font-semibold">
                   <th className="py-3 px-3 w-8"></th>
                   <th className="py-3 px-3">Fecha y Hora</th>
                   <th className="py-3 px-3">Quién (Actor)</th>
@@ -392,7 +394,7 @@ export default function AuditPage() {
                         <button
                           type="button"
                           onClick={() => setExpandedRowId(isExpanded ? null : log.id)}
-                          className="p-1 hover:bg-school-subtle rounded text-school-muted"
+                          className="p-1 hover:bg-school-subtle rounded text-school-muted-readable"
                           title="Ver detalles extendidos"
                         >
                           {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
@@ -410,50 +412,50 @@ export default function AuditPage() {
                       </td>
                       <td className="py-3 px-3">
                         <p className="font-bold text-school-heading">{log.actor?.name || `Usuario #${log.actor?.id}`}</p>
-                        <p className="text-[10px] text-school-muted capitalize">{log.actor?.role || 'Docente'}</p>
+                        <p className="text-[10px] text-school-muted-readable capitalize">{log.actor?.role || 'Docente'}</p>
                       </td>
                       <td className="py-3 px-3">
                         <div className="space-y-0.5">
                           {formatActionBadge(log.action)}
-                          <p className="text-[10px] text-school-muted font-mono">{log.action}</p>
+                          <p className="text-[10px] text-school-muted-readable font-mono">{log.action}</p>
                         </div>
                       </td>
                       <td className="py-3 px-3">
                         {log.studentName ? (
                           <span className="font-semibold text-school-heading">{log.studentName}</span>
                         ) : log.studentId ? (
-                          <span className="text-school-muted">ID: {log.studentId}</span>
+                          <span className="text-school-muted-readable">ID: {log.studentId}</span>
                         ) : (
-                          <span className="text-school-muted italic">-</span>
+                          <span className="text-school-muted-readable italic">-</span>
                         )}
                       </td>
                       <td className="py-3 px-3">
                         <p className="font-semibold text-school-heading">{log.courseName || '-'}</p>
                         {log.activityTitle && (
-                          <p className="text-[10px] text-school-muted">Tarea: {log.activityTitle}</p>
+                          <p className="text-[10px] text-school-muted-readable">Tarea: {log.activityTitle}</p>
                         )}
                       </td>
                       <td className="py-3 px-3 max-w-xs">
                         {hasValues ? (
                           <div className="space-y-1">
                             {log.oldValues && (
-                              <div className="text-[11px] text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                              <div className="text-sm text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">
                                 <strong>Antes:</strong> {JSON.stringify(log.oldValues)}
                               </div>
                             )}
                             {log.newValues && (
-                              <div className="text-[11px] text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                              <div className="text-sm text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                                 <strong>Ahora:</strong> {JSON.stringify(log.newValues)}
                               </div>
                             )}
                           </div>
                         ) : (
-                          <span className="text-school-muted italic">Sin cambios numéricos</span>
+                          <span className="text-school-muted-readable italic">Sin cambios numéricos</span>
                         )}
 
                         {/* Secondary expandable detail */}
                         {isExpanded && (
-                          <div className="mt-2 pt-2 border-t border-dashed border-school-border text-[10px] text-school-muted bg-white p-2 rounded shadow-2xs">
+                          <div className="mt-2 pt-2 border-t border-dashed border-school-border text-[10px] text-school-muted-readable bg-white p-2 rounded shadow-2xs">
                             <p><strong>IP:</strong> {log.ipAddress || '127.0.0.1'}</p>
                             <p><strong>Log ID:</strong> {log.id}</p>
                             <p><strong>Categoría:</strong> {log.gradeCategory || 'general'}</p>
@@ -480,7 +482,7 @@ export default function AuditPage() {
             <ChevronLeft className="h-4 w-4" /> Anterior
           </Button>
 
-          <span className="text-school-muted font-medium">
+          <span className="text-school-muted-readable font-medium">
             Página {page} de {totalPages}
           </span>
 

@@ -103,7 +103,7 @@ export default function StudentObservationsPage() {
       <div className="flex items-center gap-3">
         <Button asChild variant="ghost" size="sm" className="text-school-body font-medium hover:bg-school-subtle">
           <Link to="/estudiante">
-            <ArrowLeft className="h-4 w-4 mr-1.5 text-school-primary" /> Volver al Dashboard
+            <ArrowLeft className="h-4 w-4 mr-1.5 text-ink-turquoise" /> Volver al Dashboard
           </Link>
         </Button>
       </div>
@@ -116,34 +116,34 @@ export default function StudentObservationsPage() {
 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-4">
-        <Card className="p-4 text-center">
+        <Card accent="blue" className="nk-metric p-5 text-center">
           <CheckCircle2 className="h-5 w-5 mx-auto text-school-success mb-1" />
           <p className="text-2xl font-bold text-school-success">
             {visibleObservations.filter((o) => o.type === 'ACADEMIC').length}
           </p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Académicas</p>
+          <p className="text-sm text-school-body font-medium">Académicas</p>
         </Card>
-        <Card className="p-4 text-center">
+        <Card accent="violet" className="nk-metric p-5 text-center">
           <Info className="h-5 w-5 mx-auto text-school-warning mb-1" />
           <p className="text-2xl font-bold text-school-warning">
             {visibleObservations.filter((o) => o.type === 'GENERAL').length}
           </p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Generales</p>
+          <p className="text-sm text-school-body font-medium">Generales</p>
         </Card>
-        <Card className="p-4 text-center">
+        <Card accent="turquoise" className="nk-metric p-5 text-center">
           <AlertCircle className="h-5 w-5 mx-auto text-school-error mb-1" />
           <p className="text-2xl font-bold text-school-error">
             {visibleObservations.filter((o) => o.type === 'BEHAVIORAL').length}
           </p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Conductuales</p>
+          <p className="text-sm text-school-body font-medium">Conductuales</p>
         </Card>
       </div>
 
       {/* Observations List */}
       {isLoading ? (
         <Card className="p-12 text-center">
-          <Loader2 className="h-8 w-8 mx-auto text-school-primary animate-spin mb-3" />
-          <p className="text-school-muted font-medium">Cargando tus observaciones institucionales...</p>
+          <Loader2 className="h-8 w-8 mx-auto text-ink-turquoise animate-spin mb-3" />
+          <p className="text-school-muted-readable font-medium">Cargando tus observaciones institucionales...</p>
         </Card>
       ) : isError ? (
         <Card className="p-12 text-center text-red-600">
@@ -151,14 +151,14 @@ export default function StudentObservationsPage() {
         </Card>
       ) : visibleObservations.length === 0 ? (
         <Card className="p-12 text-center">
-          <MessageSquare className="h-10 w-10 mx-auto text-school-muted mb-2" />
+          <MessageSquare className="h-10 w-10 mx-auto text-school-muted-readable mb-2" />
           <p className="font-semibold text-school-heading text-base">No tienes observaciones visibles</p>
-          <p className="text-sm text-school-muted mt-1">No hay observaciones registradas o has ocultado las existentes.</p>
+          <p className="text-sm text-school-muted-readable mt-1">No hay observaciones registradas o has ocultado las existentes.</p>
         </Card>
       ) : (
         <div className="space-y-4">
           {visibleObservations.map((obs: BackendObservation) => (
-            <Card key={obs.id} className="hover:border-school-accent transition-colors">
+            <Card accent={obs.type === 'ACADEMIC' ? 'blue' : obs.type === 'BEHAVIORAL' ? 'violet' : 'turquoise'} key={obs.id} className="nk-event">
               <CardContent className="p-5 space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1.5 flex-1">
@@ -167,7 +167,7 @@ export default function StudentObservationsPage() {
                       {getObservationBadge(obs.type)}
                     </div>
 
-                    <div className="flex items-center gap-3 text-xs text-school-muted font-medium flex-wrap">
+                    <div className="flex items-center gap-3 text-xs text-school-muted-readable font-medium flex-wrap">
                       <span>📅 {new Date(obs.date || obs.createdAt).toLocaleDateString('es-ES')}</span>
                       {obs.teacher?.user?.name && (
                         <>
@@ -177,7 +177,7 @@ export default function StudentObservationsPage() {
                       )}
                       <span>·</span>
                       <span className="flex items-center gap-1">
-                        <Eye className="h-3.5 w-3.5 text-school-primary" />
+                        <Eye className="h-3.5 w-3.5 text-ink-turquoise" />
                         {obs.visibility === 'SOLO_ESTUDIANTE' ? 'Visible solo para ti' : 'Visible para familia'}
                       </span>
                     </div>
@@ -187,7 +187,7 @@ export default function StudentObservationsPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => openDeleteDialog(obs.id)}
-                    className="text-school-muted hover:text-school-error hover:bg-school-error/10 shrink-0"
+                    className="text-school-muted-readable hover:text-school-error hover:bg-school-error/10 shrink-0"
                     title="Ocultar de mi vista"
                     aria-label="Ocultar de mi vista"
                   >
@@ -221,7 +221,7 @@ export default function StudentObservationsPage() {
                 </>
               )}
             </DialogTitle>
-            <DialogDescription className="text-sm text-school-muted">
+            <DialogDescription className="text-sm text-school-muted-readable">
               {step === 1
                 ? 'La observación ya no aparecerá en tu lista personal. El registro institucional se conserva.'
                 : 'Esta acción ocultará definitivamente esta observación de tu vista de alumno.'}
@@ -231,7 +231,7 @@ export default function StudentObservationsPage() {
           {observationToDelete && (
             <div className="p-3 bg-school-background rounded-xl border border-school-border text-xs text-school-body">
               <strong className="text-school-heading">{observationToDelete.title}</strong>
-              <p className="text-school-muted mt-0.5">
+              <p className="text-school-muted-readable mt-0.5">
                 {new Date(observationToDelete.date || observationToDelete.createdAt).toLocaleDateString('es-ES')} · Docente: {observationToDelete.teacher?.user?.name || 'Docente'}
               </p>
             </div>

@@ -123,7 +123,7 @@ function CourseFormModal({ open, onOpenChange, course, onSaved }: CourseFormProp
       <DialogContent className="sm:max-w-lg bg-white rounded-2xl shadow-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-school-heading flex items-center gap-2">
-            <GraduationCap className="h-5 w-5 text-school-primary" />
+            <GraduationCap className="h-5 w-5 text-ink-turquoise" />
             {isEditing ? 'Editar Curso / Aula' : 'Nuevo Curso / Aula'}
           </DialogTitle>
         </DialogHeader>
@@ -266,7 +266,7 @@ export default function CoursesPage() {
             size="icon"
             onClick={() => { setEditCourse(c); setFormOpen(true); }}
             aria-label={`Editar curso ${c.name}`}
-            className="text-[#41C4BD] hover:bg-[#E3F5F3]"
+            className="text-ink-turquoise hover:bg-school-subtle"
           >
             <Pencil className="h-4 w-4" />
           </Button>
@@ -275,7 +275,7 @@ export default function CoursesPage() {
             size="icon"
             onClick={() => setDeleteId(c.id)}
             aria-label={`Eliminar curso ${c.name}`}
-            className="text-[#B42335] hover:bg-[#FDF0F1]"
+            className="text-school-error hover:bg-school-error-bg"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -301,11 +301,11 @@ export default function CoursesPage() {
       </PageHeader>
 
       {/* Filter and view mode bar */}
-      <div className="rounded-2xl border border-[#D6E5E3] bg-white p-4 sm:p-5 shadow-xs">
+      <div className="nk-card nk-filter p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-1 flex-col gap-3 sm:flex-row">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5E7A77]" />
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-school-muted-readable" />
               <Input
                 placeholder="Buscar curso por nombre o código..."
                 className="pl-10"
@@ -324,15 +324,15 @@ export default function CoursesPage() {
           </div>
 
           {/* Toggle de Modo de Vista Tarjetas / Tabla */}
-          <div className="flex items-center gap-1 rounded-xl border border-[#D6E5E3] bg-[#F4FAF9] p-1 self-start sm:self-auto">
+          <div className="flex items-center gap-1 rounded-xl border border-school-border bg-school-bg p-1 self-start sm:self-auto">
             <Button
               size="sm"
               variant="ghost"
               onClick={() => setViewMode('cards')}
               className={`rounded-lg px-3 text-xs font-semibold ${
                 viewMode === 'cards'
-                  ? 'bg-white text-[#41C4BD] shadow-xs'
-                  : 'text-[#5E7A77] hover:text-[#183B3A]'
+                  ? 'bg-white text-ink-turquoise shadow-xs'
+                  : 'text-school-muted-readable hover:text-school-heading'
               }`}
             >
               <LayoutGrid className="mr-1.5 h-4 w-4" /> Tarjetas
@@ -343,8 +343,8 @@ export default function CoursesPage() {
               onClick={() => setViewMode('table')}
               className={`rounded-lg px-3 text-xs font-semibold ${
                 viewMode === 'table'
-                  ? 'bg-white text-[#41C4BD] shadow-xs'
-                  : 'text-[#5E7A77] hover:text-[#183B3A]'
+                  ? 'bg-white text-ink-turquoise shadow-xs'
+                  : 'text-school-muted-readable hover:text-school-heading'
               }`}
             >
               <TableIcon className="mr-1.5 h-4 w-4" /> Tabla
@@ -357,28 +357,28 @@ export default function CoursesPage() {
       {viewMode === 'cards' ? (
         isLoading ? (
           <div className="flex justify-center py-16">
-            <span className="h-8 w-8 animate-spin rounded-full border-4 border-[#41C4BD] border-t-transparent" />
+            <span className="h-8 w-8 animate-spin rounded-full border-4 border-brand-turquoise border-t-transparent" />
           </div>
         ) : coursesList.length === 0 ? (
-          <div className="rounded-2xl border border-[#D6E5E3] bg-white p-12 text-center shadow-xs">
-            <BookOpen className="mx-auto h-10 w-10 text-[#5E7A77]/40 mb-3" />
-            <p className="text-base font-semibold text-[#183B3A]">No se encontraron cursos</p>
-            <p className="text-sm text-[#5E7A77] mt-1">Prueba cambiando los términos de búsqueda o el período seleccionado.</p>
+          <div className="nk-card p-12 text-center">
+            <BookOpen className="mx-auto h-10 w-10 text-school-muted-readable/40 mb-3" />
+            <p className="text-base font-semibold text-school-heading">No se encontraron cursos</p>
+            <p className="text-sm text-school-muted-readable mt-1">Prueba cambiando los términos de búsqueda o el período seleccionado.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {coursesList.map((c) => (
               <Card
                 key={c.id}
-                className="flex flex-col justify-between transition-all hover:border-[#41C4BD] hover:shadow-sm group"
+                className="flex flex-col justify-between transition-[color,background-color,border-color,box-shadow,transform] hover:border-brand-turquoise hover:shadow-sm group"
               >
                 <CardContent className="p-5 space-y-4">
-                  <div className="flex items-start justify-between border-b border-[#D6E5E3] pb-3 gap-2">
+                  <div className="flex items-start justify-between border-b border-school-border pb-3 gap-2">
                     <div className="min-w-0">
-                      <span className="text-xs font-mono font-semibold text-[#5E7A77]">
+                      <span className="text-xs font-mono font-semibold text-school-muted-readable">
                         {c.code}
                       </span>
-                      <h3 className="font-semibold text-[#183B3A] text-lg truncate group-hover:text-[#41C4BD] transition-colors mt-0.5">
+                      <h3 className="font-semibold text-school-heading text-lg truncate group-hover:text-ink-turquoise transition-colors mt-0.5">
                         {c.name}
                       </h3>
                     </div>
@@ -386,19 +386,19 @@ export default function CoursesPage() {
                   </div>
 
                   <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between rounded-lg border border-[#D6E5E3] bg-[#F4FAF9]/50 p-2.5">
-                      <span className="flex items-center gap-1.5 text-xs text-[#5E7A77]">
-                        <User className="h-4 w-4 text-[#41C4BD]" />
+                    <div className="flex items-center justify-between rounded-lg border border-school-border bg-school-bg/50 p-2.5">
+                      <span className="flex items-center gap-1.5 text-xs text-school-muted-readable">
+                        <User className="h-4 w-4 text-ink-turquoise" />
                         Docente:
                       </span>
-                      <span className="font-semibold text-xs text-[#183B3A] truncate max-w-[55%]">
+                      <span className="font-semibold text-xs text-school-heading truncate max-w-[55%]">
                         {c.teacher?.user?.name ?? 'Sin asignar'}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between rounded-lg border border-[#BBE5E1] bg-[#E3F5F3]/50 p-2.5">
-                      <span className="flex items-center gap-1.5 text-xs font-medium text-[#41C4BD]">
-                        <Users className="h-4 w-4 text-[#41C4BD]" />
+                    <div className="flex items-center justify-between rounded-lg border border-line-turquoise bg-school-subtle/50 p-2.5">
+                      <span className="flex items-center gap-1.5 text-xs font-medium text-ink-turquoise">
+                        <Users className="h-4 w-4 text-ink-turquoise" />
                         Estudiantes matriculados:
                       </span>
                       <Badge variant="default" className="font-semibold">
@@ -410,17 +410,17 @@ export default function CoursesPage() {
                   </div>
 
                   {c.description && (
-                    <p className="text-xs text-[#5E7A77] line-clamp-2 leading-relaxed bg-[#F4FAF9] p-2.5 rounded-lg border border-[#D6E5E3]">
+                    <p className="text-xs text-school-muted-readable line-clamp-2 leading-relaxed bg-school-bg p-2.5 rounded-lg border border-school-border">
                       {c.description}
                     </p>
                   )}
 
-                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#D6E5E3]">
+                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-school-border">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => { setEditCourse(c); setFormOpen(true); }}
-                      className="text-[#41C4BD] hover:bg-[#E3F5F3]"
+                      className="text-ink-turquoise hover:bg-school-subtle"
                     >
                       <Pencil className="mr-1.5 h-3.5 w-3.5" /> Editar
                     </Button>
@@ -428,7 +428,7 @@ export default function CoursesPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => setDeleteId(c.id)}
-                      className="text-[#B42335] hover:bg-[#FDF0F1]"
+                      className="text-school-error hover:bg-school-error-bg"
                     >
                       <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Eliminar
                     </Button>

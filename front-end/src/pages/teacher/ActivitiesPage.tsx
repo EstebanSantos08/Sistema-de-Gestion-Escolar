@@ -1,3 +1,4 @@
+import { DatePicker } from '@/components/ui/date-picker';
 import { useState } from 'react';
 import { Plus, BookOpen, Clock, FileText, Filter, Pencil, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -181,10 +182,10 @@ export default function ActivitiesPage() {
       </PageHeader>
 
       {/* Filtros */}
-      <Card className="p-4">
+      <Card className="nk-filter p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2 flex-1">
-            <Filter className="h-4 w-4 text-school-muted shrink-0" />
+            <Filter className="h-4 w-4 text-school-muted-readable shrink-0" />
             <span className="text-sm font-medium text-school-heading shrink-0">Filtrar por Aula:</span>
             <Select value={selectedCourseFilter} onValueChange={setSelectedCourseFilter}>
               <SelectTrigger className="w-full sm:w-64">
@@ -221,9 +222,9 @@ export default function ActivitiesPage() {
       {/* Listado de Actividades */}
       {filteredActivities.length === 0 ? (
         <Card className="p-12 text-center">
-          <FileText className="h-10 w-10 mx-auto text-school-muted mb-2" />
+          <FileText className="h-10 w-10 mx-auto text-school-muted-readable mb-2" />
           <p className="font-semibold text-school-heading text-base">No hay actividades registradas con estos filtros</p>
-          <p className="text-sm text-school-muted mt-1">Crea una nueva actividad o modifica los criterios de búsqueda.</p>
+          <p className="text-sm text-school-muted-readable mt-1">Crea una nueva actividad o modifica los criterios de búsqueda.</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -233,7 +234,7 @@ export default function ActivitiesPage() {
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <span className="text-xs font-semibold text-school-primary uppercase tracking-wider bg-school-subtle px-2 py-0.5 rounded-md">
+                      <span className="text-xs font-semibold text-ink-turquoise uppercase tracking-wider bg-school-subtle px-2 py-0.5 rounded-md">
                         {act.courseName}
                       </span>
                       <h4 className="font-bold text-school-heading text-base mt-2 leading-snug">{act.title}</h4>
@@ -243,8 +244,8 @@ export default function ActivitiesPage() {
                     </Badge>
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-school-primary bg-school-subtle px-2.5 py-1.5 rounded-lg border border-school-border/50">
-                    <Clock className="h-3.5 w-3.5 text-school-primary shrink-0" />
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-ink-turquoise bg-school-subtle px-2.5 py-1.5 rounded-lg border border-school-border/50">
+                    <Clock className="h-3.5 w-3.5 text-ink-turquoise shrink-0" />
                     <span>Límite: {formatDateTimeDisplay(act.dueDate)}</span>
                   </div>
 
@@ -269,7 +270,7 @@ export default function ActivitiesPage() {
 
                   <div className="flex items-center gap-1">
                     <Button size="sm" variant="outline" onClick={() => setSelectedActivityForSubmissions(act)} className="h-9 text-xs font-medium">
-                      <Eye className="h-3.5 w-3.5 mr-1 text-school-primary" /> Evidencias
+                      <Eye className="h-3.5 w-3.5 mr-1 text-ink-turquoise" /> Evidencias
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => handleOpenEditModal(act)} className="h-9 text-xs font-medium text-school-warning" aria-label="Editar actividad">
                       <Pencil className="h-3.5 w-3.5" />
@@ -284,22 +285,22 @@ export default function ActivitiesPage() {
 
       {/* Modal de Creación / Edición */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="accent-yellow sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-school-heading flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-school-primary" />
+              <BookOpen className="h-5 w-5 text-ink-turquoise" />
               {editingActivity ? 'Editar Actividad' : 'Nueva Actividad'}
             </DialogTitle>
-            <DialogDescription className="text-sm text-school-muted">
+            <DialogDescription className="text-sm text-school-muted-readable">
               Define la materia, título y fecha/hora límite de entrega
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSave} className="space-y-4 pt-2">
+          <form onSubmit={handleSave} className="space-y-5 pt-2">
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-school-heading">Aula / Curso *</Label>
+              <Label htmlFor="activity-course" className="text-sm font-semibold text-ink-blue">Aula / Curso *</Label>
               <Select value={formCourseId} onValueChange={setFormCourseId}>
-                <SelectTrigger>
+                <SelectTrigger id="activity-course" className="border-line-blue bg-surface-blue">
                   <SelectValue placeholder="Selecciona un aula" />
                 </SelectTrigger>
                 <SelectContent>
@@ -313,8 +314,9 @@ export default function ActivitiesPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-school-heading">Título de la Actividad *</Label>
+              <Label htmlFor="activity-title" className="text-sm font-semibold text-ink-turquoise">Título de la Actividad *</Label>
               <Input
+                id="activity-title"
                 placeholder="Ej: Taller de Expresión Artística"
                 value={formTitle}
                 onChange={(e) => setFormTitle(e.target.value)}
@@ -323,8 +325,9 @@ export default function ActivitiesPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-school-heading">Instrucciones o Descripción</Label>
+              <Label htmlFor="activity-description" className="text-sm font-medium text-school-heading">Instrucciones o Descripción</Label>
               <Textarea
+                id="activity-description"
                 placeholder="Detalla las instrucciones para los estudiantes..."
                 value={formDescription}
                 onChange={(e) => setFormDescription(e.target.value)}
@@ -332,21 +335,22 @@ export default function ActivitiesPage() {
               />
             </div>
 
-            <div className="space-y-1.5 bg-school-subtle/60 p-3.5 rounded-xl border border-school-border">
-              <Label className="text-xs font-semibold text-school-primary flex items-center gap-1.5">
+            <div className="space-y-2 bg-surface-yellow p-4 rounded-xl border border-line-yellow">
+              <Label htmlFor="activity-deadline" className="text-sm font-semibold text-ink-yellow flex items-center gap-1.5">
                 <Clock className="h-4 w-4" /> Fecha y Hora Límite *
               </Label>
-              <Input
+              <DatePicker
+                id="activity-deadline"
                 type="datetime-local"
                 min={minDateTimeAllowed}
                 value={formDueDate}
-                onChange={(e) => setFormDueDate(e.target.value)}
+                onValueChange={(value) => setFormDueDate(value)}
                 className="bg-white font-medium"
                 required
               />
             </div>
 
-            <DialogFooter className="pt-2">
+            <DialogFooter className="border-t border-line-yellow pt-4">
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
                 Cancelar
               </Button>

@@ -1,12 +1,16 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
+export type CardAccent = 'turquoise' | 'blue' | 'lime' | 'yellow' | 'pink' | 'violet' | 'lilac';
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> { accent?: CardAccent; }
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, accent, ...props }, ref) => (
     <div
       ref={ref}
       className={cn(
-        'rounded-3xl border border-[#D6E5E3] bg-white text-[#365451] shadow-xs overflow-hidden transition-all duration-300 hover:shadow-md',
+        'nk-card',
+        accent && `accent-${accent}`,
         className
       )}
       {...props}
@@ -17,7 +21,7 @@ Card.displayName = 'Card';
 
 const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('flex flex-col space-y-1.5 p-5 sm:p-6', className)} {...props} />
+    <div ref={ref} className={cn('nk-card-header flex flex-col space-y-1.5 p-5 sm:p-6', className)} {...props} />
   )
 );
 CardHeader.displayName = 'CardHeader';
@@ -26,7 +30,7 @@ const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HT
   ({ className, ...props }, ref) => (
     <h3
       ref={ref}
-      className={cn('text-lg font-semibold leading-tight text-[#183B3A]', className)}
+      className={cn('text-lg font-semibold leading-tight text-school-heading', className)}
       {...props}
     />
   )
@@ -37,7 +41,7 @@ const CardDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
-  <p ref={ref} className={cn('text-sm text-[#5E7A77]', className)} {...props} />
+  <p ref={ref} className={cn('text-sm text-school-muted-readable', className)} {...props} />
 ));
 CardDescription.displayName = 'CardDescription';
 

@@ -13,24 +13,24 @@
     --popover: 0 0% 100%;
     --popover-foreground: 174 22% 27%;
 
-    --primary: 177 53% 51%; /* #41C4BD */
+    --primary: 177 88% 26%; /* #41C4BD */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 173 47% 93%; /* #E3F5F3 */
-    --secondary-foreground: 177 53% 51%;
+    --secondary-foreground: 177 88% 26%;
 
     --muted: 170 30% 96%;
-    --muted-foreground: 174 13% 42%; /* #5E7A77 */
+    --muted-foreground: 171 14% 36%; /* #5E7A77 */
 
     --accent: 173 47% 93%; /* #E3F5F3 */
-    --accent-foreground: 177 53% 51%;
+    --accent-foreground: 177 88% 26%;
 
     --destructive: 353 67% 42%; /* #B42335 */
     --destructive-foreground: 0 0% 100%;
 
     --border: 172 22% 87%; /* #D6E5E3 */
     --input: 173 10% 49%; /* #718B88 */
-    --ring: 177 53% 51%; /* #41C4BD */
+    --ring: 177 88% 26%; /* #41C4BD */
 
     --radius: 0.75rem;
   }
@@ -59,7 +59,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid #41C4BD;
+    outline: 2px solid theme('colors.school.primary');
     outline-offset: 2px;
   }
 }
@@ -72,7 +72,7 @@
 
   /* Surface and panel utility */
   .school-panel {
-    background-color: #FFFFFF;
+    background-color: theme('colors.surface.turquoise');
     border: 1px solid #D6E5E3;
     border-radius: 1rem;
     box-shadow: 0 1px 2px 0 rgba(24, 59, 58, 0.04);
@@ -85,4 +85,130 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* NICE KIDS: categories own their accents; readable ink is separate from logo color. */
+@layer base {
+  :root {
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --tone: theme('colors.brand.turquoise');
+    --tone-soft: theme('colors.surface.turquoise');
+    --tone-ink: theme('colors.ink.turquoise');
+    --tone-line: theme('colors.line.turquoise');
+    --chart-1: theme('colors.brand.turquoise');
+    --chart-2: theme('colors.brand.lightblue');
+    --chart-3: theme('colors.brand.lime');
+    --chart-4: theme('colors.brand.yellow');
+    --chart-5: theme('colors.brand.violet');
+    --chart-6: theme('colors.brand.pink');
+    --chart-error: theme('colors.school.error');
+    --chart-muted: theme('colors.school.muted-readable');
+    --elevation-soft: 0 4px 16px -8px rgb(24 59 58 / 16%);
+    --elevation-raised: 0 12px 24px -12px rgb(24 59 58 / 24%);
+  }
+  body { caret-color: theme('colors.school.primary'); }
+  h1, h2, h3 { text-wrap: balance; }
+  button, input, select, textarea { font: inherit; }
+}
+@layer components {
+  .accent-turquoise { --tone: theme('colors.brand.turquoise'); --tone-soft: theme('colors.surface.turquoise'); --tone-ink: theme('colors.ink.turquoise'); --tone-line: theme('colors.line.turquoise'); }
+  .accent-blue { --tone: theme('colors.brand.lightblue'); --tone-soft: theme('colors.surface.blue'); --tone-ink: theme('colors.ink.blue'); --tone-line: theme('colors.line.blue'); }
+  .accent-lime { --tone: theme('colors.brand.lime'); --tone-soft: theme('colors.surface.lime'); --tone-ink: theme('colors.ink.lime'); --tone-line: theme('colors.line.lime'); }
+  .accent-yellow { --tone: theme('colors.brand.yellow'); --tone-soft: theme('colors.surface.yellow'); --tone-ink: theme('colors.ink.yellow'); --tone-line: theme('colors.line.yellow'); }
+  .accent-pink { --tone: theme('colors.brand.pink'); --tone-soft: theme('colors.surface.pink'); --tone-ink: theme('colors.ink.pink'); --tone-line: theme('colors.line.pink'); }
+  .accent-violet { --tone: theme('colors.brand.violet'); --tone-soft: theme('colors.surface.violet'); --tone-ink: theme('colors.ink.violet'); --tone-line: theme('colors.line.violet'); }
+  .accent-lilac { --tone: theme('colors.brand.lilac'); --tone-soft: theme('colors.surface.lilac'); --tone-ink: theme('colors.ink.lilac'); --tone-line: theme('colors.line.lilac'); }
+
+  .nk-app {
+    background: radial-gradient(ellipse at 95% 12%, theme('colors.surface.blue'), transparent 42%),
+      radial-gradient(ellipse at 5% 65%, theme('colors.surface.lime'), transparent 38%), theme('colors.school.bg');
+  }
+  .nk-app[data-role="parent"] { background: radial-gradient(ellipse at 100% 5%, theme('colors.surface.lilac'), transparent 50%), theme('colors.school.bg'); }
+  .nk-app[data-role="admin"] { background: radial-gradient(ellipse at 100% 0%, theme('colors.surface.violet'), transparent 45%), theme('colors.school.bg'); }
+  .nk-card, .school-panel {
+    min-width: 0; border: 1.5px solid var(--tone-line); border-radius: 1.25rem;
+    background: var(--tone-soft); color: theme('colors.school.body');
+    box-shadow: var(--elevation-soft);
+  }
+  .nk-card-header { border-bottom: 1px solid var(--tone-line); }
+  .nk-section { border-top: 4px solid var(--tone); border-radius: 1.5rem; }
+  .nk-filter { border-top: 4px solid var(--tone); }
+  .nk-filter label { color: var(--tone-ink); }
+  .nk-metric { position: relative; overflow: hidden; border-top: 4px solid var(--tone); }
+  .nk-metric::after { content: ''; position: absolute; right: -1.5rem; bottom: -2.8rem; width: 7rem; height: 7rem; border: 16px solid var(--tone); border-radius: 50%; opacity: .1; pointer-events: none; }
+  .nk-icon { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; border-radius: .875rem; background: var(--tone-soft); color: var(--tone-ink); border: 1px solid var(--tone-line); }
+  .nk-metric .nk-icon { background: white; }
+  .nk-quick { display: flex; flex-direction: column; align-items: flex-start; gap: .75rem; min-height: 7.5rem; padding: 1rem; border: 1.5px solid var(--tone-line); border-radius: 1rem; background: var(--tone-soft); color: theme('colors.school.heading'); font-size: .875rem; font-weight: 600; }
+  .nk-quick .nk-icon { background: rgb(255 255 255 / 75%); }
+  .nk-course { border-left: 4px solid var(--tone); background: rgb(255 255 255 / 65%); }
+  .nk-event { position: relative; border-left: 3px solid var(--tone); background: rgb(255 255 255 / 65%); }
+  .nk-sidebar { background: linear-gradient(180deg, theme('colors.surface.turquoise'), theme('colors.school.bg') 70%); border-right: 1.5px solid theme('colors.line.turquoise'); }
+  .nk-brand { background: theme('colors.surface.turquoise'); border-bottom: 1px solid theme('colors.line.turquoise'); }
+  .nk-brand-line { height: 4px; background: linear-gradient(90deg, theme('colors.brand.turquoise') 0% 25%, theme('colors.brand.yellow') 25% 45%, theme('colors.brand.pink') 45% 65%, theme('colors.brand.lime') 65% 85%, theme('colors.brand.lightblue') 85%); }
+  .nk-nav { display: flex; align-items: center; gap: .75rem; min-height: 3.25rem; border: 1px solid transparent; border-left: 3px solid transparent; border-radius: .875rem; padding: .5rem .75rem; font-size: .875rem; font-weight: 500; color: theme('colors.school.body'); }
+  .nk-nav .nk-icon { width: 2rem; height: 2rem; border-radius: .625rem; }
+  .nk-nav[aria-current="page"] { border-color: theme('colors.line.turquoise'); border-left-color: var(--tone); background: theme('colors.school.subtle'); color: theme('colors.school.heading'); font-weight: 700; box-shadow: var(--elevation-soft); }
+  .nk-page-header { border-left: 4px solid var(--tone); padding: .5rem 0 .5rem 1rem; }
+  .nk-welcome { position: relative; isolation: isolate; overflow: hidden; border-radius: 1.75rem; border: 1px solid var(--tone-line); background: linear-gradient(110deg, theme('colors.surface.blue'), theme('colors.surface.turquoise') 62%, theme('colors.brand.turquoise')); }
+  .nk-welcome[data-variant="lime"] { background: linear-gradient(110deg, theme('colors.surface.lime'), theme('colors.surface.turquoise') 60%, theme('colors.brand.lightblue')); }
+  .nk-welcome[data-variant="violet"] { background: linear-gradient(110deg, theme('colors.surface.violet'), theme('colors.surface.turquoise') 65%, theme('colors.brand.turquoise')); }
+  .nk-welcome[data-variant="pink"] { background: linear-gradient(110deg, theme('colors.surface.pink'), theme('colors.surface.lilac') 55%, theme('colors.brand.turquoise')); }
+  .nk-welcome-art { position: absolute; right: 4%; top: 12%; width: 10rem; height: 10rem; border-radius: 50% 50% 35% 35%; border: 22px solid rgb(255 255 255 / 35%); transform: rotate(-12deg); pointer-events: none; }
+  .nk-welcome-art::after { content: ''; position: absolute; width: 3.5rem; height: 3.5rem; border-radius: 1rem; background: theme('colors.brand.yellow'); right: -2rem; bottom: -1rem; opacity: .65; }
+  .nk-control { min-height: 44px; border-width: 1.5px; border-color: theme('colors.school.input'); border-radius: .75rem; background: white; color: theme('colors.school.body'); font-size: 1rem; }
+  .nk-control::placeholder { color: theme('colors.school.muted-readable'); opacity: 1; }
+  .nk-control:hover:not(:disabled) { border-color: var(--tone-ink); background-color: theme('colors.school.bg'); }
+  .nk-control:focus-visible { border-color: theme('colors.school.primary'); outline: 2px solid theme('colors.school.primary'); outline-offset: 2px; }
+  .nk-button, .nk-nav, .nk-quick, .nk-lift, .nk-icon { transition: transform 180ms var(--ease-out), box-shadow 180ms ease, background-color 180ms ease, border-color 180ms ease; }
+  .nk-button:active:not(:disabled) { transform: scale(.98); }
+  .nk-button:focus-visible, .nk-nav:focus-visible, .nk-quick:focus-visible { transition: none; }
+  .nk-context-button { border: 1.5px solid var(--tone-line); background: var(--tone-soft); color: var(--tone-ink); }
+  .nk-table { border-radius: 1rem; border: 1px solid var(--tone-line); }
+  .nk-table thead, .nk-table-head { background: var(--tone-soft); }
+  .nk-table th { padding-top: 1rem; padding-bottom: 1rem; color: var(--tone-ink); font-size: .875rem; }
+  .nk-table tbody tr { background: rgb(255 255 255 / 65%); }
+  .nk-table tbody tr:hover { background: var(--tone-soft); }
+  .nk-dialog { max-height: calc(100dvh - 2rem); overflow-y: auto; border-top: 4px solid var(--tone); border-radius: 1.25rem; }
+  .nk-dialog-header { padding: 1rem; border-radius: .875rem; background: var(--tone-soft); border-bottom: 1px solid var(--tone-line); }
+  .nk-popover { transform-origin: var(--radix-select-content-transform-origin, var(--radix-dropdown-menu-content-transform-origin)); }
+  .nk-attendance-status[aria-pressed="true"] { border: 2px solid var(--tone-ink); background: var(--tone-soft); color: var(--tone-ink); box-shadow: inset 0 -3px 0 var(--tone); font-weight: 700; }
+  .nk-attendance-status[aria-pressed="true"]::before { content: ''; width: .4rem; height: .4rem; border-radius: 50%; background: currentColor; }
+}
+@media (hover: hover) and (pointer: fine) {
+  .nk-lift:hover, .nk-quick:hover { transform: translateY(-2px); box-shadow: var(--elevation-raised); border-color: var(--tone); }
+  .nk-quick:hover .nk-icon { transform: scale(1.05); }
+  .nk-nav:hover { transform: translateX(2px); background: var(--tone-soft); }
+  .nk-button:hover:not(:disabled) { box-shadow: var(--elevation-soft); }
+}
+@media (max-width: 639px) {
+  .nk-welcome-art { right: -4rem; opacity: .35; }
+  .nk-quick { min-height: 6.5rem; }
+  .nk-attendance-table thead { display: none; }
+  .nk-attendance-table tr { display: grid; grid-template-columns: 1fr; padding: .75rem; }
+  .nk-attendance-table td { display: block; padding: .375rem; }
+  .nk-attendance-table td:nth-child(2) { padding-top: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nk-lift:hover, .nk-quick:hover, .nk-quick:hover .nk-icon, .nk-nav:hover, .nk-button:active:not(:disabled) { transform: none; }
+}
+
+@layer components {
+  .nk-date-input::-webkit-calendar-picker-indicator { display: none; }
+  .nk-calendar { position: fixed; margin: 0; width: min(336px, calc(100vw - 16px)); max-height: calc(100dvh - 16px); overflow: auto; padding: 12px; border: 1.5px solid theme('colors.line.turquoise'); border-radius: 1.25rem; background: white; color: theme('colors.school.body'); box-shadow: var(--elevation-raised); }
+  .nk-calendar-day { display: flex; align-items: center; justify-content: center; width: 100%; height: 40px; border: 2px solid transparent; border-radius: .625rem; font-size: .875rem; }
+  .nk-calendar-day:hover { background: theme('colors.surface.turquoise'); }
+  .nk-calendar-day[aria-current="date"] { border-color: theme('colors.school.primary'); font-weight: 700; }
+  .nk-calendar-day[data-selected="true"] { background: theme('colors.school.primary'); color: white; }
+  .nk-calendar-day[data-outside="true"]:not([data-selected="true"]) { color: theme('colors.school.muted-readable'); }
+  .nk-calendar-day[aria-disabled="true"] { opacity: .35; cursor: not-allowed; }
+  .nk-dialog[data-state="open"], .nk-popover[data-state="open"] { animation: nk-overlay-in 180ms var(--ease-out); }
+  @keyframes nk-overlay-in { from { opacity: 0; scale: .97; } to { opacity: 1; scale: 1; } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nk-dialog[data-state="open"], .nk-popover[data-state="open"] { animation: none; }
+}
+
+@layer components {
+  .nk-card-header { border-top-left-radius: inherit; border-top-right-radius: inherit; }
+  .nk-attendance-status.accent-pink[aria-pressed="true"] { color: theme('colors.school.error'); border-color: theme('colors.school.error'); background: theme('colors.school.error-bg'); box-shadow: inset 0 -3px 0 theme('colors.school.error'); }
 }

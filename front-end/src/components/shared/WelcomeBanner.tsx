@@ -1,6 +1,5 @@
-import React from 'react';
-import { SparkleStar, FloatingCloud, CloudDivider } from '@/components/ui/CloudDecoration';
-import { Sparkles, Heart } from 'lucide-react';
+import { CloudDivider, SparkleStar } from '@/components/ui/CloudDecoration';
+import { CalendarDays, HeartHandshake } from 'lucide-react';
 
 interface WelcomeBannerProps {
   userName?: string;
@@ -10,52 +9,20 @@ interface WelcomeBannerProps {
   variant?: 'turquoise' | 'violet' | 'pink' | 'lime';
 }
 
-const variantGradients: Record<string, string> = {
-  turquoise: 'from-[#41C4BD] via-[#64B6E5] to-[#41C4BD]',
-  violet: 'from-[#9731AC] via-[#EE7DCC] to-[#41C4BD]',
-  pink: 'from-[#FF5DA0] via-[#EE7DCC] to-[#F2C700]',
-  lime: 'from-[#9DD31B] via-[#41C4BD] to-[#64B6E5]',
-};
-
-export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
-  userName = 'Usuario',
-  roleLabel = 'Portal Escolar',
-  period = '2026-I',
-  description = 'Resumen de actividades y gestión educativa institucional',
-  variant = 'turquoise',
-}) => {
-  const gradient = variantGradients[variant] ?? variantGradients.turquoise;
-
+export function WelcomeBanner({ userName = 'Usuario', roleLabel = 'Portal Escolar', period = '2026-I', description = 'Resumen de actividades y gestión educativa institucional', variant = 'turquoise' }: WelcomeBannerProps) {
   return (
-    <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-r ${gradient} text-white shadow-xl mb-6`}>
-      {/* Decorative stars and clouds */}
-      <SparkleStar color="#F2C700" size={24} className="absolute top-4 right-12 z-10" />
-      <SparkleStar color="#FFFFFF" size={20} className="absolute bottom-10 left-10 z-10" />
-      <FloatingCloud size="sm" color="#FFFFFF" className="absolute -top-2 right-1/4 opacity-40 z-0" />
-      <FloatingCloud size="md" color="#FFFFFF" delayed className="absolute bottom-2 right-8 opacity-30 z-0" />
-
-      <div className="relative z-10 p-6 sm:p-8 pb-10">
-        <div className="flex flex-wrap items-center gap-2 mb-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 backdrop-blur-xs px-3.5 py-1 text-xs font-bold text-[#183B3A] shadow-xs">
-            <Sparkles className="h-3.5 w-3.5 text-[#F2C700] fill-[#F2C700]" />
-            {roleLabel}
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-white/20 backdrop-blur-xs px-3 py-1 text-xs font-bold text-white">
-            Período: {period}
-          </span>
+    <section className={`nk-welcome accent-${variant}`} data-variant={variant} aria-label="Bienvenida">
+      <div className="nk-welcome-art" aria-hidden="true" />
+      <SparkleStar color="currentColor" size={28} className="pointer-events-none absolute right-8 top-7 text-ink-turquoise opacity-30" />
+      <div className="relative z-10 px-6 pb-4 pt-6 sm:px-8 sm:pt-8">
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+          <span className="inline-flex items-center gap-2 rounded-lg border border-white bg-white/80 px-3 py-1.5 font-semibold text-school-heading"><HeartHandshake aria-hidden="true" className="h-4 w-4" />{roleLabel}</span>
+          <span className="inline-flex items-center gap-2 rounded-lg bg-white/65 px-3 py-1.5 text-school-body"><CalendarDays aria-hidden="true" className="h-4 w-4" />Período: {period}</span>
         </div>
-
-        <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white drop-shadow-sm flex items-center gap-2">
-          <span>¡Hola, {userName.split(' ')[0]}!</span>
-          <Heart className="h-6 w-6 text-[#FF5DA0] fill-[#FF5DA0] animate-bounce-soft hidden xs:inline-block" />
-        </h1>
-
-        <p className="text-sm sm:text-base text-white/90 max-w-2xl font-medium mt-1">
-          {description}
-        </p>
+        <h1 className="w-full max-w-5xl text-3xl font-bold tracking-tight text-school-heading sm:text-4xl">¡Hola, {userName.split(' ')[0]}!</h1>
+        <p className="mt-3 max-w-2xl text-base leading-relaxed text-school-body sm:pr-20">{description}</p>
       </div>
-
-      <CloudDivider fillColor="#F4FAF9" className="-mb-1" />
-    </div>
+      <CloudDivider className="relative z-10 -mb-px opacity-60" fillColor="white" />
+    </section>
   );
-};
+}

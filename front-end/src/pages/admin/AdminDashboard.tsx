@@ -30,7 +30,6 @@ import {
 } from 'recharts';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { PageHeader } from '@/components/shared/PageHeader';
 import { WelcomeBanner } from '@/components/shared/WelcomeBanner';
 import { StatCard } from '@/components/shared/StatCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -199,21 +198,21 @@ export default function AdminDashboard() {
       </div>
 
       {/* CENTRO DE GESTIONES ADMINISTRATIVAS */}
-      <Card>
-        <CardHeader className="border-b border-[#D6E5E3] bg-[#F4FAF9]/60 pb-4">
+      <Card accent="turquoise" className="nk-section">
+        <CardHeader className="border-b border-school-border bg-school-bg/60 pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <CardTitle className="flex items-center gap-2 text-lg font-semibold text-[#183B3A]">
-                <ShieldCheck className="h-5 w-5 text-[#41C4BD]" />
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold text-school-heading">
+                <ShieldCheck className="h-5 w-5 text-ink-turquoise" />
                 Centro de Gestiones Directivas
               </CardTitle>
-              <CardDescription className="text-sm text-[#5E7A77] mt-0.5">
+              <CardDescription className="text-sm text-school-muted-readable mt-0.5">
                 Acceso directo a los módulos de administración y configuración escolar
               </CardDescription>
             </div>
 
             {/* Category tabs */}
-            <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-[#D6E5E3] bg-white p-1 shadow-2xs">
+            <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-school-border bg-white p-1 shadow-2xs">
               {(
                 [
                   { id: 'personas', label: 'Personas' },
@@ -225,11 +224,12 @@ export default function AdminDashboard() {
                 <button
                   key={cat.id}
                   type="button"
+                  aria-pressed={activeCategory === cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#41C4BD] ${
+                  className={`min-h-11 rounded-lg px-3.5 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-turquoise ${
                     activeCategory === cat.id
-                      ? 'bg-[#41C4BD] text-white shadow-xs'
-                      : 'text-[#5E7A77] hover:bg-[#F4FAF9] hover:text-[#183B3A]'
+                      ? 'bg-school-primary text-white shadow-xs'
+                      : 'text-school-muted-readable hover:bg-school-bg hover:text-school-heading'
                   }`}
                 >
                   {cat.label}
@@ -242,14 +242,14 @@ export default function AdminDashboard() {
         <CardContent className="p-5 sm:p-6">
           {activeCategory === 'personas' && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
+              <div className="nk-card nk-lift accent-blue p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#FDF0F6] text-[#D12B75]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-pink text-ink-pink">
                     <UserPlus className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm text-[#183B3A]">Padres y Apoderados</h4>
-                    <p className="text-xs text-[#5E7A77]">Registro y contactos</p>
+                    <h4 className="font-semibold text-sm text-school-heading">Padres y Apoderados</h4>
+                    <p className="text-xs text-school-muted-readable">Registro y contactos</p>
                   </div>
                 </div>
                 <Button asChild variant="outline" size="sm" className="w-full mt-3">
@@ -259,14 +259,14 @@ export default function AdminDashboard() {
                 </Button>
               </div>
 
-              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
+              <div className="nk-card nk-lift accent-blue p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F4FBE8] text-[#557D07]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-lime text-ink-lime">
                     <GraduationCap className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm text-[#183B3A]">Ficha de Estudiantes</h4>
-                    <p className="text-xs text-[#5E7A77]">Expediente e historial</p>
+                    <h4 className="font-semibold text-sm text-school-heading">Ficha de Estudiantes</h4>
+                    <p className="text-xs text-school-muted-readable">Expediente e historial</p>
                   </div>
                 </div>
                 <Button asChild variant="outline" size="sm" className="w-full mt-3">
@@ -276,14 +276,14 @@ export default function AdminDashboard() {
                 </Button>
               </div>
 
-              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
+              <div className="nk-card nk-lift accent-blue p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EFF7FC] text-[#1E7BB5]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-blue text-ink-blue">
                     <Users className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm text-[#183B3A]">Personal Docente</h4>
-                    <p className="text-xs text-[#5E7A77]">Asignaciones docentes</p>
+                    <h4 className="font-semibold text-sm text-school-heading">Personal Docente</h4>
+                    <p className="text-xs text-school-muted-readable">Asignaciones docentes</p>
                   </div>
                 </div>
                 <Button asChild variant="outline" size="sm" className="w-full mt-3">
@@ -297,14 +297,14 @@ export default function AdminDashboard() {
 
           {activeCategory === 'academica' && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
+              <div className="nk-card nk-lift accent-blue p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EFF7FC] text-[#1E7BB5]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-blue text-ink-blue">
                     <FolderPlus className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm text-[#183B3A]">Cursos Escolares</h4>
-                    <p className="text-xs text-[#5E7A77]">Horarios y asignaturas</p>
+                    <h4 className="font-semibold text-sm text-school-heading">Cursos Escolares</h4>
+                    <p className="text-xs text-school-muted-readable">Horarios y asignaturas</p>
                   </div>
                 </div>
                 <Button asChild variant="outline" size="sm" className="w-full mt-3">
@@ -314,14 +314,14 @@ export default function AdminDashboard() {
                 </Button>
               </div>
 
-              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
+              <div className="nk-card nk-lift accent-blue p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#E3F5F3] text-[#41C4BD]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-school-subtle text-ink-turquoise">
                     <Layers className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm text-[#183B3A]">Niveles y Aulas</h4>
-                    <p className="text-xs text-[#5E7A77]">Configuración de grupos</p>
+                    <h4 className="font-semibold text-sm text-school-heading">Niveles y Aulas</h4>
+                    <p className="text-xs text-school-muted-readable">Configuración de grupos</p>
                   </div>
                 </div>
                 <Button
@@ -334,14 +334,14 @@ export default function AdminDashboard() {
                 </Button>
               </div>
 
-              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
+              <div className="nk-card nk-lift accent-blue p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#FEF8E7] text-[#805D00]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-school-warning-bg text-school-warning">
                     <Calendar className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm text-[#183B3A]">Períodos Escolares</h4>
-                    <p className="text-xs text-[#5E7A77]">Ciclo lectivo activo</p>
+                    <h4 className="font-semibold text-sm text-school-heading">Períodos Escolares</h4>
+                    <p className="text-xs text-school-muted-readable">Ciclo lectivo activo</p>
                   </div>
                 </div>
                 <Button
@@ -354,14 +354,14 @@ export default function AdminDashboard() {
                 </Button>
               </div>
 
-              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
+              <div className="nk-card nk-lift accent-blue p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#FEF8E7] text-[#805D00]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-school-warning-bg text-school-warning">
                     <Sun className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm text-[#183B3A]">Vacacionales</h4>
-                    <p className="text-xs text-[#5E7A77]">Talleres y actividades</p>
+                    <h4 className="font-semibold text-sm text-school-heading">Vacacionales</h4>
+                    <p className="text-xs text-school-muted-readable">Talleres y actividades</p>
                   </div>
                 </div>
                 <Button
@@ -378,14 +378,14 @@ export default function AdminDashboard() {
 
           {activeCategory === 'escolar' && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
+              <div className="nk-card nk-lift accent-blue p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#E3F5F3] text-[#41C4BD]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-school-subtle text-ink-turquoise">
                     <ClipboardList className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm text-[#183B3A]">Matrículas</h4>
-                    <p className="text-xs text-[#5E7A77]">Inscripciones y cupos</p>
+                    <h4 className="font-semibold text-sm text-school-heading">Matrículas</h4>
+                    <p className="text-xs text-school-muted-readable">Inscripciones y cupos</p>
                   </div>
                 </div>
                 <Button asChild variant="outline" size="sm" className="w-full mt-3">
@@ -395,14 +395,14 @@ export default function AdminDashboard() {
                 </Button>
               </div>
 
-              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
+              <div className="nk-card nk-lift accent-blue p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EAF5EB] text-[#287A32]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-school-success-bg text-school-success">
                     <Sparkles className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm text-[#183B3A]">Promoción</h4>
-                    <p className="text-xs text-[#5E7A77]">Pase de nivel escolar</p>
+                    <h4 className="font-semibold text-sm text-school-heading">Promoción</h4>
+                    <p className="text-xs text-school-muted-readable">Pase de nivel escolar</p>
                   </div>
                 </div>
                 <Button
@@ -415,14 +415,14 @@ export default function AdminDashboard() {
                 </Button>
               </div>
 
-              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
+              <div className="nk-card nk-lift accent-blue p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F6EDF8] text-[#9731AC]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-violet text-brand-violet">
                     <Award className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm text-[#183B3A]">Graduaciones & Salidas</h4>
-                    <p className="text-xs text-[#5E7A77]">Cierres de ciclo</p>
+                    <h4 className="font-semibold text-sm text-school-heading">Graduaciones & Salidas</h4>
+                    <p className="text-xs text-school-muted-readable">Cierres de ciclo</p>
                   </div>
                 </div>
                 <Button
@@ -439,14 +439,14 @@ export default function AdminDashboard() {
 
           {activeCategory === 'control' && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
+              <div className="nk-card nk-lift accent-blue p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F6EDF8] text-[#9731AC]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-violet text-brand-violet">
                     <FileBarChart className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm text-[#183B3A]">Reportes Oficiales</h4>
-                    <p className="text-xs text-[#5E7A77]">Exportación PDF y Excel</p>
+                    <h4 className="font-semibold text-sm text-school-heading">Reportes Oficiales</h4>
+                    <p className="text-xs text-school-muted-readable">Exportación PDF y Excel</p>
                   </div>
                 </div>
                 <Button asChild variant="outline" size="sm" className="w-full mt-3">
@@ -456,14 +456,14 @@ export default function AdminDashboard() {
                 </Button>
               </div>
 
-              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
+              <div className="nk-card nk-lift accent-blue p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#E3F5F3] text-[#41C4BD]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-school-subtle text-ink-turquoise">
                     <Settings className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm text-[#183B3A]">Configuración General</h4>
-                    <p className="text-xs text-[#5E7A77]">Parámetros institucionales</p>
+                    <h4 className="font-semibold text-sm text-school-heading">Configuración General</h4>
+                    <p className="text-xs text-school-muted-readable">Parámetros institucionales</p>
                   </div>
                 </div>
                 <Button
@@ -476,14 +476,14 @@ export default function AdminDashboard() {
                 </Button>
               </div>
 
-              <div className="rounded-xl border border-[#D6E5E3] bg-white p-4 transition-all hover:border-[#41C4BD] hover:shadow-xs">
+              <div className="nk-card nk-lift accent-blue p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F6EDF8] text-[#9731AC]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-violet text-brand-violet">
                     <History className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm text-[#183B3A]">Auditoría y Bitácora</h4>
-                    <p className="text-xs text-[#5E7A77]">Registro de eventos</p>
+                    <h4 className="font-semibold text-sm text-school-heading">Auditoría y Bitácora</h4>
+                    <p className="text-xs text-school-muted-readable">Registro de eventos</p>
                   </div>
                 </div>
                 <Button asChild variant="outline" size="sm" className="w-full mt-3">
@@ -502,7 +502,7 @@ export default function AdminDashboard() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-[#41C4BD]" />
+              <ShieldCheck className="h-5 w-5 text-ink-turquoise" />
               {modalFeature}
             </DialogTitle>
             <DialogDescription>
@@ -510,7 +510,7 @@ export default function AdminDashboard() {
             </DialogDescription>
           </DialogHeader>
           <div className="py-2">
-            <div className="rounded-xl border border-[#BBE5E1] bg-[#E3F5F3] p-4 text-xs font-medium text-[#41C4BD] leading-relaxed">
+            <div className="rounded-xl border border-line-turquoise bg-school-subtle p-4 text-xs font-medium text-ink-turquoise leading-relaxed">
               El panel de <strong>{modalFeature}</strong> está disponible para la gestión actual. Todas las operaciones realizadas quedan registradas en la bitácora de auditoría.
             </div>
           </div>
@@ -532,16 +532,16 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Bar chart */}
-        <Card>
-          <CardHeader className="border-b border-[#D6E5E3] pb-3 bg-[#F4FAF9]/50">
-            <CardTitle className="text-base font-semibold text-[#183B3A] flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#41C4BD]" />
+        <Card accent="blue" className="nk-section">
+          <CardHeader className="border-b border-school-border pb-3 bg-school-bg/50">
+            <CardTitle className="text-base font-semibold text-school-heading flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-brand-turquoise" />
               Matriculados por curso
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
             {isLoading ? (
-              <div className="flex h-52 items-center justify-center text-[#5E7A77] text-sm">
+              <div className="flex h-52 items-center justify-center text-school-muted-readable text-sm">
                 Cargando métricas...
               </div>
             ) : (
@@ -553,11 +553,11 @@ export default function AdminDashboard() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#D6E5E3" vertical={false} />
                   <XAxis
                     dataKey="name"
-                    tick={{ fontSize: 12, fill: '#5E7A77' }}
+                    tick={{ fontSize: 12, fill: 'var(--chart-muted)' }}
                     angle={-25}
                     textAnchor="end"
                   />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#5E7A77' }} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: 'var(--chart-muted)' }} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: '#FFFFFF',
@@ -568,7 +568,7 @@ export default function AdminDashboard() {
                       color: '#183B3A',
                     }}
                   />
-                  <Bar dataKey="matriculados" fill="#41C4BD" radius={[6, 6, 0, 0]} />
+                  <Bar isAnimationActive={false} dataKey="matriculados" name="Estudiantes matriculados" fill="var(--chart-1)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -576,36 +576,36 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Recent enrollments */}
-        <Card>
-          <CardHeader className="border-b border-[#D6E5E3] pb-3 bg-[#F4FAF9]/50">
-            <CardTitle className="text-base font-semibold text-[#183B3A] flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#41C4BD]" />
+        <Card accent="violet" className="nk-section">
+          <CardHeader className="border-b border-school-border pb-3 bg-school-bg/50">
+            <CardTitle className="text-base font-semibold text-school-heading flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-brand-turquoise" />
               Últimas matrículas registradas
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
             {isLoading ? (
-              <p className="text-[#5E7A77] text-sm py-8 text-center">Cargando matrículas...</p>
+              <p className="text-school-muted-readable text-sm py-8 text-center">Cargando matrículas...</p>
             ) : (data?.recentEnrollments ?? []).length === 0 ? (
-              <p className="text-[#5E7A77] text-sm py-8 text-center">Sin matrículas recientes.</p>
+              <p className="text-school-muted-readable text-sm py-8 text-center">Sin matrículas recientes.</p>
             ) : (
-              <ul className="divide-y divide-[#D6E5E3]">
+              <ul className="divide-y divide-school-border">
                 {data!.recentEnrollments.map((e) => {
                   const variant = statusBadgeVariant[e.status] ?? 'secondary';
                   const label = statusLabelText[e.status] ?? e.status;
                   return (
                     <li
                       key={e.id}
-                      className="flex items-center justify-between py-3 px-2 rounded-lg transition-colors hover:bg-[#E3F5F3]/30 text-sm"
+                      className="flex items-center justify-between py-3 px-2 rounded-lg transition-colors hover:bg-school-subtle/30 text-sm"
                     >
                       <div className="space-y-0.5">
-                        <p className="font-semibold text-[#183B3A]">
+                        <p className="font-semibold text-school-heading">
                           {e.student?.user?.name ?? 'Estudiante'}{' '}
-                          <span className="text-xs text-[#5E7A77] font-normal">
+                          <span className="text-xs text-school-muted-readable font-normal">
                             ({e.student?.studentCode})
                           </span>
                         </p>
-                        <p className="text-xs text-[#5E7A77]">
+                        <p className="text-xs text-school-muted-readable">
                           {e.course?.name} · {formatDate(e.enrolledAt)}
                         </p>
                       </div>

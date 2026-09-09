@@ -52,7 +52,7 @@ function ReportButton({
       disabled={disabled || loading}
     >
       {loading ? (
-        <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#41C4BD] border-t-transparent" />
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand-turquoise border-t-transparent" />
       ) : (
         icon
       )}
@@ -126,10 +126,10 @@ export default function ReportsPage() {
       />
 
       {/* Section 1: By course */}
-      <Card>
-        <CardHeader className="border-b border-[#D6E5E3] bg-[#F4FAF9]/50 pb-4">
-          <CardTitle className="text-base font-semibold text-[#183B3A] flex items-center gap-2">
-            <FileSpreadsheet className="h-5 w-5 text-[#41C4BD]" />
+      <Card accent="violet" className="nk-section">
+        <CardHeader className="border-b border-school-border bg-school-bg/50 pb-4">
+          <CardTitle className="text-base font-semibold text-school-heading flex items-center gap-2">
+            <FileSpreadsheet className="h-5 w-5 text-ink-turquoise" />
             Reportes por Curso
           </CardTitle>
           <CardDescription>
@@ -139,7 +139,7 @@ export default function ReportsPage() {
         <CardContent className="space-y-4 pt-5">
           <div className="flex flex-wrap gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-[#183B3A]">Período</Label>
+              <Label className="text-xs font-semibold text-school-heading">Período</Label>
               <Input
                 className="w-32"
                 value={coursePeriod}
@@ -148,8 +148,8 @@ export default function ReportsPage() {
                 aria-label="Período del curso"
               />
             </div>
-            <div className="space-y-1.5 min-w-[260px] flex-1 sm:flex-initial">
-              <Label className="text-xs font-semibold text-[#183B3A]">Curso escolar</Label>
+            <div className="space-y-1.5 min-w-0 w-full sm:min-w-[260px] flex-1 sm:flex-initial">
+              <Label className="text-xs font-semibold text-school-heading">Curso escolar</Label>
               <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar curso" />
@@ -167,7 +167,7 @@ export default function ReportsPage() {
           <div className="flex flex-wrap gap-3 pt-2">
             <ReportButton
               label="Descargar Planilla Excel"
-              icon={<FileSpreadsheet className="h-4 w-4 text-[#287A32]" />}
+              icon={<FileSpreadsheet className="h-4 w-4 text-school-success" />}
               disabled={!selectedCourseId}
               onClick={() =>
                 reportService.downloadCourseExcel(
@@ -178,7 +178,7 @@ export default function ReportsPage() {
             />
             <ReportButton
               label="Descargar Acta Oficial PDF"
-              icon={<FileText className="h-4 w-4 text-[#41C4BD]" />}
+              icon={<FileText className="h-4 w-4 text-ink-turquoise" />}
               disabled={!selectedCourseId}
               onClick={() =>
                 reportService.downloadCoursePdf(
@@ -192,10 +192,10 @@ export default function ReportsPage() {
       </Card>
 
       {/* Section 2: By student */}
-      <Card>
-        <CardHeader className="border-b border-[#D6E5E3] bg-[#F4FAF9]/50 pb-4">
-          <CardTitle className="text-base font-semibold text-[#183B3A] flex items-center gap-2">
-            <GraduationCap className="h-5 w-5 text-[#41C4BD]" />
+      <Card accent="blue" className="nk-section">
+        <CardHeader className="border-b border-school-border bg-school-bg/50 pb-4">
+          <CardTitle className="text-base font-semibold text-school-heading flex items-center gap-2">
+            <GraduationCap className="h-5 w-5 text-ink-turquoise" />
             Reportes Individuales por Estudiante
           </CardTitle>
           <CardDescription>
@@ -205,9 +205,9 @@ export default function ReportsPage() {
         <CardContent className="space-y-4 pt-5">
           <div className="flex flex-wrap gap-4">
             {/* Filter by course */}
-            <div className="space-y-1.5 min-w-[260px]">
-              <Label className="text-xs font-semibold text-[#183B3A] flex items-center gap-1.5">
-                <Users className="h-4 w-4 text-[#41C4BD]" />
+            <div className="space-y-1.5 min-w-0 w-full sm:min-w-[260px]">
+              <Label className="text-xs font-semibold text-school-heading flex items-center gap-1.5">
+                <Users className="h-4 w-4 text-ink-turquoise" />
                 Filtrar por Curso
               </Label>
               <Select
@@ -232,9 +232,9 @@ export default function ReportsPage() {
             </div>
 
             {/* Select student */}
-            <div className="space-y-1.5 min-w-[300px] flex-1">
-              <Label className="text-xs font-semibold text-[#183B3A] flex items-center gap-1.5">
-                <GraduationCap className="h-4 w-4 text-[#41C4BD]" />
+            <div className="space-y-1.5 min-w-0 w-full sm:min-w-[300px] flex-1">
+              <Label className="text-xs font-semibold text-school-heading flex items-center gap-1.5">
+                <GraduationCap className="h-4 w-4 text-ink-turquoise" />
                 Seleccionar Estudiante
               </Label>
               <Select
@@ -268,7 +268,7 @@ export default function ReportsPage() {
           <div className="flex flex-wrap gap-3 pt-2">
             <ReportButton
               label="Excel de Calificaciones"
-              icon={<FileSpreadsheet className="h-4 w-4 text-[#287A32]" />}
+              icon={<FileSpreadsheet className="h-4 w-4 text-school-success" />}
               disabled={!selectedStudentId}
               onClick={() =>
                 reportService.downloadStudentExcel(
@@ -279,7 +279,7 @@ export default function ReportsPage() {
             />
             <ReportButton
               label="Boletín de Notas PDF"
-              icon={<FileText className="h-4 w-4 text-[#41C4BD]" />}
+              icon={<FileText className="h-4 w-4 text-ink-turquoise" />}
               disabled={!selectedStudentId}
               onClick={() =>
                 reportService.downloadStudentBulletinPdf(
@@ -290,7 +290,7 @@ export default function ReportsPage() {
             />
             <ReportButton
               label="Historial Académico PDF"
-              icon={<FileText className="h-4 w-4 text-[#9731AC]" />}
+              icon={<FileText className="h-4 w-4 text-brand-violet" />}
               disabled={!selectedStudentId}
               onClick={() =>
                 reportService.downloadTranscriptPdf(
@@ -304,10 +304,10 @@ export default function ReportsPage() {
       </Card>
 
       {/* Section 3: Global */}
-      <Card>
-        <CardHeader className="border-b border-[#D6E5E3] bg-[#F4FAF9]/50 pb-4">
-          <CardTitle className="text-base font-semibold text-[#183B3A] flex items-center gap-2">
-            <Download className="h-5 w-5 text-[#41C4BD]" />
+      <Card accent="turquoise" className="nk-section">
+        <CardHeader className="border-b border-school-border bg-school-bg/50 pb-4">
+          <CardTitle className="text-base font-semibold text-school-heading flex items-center gap-2">
+            <Download className="h-5 w-5 text-ink-turquoise" />
             Reporte Consolidado del Período
           </CardTitle>
           <CardDescription>
@@ -316,7 +316,7 @@ export default function ReportsPage() {
         </CardHeader>
         <CardContent className="space-y-4 pt-5">
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-[#183B3A]">Período Académico</Label>
+            <Label className="text-xs font-semibold text-school-heading">Período Académico</Label>
             <Input
               className="w-36"
               value={globalPeriod}
@@ -328,7 +328,7 @@ export default function ReportsPage() {
           <div className="pt-2">
             <ReportButton
               label="Descargar Consolidado Global Excel"
-              icon={<FileSpreadsheet className="h-4 w-4 text-[#287A32]" />}
+              icon={<FileSpreadsheet className="h-4 w-4 text-school-success" />}
               disabled={!globalPeriod}
               onClick={() => reportService.downloadAllGradesExcel(globalPeriod)}
             />

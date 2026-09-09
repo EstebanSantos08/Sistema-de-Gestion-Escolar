@@ -11,6 +11,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LogOut, User as UserIcon, Menu } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { NiceKidsLogo } from '@/components/shared/NiceKidsLogo';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,7 +54,7 @@ export function Navbar() {
   const currentRole = roleMeta[user.role] || roleMeta.student;
 
   return (
-    <header className="flex min-h-[64px] items-center justify-between gap-3 border-b border-[#D6E5E3] bg-white px-4 py-2.5 sm:px-6">
+    <header className="flex min-h-[64px] items-center justify-between gap-3 border-b border-line-turquoise bg-school-bg/95 px-4 py-2.5 sm:px-6">
       <div className="flex items-center gap-3.5">
         {/* Mobile menu trigger */}
         <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
@@ -61,17 +62,17 @@ export function Navbar() {
             <Button
               variant="outline"
               size="icon"
-              className="h-11 w-11 border-[#D6E5E3] text-[#41C4BD] hover:bg-[#E3F5F3] md:hidden"
+              className="h-11 w-11 border-school-border text-ink-turquoise hover:bg-school-subtle md:hidden"
               aria-label="Abrir menú de navegación"
             >
               <Menu aria-hidden="true" className="h-5 w-5" />
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] overflow-y-auto rounded-2xl bg-white p-5 border-[#D6E5E3]">
-            <DialogTitle className="text-xl font-semibold text-[#183B3A]">
+          <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] overflow-y-auto rounded-2xl bg-white p-5 border-school-border">
+            <DialogTitle className="text-xl font-semibold text-school-heading">
               Menú principal
             </DialogTitle>
-            <DialogDescription className="text-sm text-[#5E7A77]">
+            <DialogDescription className="text-sm text-school-muted-readable">
               Accede a tus cursos, calificaciones y herramientas escolares.
             </DialogDescription>
             <nav aria-label="Navegación móvil" className="mt-4 space-y-1.5">
@@ -82,14 +83,12 @@ export function Navbar() {
                     key={to}
                     to={to}
                     aria-current={active ? 'page' : undefined}
-                    className={navigationLinkClass(active)}
+                    className={navigationLinkClass(active, to)}
                     onClick={() => setMenuOpen(false)}
                   >
                     <Icon
                       aria-hidden="true"
-                      className={`h-5 w-5 shrink-0 ${
-                        active ? 'text-[#41C4BD]' : 'text-[#5E7A77]'
-                      }`}
+                      className="h-5 w-5 shrink-0 text-current"
                     />
                     <span>{label}</span>
                   </Link>
@@ -99,22 +98,24 @@ export function Navbar() {
           </DialogContent>
         </Dialog>
 
-        <div className="md:hidden flex items-center gap-1.5">
-          <span className="text-base font-black tracking-tight text-[#183B3A]">NICE KIDS</span>
+        <div className="md:hidden flex items-center">
+          <Link to="/" aria-label="NICE KIDS, inicio">
+            <NiceKidsLogo size="sm" showSubtitle={false} showBar={false} />
+          </Link>
         </div>
 
         {/* Period pill */}
-        <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#BBE5E1] bg-[#E3F5F3] px-3.5 py-1 text-xs font-medium text-[#41C4BD]">
-          <span className="h-2 w-2 rounded-full bg-[#41C4BD]" />
+        <div className="hidden sm:flex items-center gap-2 rounded-full border border-line-turquoise bg-school-subtle px-3.5 py-1 text-xs font-medium text-ink-turquoise">
+          <span className="h-2 w-2 rounded-full bg-brand-turquoise" />
           <span>
-            Período Académico: <strong className="font-semibold text-[#183B3A]">2026-I</strong>
+            Período Académico: <strong className="font-semibold text-school-heading">2026-I</strong>
           </span>
         </div>
       </div>
 
       <div className="flex items-center gap-3">
         {/* Role badge */}
-        <Badge variant={currentRole.badgeVariant} className="hidden xs:inline-flex text-xs font-medium">
+        <Badge variant={currentRole.badgeVariant} className="hidden sm:inline-flex text-xs font-medium">
           {currentRole.label}
         </Badge>
 
@@ -124,37 +125,37 @@ export function Navbar() {
             <Button
               aria-label="Abrir menú de usuario"
               variant="ghost"
-              className="relative h-11 w-11 rounded-full border border-[#D6E5E3] bg-[#E3F5F3] p-0.5 text-[#41C4BD] hover:bg-[#D4EFEA] focus-visible:ring-2 focus-visible:ring-[#41C4BD]"
+              className="relative h-11 w-11 rounded-full border border-school-border bg-school-subtle p-0.5 text-ink-turquoise hover:bg-school-subtle focus-visible:ring-2 focus-visible:ring-brand-turquoise"
             >
               <Avatar className="h-9 w-9">
-                <AvatarFallback className="bg-white text-[#41C4BD] font-bold text-sm">
+                <AvatarFallback className="bg-white text-ink-turquoise font-bold text-sm">
                   {getInitials(user.name)}
                 </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent align="end" className="w-60 rounded-2xl p-2 border-[#D6E5E3] bg-white shadow-xl">
+          <DropdownMenuContent align="end" className="w-60 rounded-2xl p-2 border-school-border bg-white shadow-xl">
             <DropdownMenuLabel className="px-3 py-2">
-              <p className="font-semibold text-[#183B3A] text-sm truncate">{user.name}</p>
-              <p className="text-xs text-[#5E7A77] truncate mt-0.5">{user.email}</p>
+              <p className="font-semibold text-school-heading text-sm truncate">{user.name}</p>
+              <p className="text-xs text-school-muted-readable truncate mt-0.5">{user.email}</p>
               <div className="mt-2">
                 <Badge variant={currentRole.badgeVariant} className="text-[11px] font-medium">
                   {currentRole.label}
                 </Badge>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-[#D6E5E3]" />
-            <DropdownMenuItem disabled className="rounded-lg text-sm text-[#5E7A77]">
-              <UserIcon className="mr-2 h-4 w-4 text-[#41C4BD]" />
+            <DropdownMenuSeparator className="bg-school-border" />
+            <DropdownMenuItem disabled className="rounded-lg text-sm text-school-muted-readable">
+              <UserIcon className="mr-2 h-4 w-4 text-ink-turquoise" />
               Mi perfil
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-[#D6E5E3]" />
+            <DropdownMenuSeparator className="bg-school-border" />
             <DropdownMenuItem
               onClick={handleLogout}
-              className="rounded-lg text-[#B42335] focus:bg-[#FDF0F1] focus:text-[#B42335] font-semibold cursor-pointer text-sm"
+              className="rounded-lg text-school-error focus:bg-school-error-bg focus:text-school-error font-semibold cursor-pointer text-sm"
             >
-              <LogOut className="mr-2 h-4 w-4 text-[#B42335]" />
+              <LogOut className="mr-2 h-4 w-4 text-school-error" />
               Cerrar sesión
             </DropdownMenuItem>
           </DropdownMenuContent>

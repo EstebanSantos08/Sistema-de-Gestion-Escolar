@@ -48,7 +48,7 @@ export default function MyGradesPage() {
 
   if (isLoading) {
     return (
-      <div role="status" className="flex items-center justify-center gap-3 py-20 text-school-muted text-sm">
+      <div role="status" className="flex items-center justify-center gap-3 py-20 text-school-muted-readable text-sm">
         <span className="h-6 w-6 animate-spin rounded-full border-2 border-school-primary border-t-transparent" />
         <span>Cargando calificaciones...</span>
       </div>
@@ -63,7 +63,7 @@ export default function MyGradesPage() {
           <div className="max-w-md mx-auto space-y-3">
             <AlertCircle className="h-8 w-8 text-school-error mx-auto" />
             <h3 className="text-base font-semibold text-school-heading">No se pudieron cargar las calificaciones</h3>
-            <p className="text-sm text-school-muted">Comprueba tu conexión e inténtalo de nuevo.</p>
+            <p className="text-sm text-school-muted-readable">Comprueba tu conexión e inténtalo de nuevo.</p>
             <Button variant="outline" onClick={() => void refetch()} className="mt-2">
               Reintentar
             </Button>
@@ -78,7 +78,7 @@ export default function MyGradesPage() {
       <div className="flex items-center gap-3">
         <Button asChild variant="ghost" size="sm" className="text-school-body font-medium hover:bg-school-subtle">
           <Link to="/estudiante/mis-cursos">
-            <ArrowLeft className="h-4 w-4 mr-1 text-school-primary" /> Volver a Mis Cursos
+            <ArrowLeft className="h-4 w-4 mr-1 text-ink-turquoise" /> Volver a Mis Cursos
           </Link>
         </Button>
       </div>
@@ -89,14 +89,14 @@ export default function MyGradesPage() {
         description={`Registro y desglose de calificaciones${data?.period ? ` · Período ${data.period}` : ''}`}
       >
         <Button variant="outline" onClick={handleDownloadBuletin} className="gap-2">
-          <FileText className="h-4 w-4 text-school-primary" />
+          <FileText className="h-4 w-4 text-ink-turquoise" />
           Descargar Boletín PDF
         </Button>
       </PageHeader>
 
       {courses.length === 0 ? (
         <Card className="p-12 text-center">
-          <p className="text-school-muted text-sm">No tienes calificaciones registradas en este período.</p>
+          <p className="text-school-muted-readable text-sm">No tienes calificaciones registradas en este período.</p>
         </Card>
       ) : (
         <>
@@ -105,13 +105,13 @@ export default function MyGradesPage() {
               <AccordionItem
                 key={c.courseId}
                 value={String(c.courseId)}
-                className="rounded-2xl border border-school-border bg-white px-5 shadow-xs overflow-hidden"
+                className="nk-card nk-section accent-yellow px-5 shadow-xs overflow-hidden"
               >
                 <AccordionTrigger className="hover:no-underline py-4">
                   <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between w-full pr-4 text-left">
                     <div>
                       <p className="font-bold text-base text-school-heading">{c.courseName}</p>
-                      <p className="text-xs text-school-muted">{c.teacherName || 'Docente asignado'}</p>
+                      <p className="text-xs text-school-muted-readable">{c.teacherName || 'Docente asignado'}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       {c.grades.length > 0 ? (
@@ -122,7 +122,7 @@ export default function MyGradesPage() {
                           <GradeBadge passed={c.passed} />
                         </>
                       ) : (
-                        <span className="text-xs text-school-muted">Sin notas</span>
+                        <span className="text-xs text-school-muted-readable">Sin notas</span>
                       )}
                     </div>
                   </div>
@@ -130,7 +130,7 @@ export default function MyGradesPage() {
 
                 <AccordionContent className="pt-1 pb-4">
                   {c.grades.length === 0 ? (
-                    <p className="text-sm text-school-muted py-2">
+                    <p className="text-sm text-school-muted-readable py-2">
                       Aún no hay calificaciones registradas para esta materia.
                     </p>
                   ) : (
@@ -155,13 +155,13 @@ export default function MyGradesPage() {
                                 <TableCell className="tabular-nums text-center font-bold text-school-heading">
                                   {g.score.toFixed(2)}
                                 </TableCell>
-                                <TableCell className="tabular-nums text-center text-school-muted">
+                                <TableCell className="tabular-nums text-center text-school-muted-readable">
                                   {(g.weight * 100).toFixed(0)}%
                                 </TableCell>
-                                <TableCell className="tabular-nums text-center font-semibold text-school-primary">
+                                <TableCell className="tabular-nums text-center font-semibold text-ink-turquoise">
                                   {(g.score * g.weight).toFixed(2)}
                                 </TableCell>
-                                <TableCell className="text-school-muted text-xs">
+                                <TableCell className="text-school-muted-readable text-xs">
                                   {(g as { comments?: string }).comments ?? '—'}
                                 </TableCell>
                               </TableRow>
@@ -173,7 +173,7 @@ export default function MyGradesPage() {
                       {/* Progress bar */}
                       <div className="space-y-1.5 pt-1">
                         <div className="flex justify-between text-xs font-semibold">
-                          <span className="text-school-muted">Promedio Final Ponderado</span>
+                          <span className="text-school-muted-readable">Promedio Final Ponderado</span>
                           <span className={c.passed ? 'text-school-success' : 'text-school-error'}>
                             {c.weightedAverage.toFixed(2)} / 10
                           </span>
@@ -197,7 +197,7 @@ export default function MyGradesPage() {
                 <span className="font-bold text-school-heading text-base">
                   Promedio General del Período
                 </span>
-                <span className="text-2xl font-bold text-school-primary">
+                <span className="text-2xl font-bold text-ink-turquoise">
                   {data.generalAverage.toFixed(2)} / 10
                 </span>
               </CardContent>

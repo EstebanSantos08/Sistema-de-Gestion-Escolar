@@ -7,15 +7,15 @@ const alertVariants = cva(
   {
     variants: {
       variant: {
-        default: 'border-[#BBE5E1] bg-[#E3F5F3] text-[#41C4BD] [&>svg]:text-[#41C4BD]',
+        default: 'border-line-turquoise bg-school-subtle text-ink-turquoise [&>svg]:text-ink-turquoise',
         destructive:
-          'border-[#F7C3C9] bg-[#FDF0F1] text-[#B42335] [&>svg]:text-[#B42335]',
+          'border-school-error-border bg-school-error-bg text-school-error [&>svg]:text-school-error',
         success:
-          'border-[#C6E7C8] bg-[#EAF5EB] text-[#287A32] [&>svg]:text-[#287A32]',
+          'border-school-success-border bg-school-success-bg text-school-success [&>svg]:text-school-success',
         warning:
-          'border-[#F6E4AC] bg-[#FEF8E7] text-[#805D00] [&>svg]:text-[#805D00]',
+          'border-school-warning-border bg-school-warning-bg text-school-warning [&>svg]:text-school-warning',
         info:
-          'border-[#C7E5F6] bg-[#EFF7FC] text-[#1E7BB5] [&>svg]:text-[#1E7BB5]',
+          'border-line-blue bg-surface-blue text-ink-blue [&>svg]:text-ink-blue',
       },
     },
     defaultVariants: { variant: 'default' },

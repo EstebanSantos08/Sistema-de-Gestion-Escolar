@@ -89,7 +89,7 @@ export default function StudentAnnouncementsPage() {
       <div className="flex items-center gap-3">
         <Button asChild variant="ghost" size="sm" className="text-school-body font-medium hover:bg-school-subtle">
           <Link to="/estudiante">
-            <ArrowLeft className="h-4 w-4 mr-1.5 text-school-primary" /> Volver al Dashboard
+            <ArrowLeft className="h-4 w-4 mr-1.5 text-ink-turquoise" /> Volver al Dashboard
           </Link>
         </Button>
       </div>
@@ -102,38 +102,38 @@ export default function StudentAnnouncementsPage() {
 
       {/* Summary */}
       <div className="grid grid-cols-2 gap-4">
-        <Card className="p-4 text-center">
+        <Card accent="pink" className="nk-metric p-5 text-center">
           <Bell className="h-5 w-5 mx-auto text-school-warning mb-1" />
           <p className="text-2xl font-bold text-school-warning">
             {visibleAnnouncements.length}
           </p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Avisos Activos</p>
+          <p className="text-sm text-school-body font-medium">Avisos Activos</p>
         </Card>
-        <Card className="p-4 text-center">
-          <Megaphone className="h-5 w-5 mx-auto text-school-primary mb-1" />
-          <p className="text-2xl font-bold text-school-primary">{allAnnouncements.length}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Total Emitidos</p>
+        <Card accent="yellow" className="nk-metric p-5 text-center">
+          <Megaphone className="h-5 w-5 mx-auto text-ink-turquoise mb-1" />
+          <p className="text-2xl font-bold text-ink-turquoise">{allAnnouncements.length}</p>
+          <p className="text-sm text-school-body font-medium">Total Emitidos</p>
         </Card>
       </div>
 
       {/* Announcements List */}
       {isLoading ? (
         <Card className="p-12 text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-school-primary mb-3" />
-          <p className="text-school-muted font-medium">Cargando circulares oficiales...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-ink-turquoise mb-3" />
+          <p className="text-school-muted-readable font-medium">Cargando circulares oficiales...</p>
         </Card>
       ) : visibleAnnouncements.length === 0 ? (
         <Card className="p-12 text-center">
-          <Megaphone className="h-10 w-10 mx-auto text-school-muted mb-2" />
+          <Megaphone className="h-10 w-10 mx-auto text-school-muted-readable mb-2" />
           <p className="font-semibold text-school-heading text-base">No hay comunicados disponibles</p>
-          <p className="text-sm text-school-muted mt-1">
+          <p className="text-sm text-school-muted-readable mt-1">
             No tienes avisos institucionales pendientes de lectura.
           </p>
         </Card>
       ) : (
         <div className="space-y-4">
           {visibleAnnouncements.map((ann: BackendAnnouncement) => (
-            <Card key={ann.id} className="hover:border-school-accent transition-colors">
+            <Card key={ann.id} className="nk-event accent-pink">
               <CardContent className="p-5 space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1.5 flex-1">
@@ -146,9 +146,9 @@ export default function StudentAnnouncementsPage() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-3 text-xs text-school-muted font-medium flex-wrap">
+                    <div className="flex items-center gap-3 text-xs text-school-muted-readable font-medium flex-wrap">
                       <span className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5 text-school-primary" />
+                        <Calendar className="h-3.5 w-3.5 text-ink-turquoise" />
                         {new Date(ann.createdAt).toLocaleDateString('es-ES')}
                       </span>
                       {ann.author?.name && (
@@ -164,7 +164,7 @@ export default function StudentAnnouncementsPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => openDeleteDialog(ann.id)}
-                    className="text-school-muted hover:text-school-error hover:bg-school-error/10 shrink-0"
+                    className="text-school-muted-readable hover:text-school-error hover:bg-school-error/10 shrink-0"
                     title="Ocultar de mi vista"
                     aria-label="Ocultar de mi vista"
                   >
@@ -198,7 +198,7 @@ export default function StudentAnnouncementsPage() {
                 </>
               )}
             </DialogTitle>
-            <DialogDescription className="text-sm text-school-muted">
+            <DialogDescription className="text-sm text-school-muted-readable">
               {step === 1
                 ? 'El aviso ya no aparecerá en tu lista personal. El comunicado institucional se conserva.'
                 : 'Esta acción ocultará definitivamente este comunicado de tu vista de alumno.'}
@@ -208,7 +208,7 @@ export default function StudentAnnouncementsPage() {
           {announcementToDelete && (
             <div className="p-3 bg-school-background rounded-xl border border-school-border text-xs text-school-body">
               <strong className="text-school-heading">{announcementToDelete.title}</strong>
-              <p className="text-school-muted mt-0.5">{announcementToDelete.content.slice(0, 80)}...</p>
+              <p className="text-school-muted-readable mt-0.5">{announcementToDelete.content.slice(0, 80)}...</p>
             </div>
           )}
 

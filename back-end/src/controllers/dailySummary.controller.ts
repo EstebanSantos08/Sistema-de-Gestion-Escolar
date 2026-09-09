@@ -120,10 +120,7 @@ export const getTeacherDailySummary = async (req: Request, res: Response): Promi
       Announcement.findAll({
         where: {
           authorId: req.user!.id,
-          ...(courseIdParam 
-            ? { courseId: courseIdParam } 
-            : { [Op.or]: [{ courseId: { [Op.in]: courseIds } }, { courseId: null }] }
-          ),
+          ...(courseIdParam ? { courseId: courseIdParam } : { courseId: { [Op.in]: [...courseIds, null] } }),
           createdAt: {
             [Op.gte]: new Date(`${dateStr}T00:00:00.000Z`),
             [Op.lte]: new Date(`${dateStr}T23:59:59.999Z`),

@@ -42,7 +42,7 @@ function PeriodCard({ period }: { period: string }) {
         </CardTitle>
         {pd.generalAverage > 0 && (
           <span className="text-sm font-medium text-school-body">
-            Promedio: <strong className="text-school-primary font-bold">{pd.generalAverage.toFixed(2)}</strong>
+            Promedio: <strong className="text-ink-turquoise font-bold">{pd.generalAverage.toFixed(2)}</strong>
           </span>
         )}
       </CardHeader>
@@ -63,7 +63,7 @@ function PeriodCard({ period }: { period: string }) {
                 <TableRow key={c.courseId} className="hover:bg-school-background/40">
                   <TableCell>
                     <p className="font-semibold text-school-heading text-sm">{c.courseName}</p>
-                    <p className="text-xs text-school-muted">{c.courseCode}</p>
+                    <p className="text-xs text-school-muted-readable">{c.courseCode}</p>
                   </TableCell>
                   <TableCell className="text-sm text-school-body">{c.teacherName || '—'}</TableCell>
                   <TableCell className="text-center font-bold text-school-heading">
@@ -73,7 +73,7 @@ function PeriodCard({ period }: { period: string }) {
                     {c.grades.length > 0 ? (
                       <GradeBadge passed={c.passed} />
                     ) : (
-                      <span className="text-xs text-school-muted">Sin notas</span>
+                      <span className="text-xs text-school-muted-readable">Sin notas</span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -123,7 +123,7 @@ export default function TranscriptPage() {
         description="Registro histórico completo de todos los períodos lectivos cursados"
       >
         <Button variant="outline" onClick={handleDownload} className="gap-2">
-          <FileText className="h-4 w-4 text-school-primary" />
+          <FileText className="h-4 w-4 text-ink-turquoise" />
           Descargar Historial PDF
         </Button>
       </PageHeader>

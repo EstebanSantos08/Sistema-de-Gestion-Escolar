@@ -134,12 +134,12 @@ export default function CourseDetailPage() {
       header: 'Estudiante',
       render: (s) => (
         <div className="flex items-center gap-3 py-1">
-          <div className="h-9 w-9 rounded-full bg-school-subtle text-school-primary font-bold flex items-center justify-center text-sm border border-school-border">
+          <div className="h-9 w-9 rounded-full bg-school-subtle text-ink-turquoise font-bold flex items-center justify-center text-sm border border-school-border">
             {s.name.charAt(0)}
           </div>
           <div>
             <p className="font-semibold text-school-heading text-sm">{s.name}</p>
-            <p className="text-xs text-school-muted">{s.studentCode}</p>
+            <p className="text-xs text-school-muted-readable">{s.studentCode}</p>
           </div>
         </div>
       ),
@@ -163,7 +163,7 @@ export default function CourseDetailPage() {
   }
 
   if (!course) {
-    return <p className="text-school-muted font-medium p-8">Curso no encontrado.</p>;
+    return <p className="text-school-muted-readable font-medium p-8">Curso no encontrado.</p>;
   }
 
   const minDateTimeAllowed = getMinDateTimeStr();
@@ -171,10 +171,10 @@ export default function CourseDetailPage() {
   return (
     <div className="space-y-6">
       {/* Botón de Retorno */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Button asChild variant="ghost" size="sm" className="text-school-body font-medium hover:bg-school-subtle">
           <Link to="/docente/mis-cursos">
-            <ArrowLeft className="h-4 w-4 mr-1.5 text-school-primary" /> Volver a Mis Cursos
+            <ArrowLeft className="h-4 w-4 mr-1.5 text-ink-turquoise" /> Volver a Mis Cursos
           </Link>
         </Button>
         <Button asChild variant="outline" size="sm">
@@ -185,16 +185,16 @@ export default function CourseDetailPage() {
       </div>
 
       {/* Encabezado del Aula Virtual */}
-      <div className="bg-school-primary rounded-2xl p-6 sm:p-8 text-white shadow-sm relative overflow-hidden">
+      <div className="nk-card nk-section accent-blue p-6 sm:p-8 relative overflow-hidden">
         <div className="relative z-10 space-y-2">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-school-subtle bg-white/10 px-2.5 py-0.5 rounded-md">
+            <span className="text-xs font-semibold uppercase tracking-wider text-ink-blue bg-white/80 px-2.5 py-0.5 rounded-md">
               {course.code}
             </span>
-            <span className="text-xs text-white/80">· Período {course.period}</span>
+            <span className="text-sm text-school-body">· Período {course.period}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold">{course.name}</h1>
-          <p className="text-sm text-white/90">
+          <p className="text-sm text-school-body">
             {course.credits} Créditos · Docente a cargo
           </p>
         </div>
@@ -202,10 +202,11 @@ export default function CourseDetailPage() {
 
       {/* Barra de Pestañas y Acciones */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-school-border pb-3">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant={activeTab === 'tasks' ? 'default' : 'ghost'}
             onClick={() => setActiveTab('tasks')}
+            aria-pressed={activeTab === 'tasks'}
             className={activeTab === 'tasks' ? 'font-semibold' : 'text-school-body font-medium'}
           >
             <FileText className="mr-2 h-4 w-4" />
@@ -215,6 +216,7 @@ export default function CourseDetailPage() {
           <Button
             variant={activeTab === 'students' ? 'default' : 'ghost'}
             onClick={() => setActiveTab('students')}
+            aria-pressed={activeTab === 'students'}
             className={activeTab === 'students' ? 'font-semibold' : 'text-school-body font-medium'}
           >
             <Users className="mr-2 h-4 w-4" />
@@ -234,9 +236,9 @@ export default function CourseDetailPage() {
         <div className="space-y-4">
           {activities.length === 0 ? (
             <Card className="p-10 text-center">
-              <FileText className="h-10 w-10 mx-auto text-school-muted mb-2" />
+              <FileText className="h-10 w-10 mx-auto text-school-muted-readable mb-2" />
               <p className="font-semibold text-school-heading text-base">No hay deberes asignados en este curso</p>
-              <p className="text-sm text-school-muted mt-1 max-w-md mx-auto">
+              <p className="text-sm text-school-muted-readable mt-1 max-w-md mx-auto">
                 Haz clic en "Asignar Nuevo Deber" para publicar la primera tarea con su fecha y hora límite de entrega.
               </p>
             </Card>
@@ -253,8 +255,8 @@ export default function CourseDetailPage() {
                         </Badge>
                       </div>
 
-                      <div className="flex items-center gap-1.5 text-xs font-medium text-school-primary bg-school-subtle px-2.5 py-1.5 rounded-lg border border-school-border/50">
-                        <Clock className="h-3.5 w-3.5 text-school-primary" />
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-ink-turquoise bg-school-subtle px-2.5 py-1.5 rounded-lg border border-school-border/50">
+                        <Clock className="h-3.5 w-3.5 text-ink-turquoise" />
                         <span>Límite: {formatDateTimeDisplay(act.dueDate)}</span>
                       </div>
 
@@ -268,7 +270,7 @@ export default function CourseDetailPage() {
                     {/* Footer: Acciones del Docente */}
                     <div className="pt-3 border-t border-school-border/60 flex items-center justify-between gap-2 text-xs">
                       <div className="flex flex-col text-xs font-medium text-school-body">
-                        <span className="text-xs text-school-muted font-medium">
+                        <span className="text-xs text-school-muted-readable font-medium">
                           Puntaje máx: <strong className="text-school-heading">{act.maxScore || 10} pts</strong>
                         </span>
                       </div>
@@ -278,9 +280,9 @@ export default function CourseDetailPage() {
                           size="sm"
                           variant="outline"
                           onClick={() => setSelectedActivityForSubmissions(act)}
-                          className="h-8 text-xs font-medium border-school-border text-school-heading hover:bg-school-subtle hover:text-school-primary"
+                          className="h-8 text-xs font-medium border-school-border text-school-heading hover:bg-school-subtle hover:text-ink-turquoise"
                         >
-                          <Eye className="h-3.5 w-3.5 mr-1 text-school-primary" /> Ver Entregas
+                          <Eye className="h-3.5 w-3.5 mr-1 text-ink-turquoise" /> Ver Entregas
                         </Button>
 
                         <Button
@@ -317,7 +319,7 @@ export default function CourseDetailPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-school-heading flex items-center gap-2">
-              <FileText className="h-5 w-5 text-school-primary" />
+              <FileText className="h-5 w-5 text-ink-turquoise" />
               {editingActivity ? 'Editar Deber y Plazo' : 'Asignar Nuevo Deber'}
             </DialogTitle>
           </DialogHeader>
@@ -345,7 +347,7 @@ export default function CourseDetailPage() {
 
             {/* Captura de Fecha y Hora Límite */}
             <div className="space-y-1.5 bg-school-subtle/60 p-3.5 rounded-xl border border-school-border">
-              <Label className="text-xs font-semibold text-school-primary flex items-center gap-1.5">
+              <Label className="text-xs font-semibold text-ink-turquoise flex items-center gap-1.5">
                 <Clock className="h-4 w-4" /> Fecha y Hora Límite de Entrega *
               </Label>
               <Input
@@ -356,7 +358,7 @@ export default function CourseDetailPage() {
                 className="bg-white font-medium text-school-heading"
                 required
               />
-              <p className="text-xs text-school-muted mt-1">
+              <p className="text-xs text-school-muted-readable mt-1">
                 Solo se permiten fechas presentes o futuras. Puedes ajustar el plazo posteriormente.
               </p>
             </div>

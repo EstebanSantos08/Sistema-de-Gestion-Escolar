@@ -1,3 +1,4 @@
+import { DatePicker } from '@/components/ui/date-picker';
 import { useState, useMemo } from 'react';
 import {
   Calendar as CalendarIcon,
@@ -25,7 +26,6 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { TeacherDailySummary } from '@/types';
@@ -116,25 +116,25 @@ export default function BitacoraPage() {
         description="Seguimiento cronológico unificado: asistencias, actividades, observaciones y comunicados registrados en el sistema"
       >
         <Button onClick={handlePrint} variant="outline" className="gap-2">
-          <Printer className="h-4 w-4 text-school-primary" />
+          <Printer className="h-4 w-4 text-ink-turquoise" />
           Exportar PDF Bitácora
         </Button>
       </PageHeader>
 
       {/* Barra de Filtros Reales */}
-      <Card className="p-4 shadow-xs">
+      <Card className="nk-filter p-5">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
           {/* Fecha */}
           <div className="space-y-1.5">
             <Label htmlFor="bitacora-date" className="text-xs font-semibold text-school-heading flex items-center gap-1.5">
-              <CalendarIcon className="h-3.5 w-3.5 text-school-primary" />
+              <CalendarIcon className="h-3.5 w-3.5 text-ink-turquoise" />
               Fecha de la bitácora:
             </Label>
-            <Input
+            <DatePicker
               id="bitacora-date"
               type="date"
               value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              onValueChange={(value) => setSelectedDate(value)}
               className="bg-white"
             />
           </div>
@@ -142,7 +142,7 @@ export default function BitacoraPage() {
           {/* Curso */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-school-heading flex items-center gap-1.5">
-              <BookOpen className="h-3.5 w-3.5 text-school-primary" />
+              <BookOpen className="h-3.5 w-3.5 text-ink-turquoise" />
               Curso / Materia:
             </Label>
             <Select
@@ -169,7 +169,7 @@ export default function BitacoraPage() {
           {/* Estudiante */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-school-heading flex items-center gap-1.5">
-              <User className="h-3.5 w-3.5 text-school-primary" />
+              <User className="h-3.5 w-3.5 text-ink-turquoise" />
               Estudiante:
             </Label>
             <Select
@@ -203,52 +203,52 @@ export default function BitacoraPage() {
 
       {/* Resumen numérico */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Card className="p-4 text-center">
+        <Card accent="lime" className="nk-metric p-5 text-center">
           <ClipboardCheck className="h-5 w-5 mx-auto text-school-success mb-1" />
           <p className="text-2xl font-bold text-school-heading">
             {summaryStats ? summaryStats.presentToday : attendanceList.length}
           </p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Presentes Hoy</p>
+          <p className="text-sm text-school-body font-medium">Presentes Hoy</p>
         </Card>
-        <Card className="p-4 text-center">
-          <CheckSquare className="h-5 w-5 mx-auto text-school-primary mb-1" />
-          <p className="text-2xl font-bold text-school-primary">{activitiesList.length}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Actividades</p>
+        <Card accent="blue" className="nk-metric p-5 text-center">
+          <CheckSquare className="h-5 w-5 mx-auto text-ink-turquoise mb-1" />
+          <p className="text-2xl font-bold text-ink-turquoise">{activitiesList.length}</p>
+          <p className="text-sm text-school-body font-medium">Actividades</p>
         </Card>
-        <Card className="p-4 text-center">
+        <Card accent="violet" className="nk-metric p-5 text-center">
           <MessageSquare className="h-5 w-5 mx-auto text-school-violet mb-1" />
           <p className="text-2xl font-bold text-school-violet">{observationsList.length}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Observaciones</p>
+          <p className="text-sm text-school-body font-medium">Observaciones</p>
         </Card>
-        <Card className="p-4 text-center">
+        <Card accent="pink" className="nk-metric p-5 text-center">
           <Megaphone className="h-5 w-5 mx-auto text-school-warning mb-1" />
           <p className="text-2xl font-bold text-school-warning">{announcementsList.length}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Comunicados</p>
+          <p className="text-sm text-school-body font-medium">Comunicados</p>
         </Card>
       </div>
 
       {/* Loading state */}
       {isLoading ? (
         <Card className="p-12 text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-school-primary mb-3" />
-          <p className="text-school-muted font-medium">Cargando registros canónicos de bitácora...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-ink-turquoise mb-3" />
+          <p className="text-school-muted-readable font-medium">Cargando registros canónicos de bitácora...</p>
         </Card>
       ) : isError ? (
         <Card className="p-12 text-center text-red-600">
           <AlertCircle className="h-10 w-10 mx-auto text-red-500 mb-2" />
           <p className="font-semibold text-base">Error al cargar la bitácora</p>
-          <p className="text-sm text-school-muted mt-1">Verifica tu conexión y permisos docentes.</p>
+          <p className="text-sm text-school-muted-readable mt-1">Verifica tu conexión y permisos docentes.</p>
           <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-4">
             Reintentar
           </Button>
         </Card>
       ) : totalRecords === 0 ? (
         <Card className="p-12 text-center">
-          <CalendarIcon className="h-10 w-10 mx-auto text-school-muted mb-2" />
+          <CalendarIcon className="h-10 w-10 mx-auto text-school-muted-readable mb-2" />
           <p className="font-semibold text-school-heading text-base">
             No se encontraron registros para el {selectedDate}
           </p>
-          <p className="text-sm text-school-muted mt-1 max-w-md mx-auto">
+          <p className="text-sm text-school-muted-readable mt-1 max-w-md mx-auto">
             Las asistencias, actividades, observaciones y comunicados registrados en el sistema para esta fecha aparecerán aquí automáticamente.
           </p>
         </Card>
@@ -256,7 +256,7 @@ export default function BitacoraPage() {
         <div className="space-y-6">
           {/* 1. Asistencias */}
           {attendanceList.length > 0 && (
-            <Card className="p-6">
+            <Card accent="lime" className="nk-section p-5 sm:p-6">
               <div className="flex items-center gap-2 border-b border-school-border pb-3 mb-4">
                 <ClipboardCheck className="h-5 w-5 text-school-success" />
                 <h3 className="font-bold text-school-heading text-base">
@@ -267,13 +267,13 @@ export default function BitacoraPage() {
                 {attendanceList.map((rec) => (
                   <div
                     key={rec.id}
-                    className="p-3.5 rounded-xl border border-school-border bg-school-background/40 flex items-center justify-between text-xs"
+                    className="nk-event p-3.5 rounded-xl flex items-center justify-between text-xs"
                   >
                     <div>
                       <p className="font-semibold text-school-heading">
                         {rec.student?.user?.name || `Estudiante #${rec.studentId}`}
                       </p>
-                      <p className="text-school-muted">Curso #{rec.courseId}</p>
+                      <p className="text-school-muted-readable">Curso #{rec.courseId}</p>
                     </div>
                     <Badge
                       variant={
@@ -298,9 +298,9 @@ export default function BitacoraPage() {
 
           {/* 2. Actividades */}
           {activitiesList.length > 0 && (
-            <Card className="p-6">
+            <Card accent="blue" className="nk-section p-5 sm:p-6">
               <div className="flex items-center gap-2 border-b border-school-border pb-3 mb-4">
-                <CheckSquare className="h-5 w-5 text-school-primary" />
+                <CheckSquare className="h-5 w-5 text-ink-turquoise" />
                 <h3 className="font-bold text-school-heading text-base">
                   Actividades ({activitiesList.length})
                 </h3>
@@ -309,17 +309,17 @@ export default function BitacoraPage() {
                 {activitiesList.map((act) => (
                   <div
                     key={act.id}
-                    className="p-4 rounded-xl border border-school-border bg-school-background/50 space-y-2"
+                    className="nk-event p-4 rounded-xl space-y-2"
                   >
                     <div className="flex items-center justify-between">
                       <Badge variant="outline">{act.type}</Badge>
-                      <span className="text-xs text-school-muted">Curso #{act.courseId}</span>
+                      <span className="text-xs text-school-muted-readable">Curso #{act.courseId}</span>
                     </div>
                     <p className="font-semibold text-school-heading text-sm">{act.title}</p>
-                    <p className="text-xs text-school-muted">
+                    <p className="text-xs text-school-muted-readable">
                       Fecha límite: {new Date(act.dueDate).toLocaleDateString('es-ES')}
                     </p>
-                    <div className="text-xs text-school-primary font-medium">
+                    <div className="text-xs text-ink-turquoise font-medium">
                       Entregas registradas: {act.submissionsCount ?? act.submissions?.length ?? 0}
                     </div>
                   </div>
@@ -330,7 +330,7 @@ export default function BitacoraPage() {
 
           {/* 3. Observaciones */}
           {observationsList.length > 0 && (
-            <Card className="p-6">
+            <Card accent="violet" className="nk-section p-5 sm:p-6">
               <div className="flex items-center gap-2 border-b border-school-border pb-3 mb-4">
                 <MessageSquare className="h-5 w-5 text-school-violet" />
                 <h3 className="font-bold text-school-heading text-base">
@@ -341,7 +341,7 @@ export default function BitacoraPage() {
                 {observationsList.map((obs) => (
                   <div
                     key={obs.id}
-                    className="p-4 rounded-xl border border-school-border bg-school-background/50 space-y-2"
+                    className="nk-event p-4 rounded-xl space-y-2"
                   >
                     <div className="flex items-center justify-between">
                       <p className="font-semibold text-school-heading text-sm">
@@ -350,9 +350,9 @@ export default function BitacoraPage() {
                       <Badge
                         variant={
                           obs.type === 'ACADEMIC'
-                            ? 'success'
+                            ? 'secondary'
                             : obs.type === 'BEHAVIORAL'
-                            ? 'destructive'
+                            ? 'purple'
                             : 'secondary'
                         }
                       >
@@ -360,7 +360,7 @@ export default function BitacoraPage() {
                       </Badge>
                     </div>
                     <p className="font-medium text-xs text-school-heading">{obs.title}</p>
-                    <p className="text-xs text-school-muted bg-white p-2.5 rounded-lg border border-school-border/50">
+                    <p className="text-xs text-school-muted-readable bg-white p-2.5 rounded-lg border border-school-border/50">
                       {obs.description}
                     </p>
                   </div>
@@ -371,7 +371,7 @@ export default function BitacoraPage() {
 
           {/* 4. Comunicados */}
           {announcementsList.length > 0 && (
-            <Card className="p-6">
+            <Card accent="pink" className="nk-section p-5 sm:p-6">
               <div className="flex items-center gap-2 border-b border-school-border pb-3 mb-4">
                 <Megaphone className="h-5 w-5 text-school-warning" />
                 <h3 className="font-bold text-school-heading text-base">
@@ -382,13 +382,13 @@ export default function BitacoraPage() {
                 {announcementsList.map((ann) => (
                   <div
                     key={ann.id}
-                    className="p-4 rounded-xl border border-school-border bg-school-background/50 space-y-2"
+                    className="nk-event p-4 rounded-xl space-y-2"
                   >
                     <div className="flex items-center justify-between">
                       <p className="font-semibold text-school-heading text-sm">{ann.title}</p>
                       <Badge variant="outline">{ann.priority || 'Normal'}</Badge>
                     </div>
-                    <p className="text-xs text-school-muted">{ann.content}</p>
+                    <p className="text-xs text-school-muted-readable">{ann.content}</p>
                   </div>
                 ))}
               </div>
@@ -424,7 +424,7 @@ export default function BitacoraPage() {
           {attendanceList.length > 0 && (
             <div>
               <h2 className="text-base font-bold text-slate-800 border-b pb-1 mb-2">Detalle de Asistencias</h2>
-              <table className="w-full text-xs text-left border-collapse border border-slate-300">
+              <table className="nk-table w-full text-xs text-left border-collapse border border-slate-300">
                 <thead>
                   <tr className="bg-slate-100">
                     <th className="border p-2 font-bold">Estudiante</th>

@@ -20,22 +20,22 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        'mb-6 sm:mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between relative',
+        'nk-page-header mb-6 sm:mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between relative',
         className
       )}
     >
       <div className="space-y-1.5">
         {eyebrow && (
-          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#E3F5F3] text-[#41C4BD] border border-[#BBE5E1] text-xs font-bold uppercase tracking-wider shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-[#41C4BD] animate-pulse" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-school-subtle text-ink-turquoise border border-line-turquoise text-xs font-semibold shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-brand-turquoise" />
             <span>{eyebrow}</span>
           </div>
         )}
-        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#183B3A] flex items-center gap-2">
+        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-school-heading flex items-center gap-2">
           <span>{title}</span>
         </h1>
         {description && (
-          <p className="text-sm sm:text-base text-[#5E7A77] max-w-3xl">
+          <p className="text-sm sm:text-base text-school-muted-readable max-w-3xl">
             {description}
           </p>
         )}

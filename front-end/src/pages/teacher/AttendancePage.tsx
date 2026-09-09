@@ -1,3 +1,4 @@
+import { DatePicker } from '@/components/ui/date-picker';
 import { useState, useEffect, useMemo } from 'react';
 import { ClipboardCheck, CheckCircle2, XCircle, Clock, AlertCircle, Save, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -146,7 +147,7 @@ export default function AttendancePage() {
       </PageHeader>
 
       {/* Selectors */}
-      <Card className="p-4 shadow-xs">
+      <Card className="nk-filter p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
           <div className="space-y-1.5 flex-1">
             <Label htmlFor="course-select">Curso / Materia *</Label>
@@ -166,13 +167,13 @@ export default function AttendancePage() {
 
           <div className="space-y-1.5 w-full sm:w-60">
             <Label htmlFor="attendance-date" className="flex items-center gap-1.5">
-              <CalendarIcon className="h-3.5 w-3.5 text-school-primary" /> Fecha *
+              <CalendarIcon className="h-3.5 w-3.5 text-ink-turquoise" /> Fecha *
             </Label>
-            <Input
+            <DatePicker
               id="attendance-date"
               type="date"
               value={date}
-              onChange={(e) => setDate(e.target.value)}
+              onValueChange={(value) => setDate(value)}
               className="bg-white"
             />
           </div>
@@ -181,25 +182,25 @@ export default function AttendancePage() {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Card className="p-4 text-center">
+        <Card accent="lime" className="nk-metric p-5 text-center">
           <CheckCircle2 className="h-5 w-5 mx-auto text-school-success mb-1" />
           <p className="text-2xl font-bold text-school-heading">{counts.present}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Presentes</p>
+          <p className="text-sm text-school-body font-medium">Presentes</p>
         </Card>
-        <Card className="p-4 text-center">
+        <Card accent="pink" className="nk-metric p-5 text-center">
           <XCircle className="h-5 w-5 mx-auto text-school-error mb-1" />
           <p className="text-2xl font-bold text-school-error">{counts.absent}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Ausentes</p>
+          <p className="text-sm text-school-body font-medium">Ausentes</p>
         </Card>
-        <Card className="p-4 text-center">
+        <Card accent="yellow" className="nk-metric p-5 text-center">
           <Clock className="h-5 w-5 mx-auto text-school-warning mb-1" />
           <p className="text-2xl font-bold text-school-warning">{counts.late}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Atrasos</p>
+          <p className="text-sm text-school-body font-medium">Atrasos</p>
         </Card>
-        <Card className="p-4 text-center">
+        <Card accent="blue" className="nk-metric p-5 text-center">
           <AlertCircle className="h-5 w-5 mx-auto text-school-blue mb-1" />
           <p className="text-2xl font-bold text-school-blue">{counts.excused}</p>
-          <p className="text-xs text-school-muted uppercase font-medium tracking-wider">Justificados</p>
+          <p className="text-sm text-school-body font-medium">Justificados</p>
         </Card>
       </div>
 
@@ -210,7 +211,7 @@ export default function AttendancePage() {
             <h3 className="font-bold text-base text-school-heading">
               {activeCourse ? activeCourse.name : 'Listado de Alumnos'}
             </h3>
-            <p className="text-xs text-school-muted">
+            <p className="text-xs text-school-muted-readable">
               {students.length} estudiantes matriculados en este curso
             </p>
           </div>
@@ -218,20 +219,20 @@ export default function AttendancePage() {
 
         {isLoading ? (
           <div className="py-16 text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-school-primary mb-3" />
-            <p className="text-school-muted text-sm font-medium">Cargando lista de estudiantes y asistencias del servidor...</p>
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-ink-turquoise mb-3" />
+            <p className="text-school-muted-readable text-sm font-medium">Cargando lista de estudiantes y asistencias del servidor...</p>
           </div>
         ) : students.length === 0 ? (
-          <div className="py-16 text-center text-school-muted">
-            <ClipboardCheck className="h-10 w-10 mx-auto text-school-muted mb-2" />
+          <div className="py-16 text-center text-school-muted-readable">
+            <ClipboardCheck className="h-10 w-10 mx-auto text-school-muted-readable mb-2" />
             <p className="font-semibold text-school-heading text-base">No hay alumnos en este curso</p>
-            <p className="text-xs text-school-muted mt-1">Selecciona otro curso para gestionar la asistencia.</p>
+            <p className="text-xs text-school-muted-readable mt-1">Selecciona otro curso para gestionar la asistencia.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
+            <table className="nk-table nk-attendance-table w-full text-left text-sm border-collapse">
               <thead>
-                <tr className="border-b border-school-border bg-school-background text-school-muted uppercase text-xs tracking-wider">
+                <tr className="border-b border-school-border bg-school-background text-school-muted-readable uppercase text-xs tracking-wider">
                   <th className="py-3 px-4">Estudiante</th>
                   <th className="py-3 px-4">Código</th>
                   <th className="py-3 px-4 text-center">Estado de Asistencia</th>
@@ -245,21 +246,21 @@ export default function AttendancePage() {
                   return (
                     <tr key={st.studentId} className="hover:bg-school-subtle/30 transition-colors">
                       <td className="py-3.5 px-4 font-semibold text-school-heading">
-                        {st.name}
+                        <span className="flex items-center gap-3"><span aria-hidden="true" className="nk-icon accent-blue font-bold">{st.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('')}</span>{st.name}</span>
                       </td>
-                      <td className="py-3.5 px-4 text-xs font-mono text-school-muted">
+                      <td className="py-3.5 px-4 text-xs font-mono text-school-muted-readable">
                         {st.studentCode}
                       </td>
                       <td className="py-3.5 px-4">
-                        <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                        <div className="flex items-center justify-center gap-2 flex-wrap">
                           <Button
                             type="button"
                             size="sm"
                             variant={state.status === 'PRESENT' ? 'default' : 'outline'}
+                            aria-pressed={state.status === 'PRESENT'}
+                            aria-label={`Presente: ${st.name}`}
                             onClick={() => setStatus(st.studentId, 'PRESENT')}
-                            className={`h-8 text-xs ${
-                              state.status === 'PRESENT' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''
-                            }`}
+                            className="nk-attendance-status accent-lime min-h-11 text-sm"
                           >
                             Presente
                           </Button>
@@ -267,8 +268,10 @@ export default function AttendancePage() {
                             type="button"
                             size="sm"
                             variant={state.status === 'ABSENT' ? 'destructive' : 'outline'}
+                            aria-pressed={state.status === 'ABSENT'}
+                            aria-label={`Ausente: ${st.name}`}
                             onClick={() => setStatus(st.studentId, 'ABSENT')}
-                            className="h-8 text-xs"
+                            className="nk-attendance-status accent-pink min-h-11 text-sm"
                           >
                             Ausente
                           </Button>
@@ -276,10 +279,10 @@ export default function AttendancePage() {
                             type="button"
                             size="sm"
                             variant={state.status === 'LATE' ? 'secondary' : 'outline'}
+                            aria-pressed={state.status === 'LATE'}
+                            aria-label={`Atraso: ${st.name}`}
                             onClick={() => setStatus(st.studentId, 'LATE')}
-                            className={`h-8 text-xs ${
-                              state.status === 'LATE' ? 'bg-amber-500 hover:bg-amber-600 text-white' : ''
-                            }`}
+                            className="nk-attendance-status accent-yellow min-h-11 text-sm"
                           >
                             Atraso
                           </Button>
@@ -287,10 +290,10 @@ export default function AttendancePage() {
                             type="button"
                             size="sm"
                             variant={state.status === 'EXCUSED' ? 'secondary' : 'outline'}
+                            aria-pressed={state.status === 'EXCUSED'}
+                            aria-label={`Justificado: ${st.name}`}
                             onClick={() => setStatus(st.studentId, 'EXCUSED')}
-                            className={`h-8 text-xs ${
-                              state.status === 'EXCUSED' ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''
-                            }`}
+                            className="nk-attendance-status accent-blue min-h-11 text-sm"
                           >
                             Justificado
                           </Button>
@@ -301,7 +304,7 @@ export default function AttendancePage() {
                           placeholder="Nota o motivo..."
                           value={state.notes}
                           onChange={(e) => setNotes(st.studentId, e.target.value)}
-                          className="h-8 text-xs bg-white"
+                          className="min-w-40 text-sm" aria-label={`Observación para ${st.name}`}
                         />
                       </td>
                     </tr>
