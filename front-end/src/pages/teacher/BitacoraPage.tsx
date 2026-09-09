@@ -2,6 +2,9 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { useState, useMemo } from 'react';
 import {
   Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  CalendarCheck,
   Printer,
   FileDown,
   ClipboardCheck,
@@ -42,6 +45,69 @@ export default function BitacoraPage() {
   const { user } = useAuth();
   const teacherName = user?.name ?? 'Profesor(a)';
   const todayStr = useMemo(() => getTodayStr(), []);
+
+  const [currentYear, setCurrentYear] = useState<number>(() => new Date().getFullYear());
+  const [currentMonth, setCurrentMonth] = useState<number>(() => new Date().getMonth());
+
+  const MONTH_NAMES = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+
+  const handlePrevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear((y) => y - 1);
+    } else {
+      setCurrentMonth((m) => m - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear((y) => y + 1);
+    } else {
+      setCurrentMonth((m) => m + 1);
+    }
+  };
+
+  const calendarDays = useMemo(() => {
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const firstDayIndex = (new Date(currentYear, currentMonth, 1).getDay() + 6) % 7; // Lunes = 0
+
+    const days: {
+      dateStr: string;
+      dayNumber: number;
+      isCurrentMonth: boolean;
+      isFuture: boolean;
+    }[] = [];
+
+    for (let i = 0; i < firstDayIndex; i++) {
+      days.push({
+        dateStr: '',
+        dayNumber: 0,
+        isCurrentMonth: false,
+        isFuture: false,
+      });
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const monthFormatted = String(currentMonth + 1).padStart(2, '0');
+      const dayFormatted = String(d).padStart(2, '0');
+      const dateStr = `${currentYear}-${monthFormatted}-${dayFormatted}`;
+      const isFuture = dateStr > todayStr;
+
+      days.push({
+        dateStr,
+        dayNumber: d,
+        isCurrentMonth: true,
+        isFuture,
+      });
+    }
+
+    return days;
+  }, [currentYear, currentMonth, todayStr]);
 
   // Filter states
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
@@ -198,6 +264,123 @@ export default function BitacoraPage() {
               </SelectContent>
             </Select>
           </div>
+        </div>
+      </Card>
+
+      {/* Calendario de Bitácora y Filtro de Meses */}
+      <Card className="p-5 shadow-xs">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4 border-b border-school-border pb-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-school-subtle text-ink-turquoise font-bold border border-line-turquoise">
+              <CalendarCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-school-heading flex items-center gap-2">
+                <span>Período Seleccionado:</span>
+                <span className="text-ink-turquoise font-black">{MONTH_NAMES[currentMonth]} {currentYear}</span>
+              </h2>
+              <p className="text-xs text-school-muted-readable">
+                Haz clic en cualquier día del mes para visualizar la bitácora de esa fecha.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handlePrevMonth}
+              title="Mes Anterior"
+              aria-label="Mes anterior"
+              className="h-9 w-9 rounded-lg"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+
+            <Select
+              value={`${currentYear}-${currentMonth}`}
+              onValueChange={(val) => {
+                const [y, m] = val.split('-').map(Number);
+                setCurrentYear(y);
+                setCurrentMonth(m);
+              }}
+            >
+              <SelectTrigger className="w-[180px] h-9 rounded-lg font-medium">
+                <SelectValue placeholder="Seleccionar Mes" />
+              </SelectTrigger>
+              <SelectContent>
+                {[2025, 2026, 2027].map((yr) =>
+                  MONTH_NAMES.map((mName, mIdx) => (
+                    <SelectItem key={`${yr}-${mIdx}`} value={`${yr}-${mIdx}`}>
+                      {mName} {yr}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleNextMonth}
+              title="Siguiente Mes"
+              aria-label="Siguiente mes"
+              className="h-9 w-9 rounded-lg"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Grilla de Días */}
+        <div className="grid grid-cols-7 gap-2 text-center">
+          {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((day) => (
+            <div key={day} className="text-xs font-semibold text-school-muted-readable uppercase tracking-wider py-1.5">
+              {day}
+            </div>
+          ))}
+
+          {calendarDays.map((item, idx) => {
+            if (!item.isCurrentMonth) {
+              return <div key={`empty-${idx}`} className="h-14 rounded-xl bg-school-background/40" />;
+            }
+
+            const isSelected = selectedDate === item.dateStr;
+            const isToday = item.dateStr === todayStr;
+
+            return (
+              <button
+                key={item.dateStr}
+                type="button"
+                onClick={() => setSelectedDate(item.dateStr)}
+                className={`h-14 rounded-xl p-2 flex flex-col justify-between items-center transition-all relative border text-xs ${
+                  isSelected
+                    ? 'bg-brand-turquoise text-white border-brand-turquoise shadow-sm ring-2 ring-brand-turquoise/30 z-10 font-bold'
+                    : isToday
+                    ? 'bg-school-subtle text-school-heading border-brand-turquoise font-semibold'
+                    : 'bg-white hover:bg-school-subtle text-school-heading border-school-border hover:border-brand-turquoise'
+                }`}
+              >
+                <div className="flex items-center justify-between w-full">
+                  <span className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-school-heading'}`}>
+                    {item.dayNumber}
+                  </span>
+                  {isToday && (
+                    <span className={`text-[10px] px-1 py-0.2 rounded font-extrabold ${isSelected ? 'bg-white text-ink-turquoise' : 'bg-brand-turquoise text-white'}`}>
+                      Hoy
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1 mt-0.5">
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-brand-turquoise'}`}
+                    title="Día disponible"
+                  />
+                </div>
+              </button>
+            );
+          })}
         </div>
       </Card>
 

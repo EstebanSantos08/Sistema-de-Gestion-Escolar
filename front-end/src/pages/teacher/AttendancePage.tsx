@@ -27,10 +27,13 @@ export default function AttendancePage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { data: courses, isLoading: loadingCourses } = useMyCourses();
-  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const todayStr = useMemo(() => getTodayStr(), []);
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const [date, setDate] = useState<string>(todayStr);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Derive initial or selected course ID directly so queries start on the very first render pass
+  const effectiveCourseId = selectedCourseId || (courses && courses.length > 0 ? String(courses[0].id) : '');
 
   useEffect(() => {
     if (courses && courses.length > 0 && !selectedCourseId) {
@@ -38,7 +41,7 @@ export default function AttendancePage() {
     }
   }, [courses, selectedCourseId]);
 
-  const courseIdNum = selectedCourseId ? Number(selectedCourseId) : null;
+  const courseIdNum = effectiveCourseId ? Number(effectiveCourseId) : null;
   const { data: courseData, isLoading: loadingStudents } = useCourseStudents(courseIdNum);
 
   const activeCourse = courses?.find((c) => c.id === courseIdNum);
@@ -57,6 +60,10 @@ export default function AttendancePage() {
     enabled: !!user && !!courseIdNum,
   });
 
+  const isToday = date === todayStr;
+  const isPast = date < todayStr;
+  const isReadOnly = !isToday;
+
   const [attendanceState, setAttendanceState] = useState<Record<number, { status: BackendAttendanceStatus; notes: string }>>({});
 
   useEffect(() => {
@@ -74,6 +81,10 @@ export default function AttendancePage() {
   }, [courseIdNum, date, students, existingAttendance]);
 
   const setStatus = (studentId: number, status: BackendAttendanceStatus) => {
+    if (isReadOnly) {
+      toast.error('Modo consulta: Solo se puede modificar y registrar asistencia en la fecha de hoy.');
+      return;
+    }
     setAttendanceState((prev) => ({
       ...prev,
       [studentId]: {
@@ -84,6 +95,10 @@ export default function AttendancePage() {
   };
 
   const setNotes = (studentId: number, notes: string) => {
+    if (isReadOnly) {
+      toast.error('Modo consulta: Solo se pueden ingresar notas en la fecha de hoy.');
+      return;
+    }
     setAttendanceState((prev) => ({
       ...prev,
       [studentId]: {
@@ -95,6 +110,11 @@ export default function AttendancePage() {
 
   const handleSave = async () => {
     if (!courseIdNum || students.length === 0) return;
+
+    if (!isToday) {
+      toast.error('Acción restringida: La asistencia solo puede guardarse en la fecha actual.');
+      return;
+    }
 
     try {
       setIsSaving(true);
@@ -140,18 +160,42 @@ export default function AttendancePage() {
         title="Control de Asistencia"
         description="Pase de lista oficial por curso y jornada académica — Datos canónicos del servidor"
       >
-        <Button onClick={handleSave} disabled={isSaving || isLoading || students.length === 0} className="gap-2">
+        <Button
+          onClick={handleSave}
+          disabled={isSaving || isLoading || students.length === 0 || isReadOnly}
+          className="gap-2"
+        >
           {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          {isSaving ? 'Guardando...' : 'Guardar Asistencia'}
+          {isSaving ? 'Guardando...' : isReadOnly ? 'Modo Consulta' : 'Guardar Asistencia'}
         </Button>
       </PageHeader>
+
+      {/* Banner de Modo Consulta Histórica si regresa al pasado */}
+      {isPast && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm shadow-xs animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+            <span>
+              <strong>Modo de Consulta Histórica:</strong> Estás visualizando la asistencia del día <strong>{date}</strong> en modo solo lectura. Las ediciones solo se permiten para el día de hoy.
+            </span>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setDate(todayStr)}
+            className="border-amber-300 text-amber-900 hover:bg-amber-100 shrink-0 font-semibold"
+          >
+            Volver al Día de Hoy
+          </Button>
+        </div>
+      )}
 
       {/* Selectors */}
       <Card className="nk-filter p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
           <div className="space-y-1.5 flex-1">
             <Label htmlFor="course-select">Curso / Materia *</Label>
-            <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
+            <Select value={effectiveCourseId} onValueChange={setSelectedCourseId}>
               <SelectTrigger id="course-select">
                 <SelectValue placeholder="Selecciona un curso" />
               </SelectTrigger>
@@ -173,8 +217,16 @@ export default function AttendancePage() {
               id="attendance-date"
               type="date"
               value={date}
-              onValueChange={(value) => setDate(value)}
-              className="bg-white"
+              max={todayStr}
+              onValueChange={(value) => {
+                if (value > todayStr) {
+                  toast.error('No es posible seleccionar fechas futuras para la asistencia.');
+                  setDate(todayStr);
+                } else {
+                  setDate(value);
+                }
+              }}
+              className="bg-white font-medium"
             />
           </div>
         </div>
@@ -256,44 +308,48 @@ export default function AttendancePage() {
                           <Button
                             type="button"
                             size="sm"
+                            disabled={isReadOnly}
                             variant={state.status === 'PRESENT' ? 'default' : 'outline'}
                             aria-pressed={state.status === 'PRESENT'}
                             aria-label={`Presente: ${st.name}`}
                             onClick={() => setStatus(st.studentId, 'PRESENT')}
-                            className="nk-attendance-status accent-lime min-h-11 text-sm"
+                            className="nk-attendance-status accent-lime min-h-11 text-sm disabled:opacity-60"
                           >
                             Presente
                           </Button>
                           <Button
                             type="button"
                             size="sm"
+                            disabled={isReadOnly}
                             variant={state.status === 'ABSENT' ? 'destructive' : 'outline'}
                             aria-pressed={state.status === 'ABSENT'}
                             aria-label={`Ausente: ${st.name}`}
                             onClick={() => setStatus(st.studentId, 'ABSENT')}
-                            className="nk-attendance-status accent-pink min-h-11 text-sm"
+                            className="nk-attendance-status accent-pink min-h-11 text-sm disabled:opacity-60"
                           >
                             Ausente
                           </Button>
                           <Button
                             type="button"
                             size="sm"
+                            disabled={isReadOnly}
                             variant={state.status === 'LATE' ? 'secondary' : 'outline'}
                             aria-pressed={state.status === 'LATE'}
                             aria-label={`Atraso: ${st.name}`}
                             onClick={() => setStatus(st.studentId, 'LATE')}
-                            className="nk-attendance-status accent-yellow min-h-11 text-sm"
+                            className="nk-attendance-status accent-yellow min-h-11 text-sm disabled:opacity-60"
                           >
                             Atraso
                           </Button>
                           <Button
                             type="button"
                             size="sm"
+                            disabled={isReadOnly}
                             variant={state.status === 'EXCUSED' ? 'secondary' : 'outline'}
                             aria-pressed={state.status === 'EXCUSED'}
                             aria-label={`Justificado: ${st.name}`}
                             onClick={() => setStatus(st.studentId, 'EXCUSED')}
-                            className="nk-attendance-status accent-blue min-h-11 text-sm"
+                            className="nk-attendance-status accent-blue min-h-11 text-sm disabled:opacity-60"
                           >
                             Justificado
                           </Button>
@@ -301,10 +357,11 @@ export default function AttendancePage() {
                       </td>
                       <td className="py-3.5 px-4">
                         <Input
-                          placeholder="Nota o motivo..."
+                          placeholder={isReadOnly ? 'Sin observaciones' : 'Nota o motivo...'}
                           value={state.notes}
+                          disabled={isReadOnly}
                           onChange={(e) => setNotes(st.studentId, e.target.value)}
-                          className="min-w-40 text-sm" aria-label={`Observación para ${st.name}`}
+                          className="min-w-40 text-sm disabled:bg-school-subtle/50 disabled:cursor-not-allowed" aria-label={`Observación para ${st.name}`}
                         />
                       </td>
                     </tr>
